@@ -1,0 +1,17 @@
+kfusion.model.initialpositions.enable = false
+
+kfusion.model.integrationrate = 2
+kfusion.model.renderingrate = 4
+
+kfusion.model.volumedims.x = 4.8
+kfusion.model.volumedims.y = 4.8
+kfusion.model.volumedims.z = 4.8
+
+kfusion.model.offset.x = 0.34
+kfusion.model.offset.y = 0.5
+kfusion.model.offset.z = 0.24
+
+kfusion.raw.enable = true
+kfusion.raw.file = /Users/jamesclarkson/data/kfusion/living_room_traj2_loop.raw
+
+

@@ -1,0 +1,26 @@
+kfusion.debug = false
+tornado.debug = false
+tornado.memory.check= false
+tornado.opencl.print = false
+
+kfusion.model.initialpositions.enable = false
+
+kfusion.model.volumedims.x = 5.0
+kfusion.model.volumedims.y = 5.0
+kfusion.model.volumedims.z = 5.0
+
+kfusion.model.offset.x = 0.34
+kfusion.model.offset.y = 0.5
+kfusion.model.offset.z = 0.24
+
+kfusion.freenect.enable = true
+kfusion.nuim.enable = false
+kfusion.nuim.root=/Users/jamesclarkson/Downloads/living_room_traj2
+kfusion.nuim.traj=livingRoom2.gt.freiburg
+
+kfusion.raw.enable = true
+kfusion.raw.file = /Users/jamesclarkson/hg/kfusion_cpp/build/living_room/living_room_traj0_1.raw
+
+kfusion.tornado.device = 2
+tornado.opencl.cflags = -cl-std=1.2 -Werror -cl-denorms-are-zero -cl-no-signed-zeros -cl-fp32-correctly-rounded-divide-sqrt
+
