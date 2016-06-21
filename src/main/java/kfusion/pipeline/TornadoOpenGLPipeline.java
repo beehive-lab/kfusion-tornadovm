@@ -101,7 +101,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 		}
 		
 		estimatePoseGraph
-//			.streamIn(projectReference)
+			.streamIn(projectReference)
 			.mapAllTo(deviceMapping);
 
 		trackingPyramid = new TaskGraph[iterations];
@@ -114,7 +114,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
 			//@formatter:off
 			trackingPyramid[i] = new TaskGraph()
-					.streamIn(pyramidPose,projectReference)
+					.streamIn(pyramidPose)
 					.add(trackPose)
 					.streamOut(pyramidTrackingResults[i])
 					.mapAllTo(deviceMapping);
@@ -152,7 +152,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 			.add(Renderer::renderLight,renderedCurrentViewImage, pyramidVerticies[0], pyramidNormals[0],light, ambient)
 			.add(Renderer::renderLight,renderedReferenceViewImage, verticies, normals, light, ambient)
 			.add(Renderer::renderTrack,renderedTrackingImage, pyramidTrackingResults[0])
-			.add(Renderer::renderDepth,renderedDepthImage, filteredDepthImage, nearPlane, farPlane)	
+//			.add(Renderer::renderDepth,renderedDepthImage, filteredDepthImage, nearPlane, farPlane)	
 			.add(renderVolume)
 			.streamOut(renderedCurrentViewImage, renderedReferenceViewImage, renderedTrackingImage, renderedDepthImage, renderedScene)
 			.mapAllTo(deviceMapping);
@@ -176,7 +176,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 			info("============== estimaing pose ==============");
 		}
 
-		estimatePoseGraph.schedule().waitOn();
+		
 
 		invReferencePose.set(referenceView.getPose());
 		MatrixFloatOps.inverse(invReferencePose);
@@ -192,6 +192,8 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 			info(
 				"project reference:\n%s", projectReference.toString());
 		}
+		
+		estimatePoseGraph.schedule().waitOn();
 		
 		// long t1 = System.nanoTime();
 

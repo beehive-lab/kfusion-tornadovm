@@ -246,11 +246,13 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 	}
 
 	protected boolean estimatePose(){
-		estimatePoseGraph.schedule();
+		
 		
 		invReferencePose.set(referenceView.getPose());
 		MatrixFloatOps.inverse(invReferencePose);
 		MatrixMath.sgemm(K, invReferencePose, projectReference);
+		
+		estimatePoseGraph.schedule().waitOn();
 		
 		// perform ICP
 		pyramidPose.set(currentView.getPose());
