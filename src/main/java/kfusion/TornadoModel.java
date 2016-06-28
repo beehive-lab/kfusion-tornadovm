@@ -48,4 +48,8 @@ public class TornadoModel extends KfusionConfig {
        return Float.parseFloat(settings.getProperty("kfusion.maxulp","5.0"));
     }
 
+    public boolean printKernels() {
+        return Boolean.parseBoolean(settings.getProperty("kfusion.kernels.print","False"));
+    }
+
 }

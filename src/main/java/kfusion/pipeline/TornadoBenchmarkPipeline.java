@@ -16,8 +16,6 @@ import tornado.collections.types.Float3;
 import tornado.collections.types.Float4;
 import tornado.collections.types.ImageFloat3;
 import tornado.collections.types.Matrix4x4Float;
-import tornado.meta.domain.DomainTree;
-import tornado.meta.domain.IntDomain;
 import tornado.runtime.api.TaskGraph;
 import tornado.runtime.api.CompilableTask;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
@@ -114,6 +112,18 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				videoCamera.skipVideoFrame();
 //				haveVideoImage = videoCamera.pollVideo(videoImageInput);
 			}
+			
+			if(config.printKernels()){
+			    preprocessingGraph.dumpProfiles();
+			    estimatePoseGraph.dumpProfiles();
+			    for(TaskGraph graph : trackingPyramid){
+			        graph.dumpProfiles();
+			    }
+			    integrateGraph.dumpProfiles();
+			    raycastGraph.dumpProfiles();
+			    renderGraph.dumpProfiles();
+			}
+			
 		}
 	}
 
@@ -175,7 +185,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		}
 		
 		estimatePoseGraph
-//			.streamIn(projectReference)
+			.streamIn(projectReference)
 			.mapAllTo(deviceMapping);
 		
 		trackingPyramid = new TaskGraph[iterations];
@@ -185,10 +195,11 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
 				referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
 				projectReference, distanceThreshold, normalThreshold);
+		    
 
 			//@formatter:off
 			trackingPyramid[i] = new TaskGraph()
-					.streamIn(pyramidPose,projectReference)
+					.streamIn(pyramidPose)
 					.add(trackPose)
 					.streamOut(pyramidTrackingResults[i])
 					.mapAllTo(deviceMapping);
