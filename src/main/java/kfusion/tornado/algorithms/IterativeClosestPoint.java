@@ -20,8 +20,8 @@ import tornado.collections.types.ImageFloat8;
 import tornado.collections.types.Int2;
 import tornado.collections.types.Matrix4x4Float;
 import tornado.collections.types.MatrixFloat;
-import tornado.collections.types.VectorFloat;
 import static tornado.collections.types.MatrixFloat.*;
+import tornado.collections.types.VectorFloat;
 
 public class IterativeClosestPoint {
 
@@ -84,6 +84,42 @@ public class IterativeClosestPoint {
 		}
 
 	}
+        
+        public static void mapReduce(@Write final float[] output, @Read final ImageFloat8 input){
+            final int numThreads = output.length / 32;
+            final int numElements = input.X() * input.Y();
+            
+            for(@Parallel int i=0;i<numThreads;i++){
+                final int startIndex = i * 32;
+                for(int j=0;j<32;j++){
+                    output[startIndex + j] = 0f;
+                }
+                
+                for(int j=i;j<numElements;j+=numThreads){
+                    reduceValues(output,startIndex,input,j);
+                }
+            }
+        }
+        
+        public static void reduceIntermediate(@Write final float[] output, @Read final float[] input){
+            final int numThreads = output.length / 32;
+             final int numElements = input.length / 32;
+            
+            for(@Parallel int i=0;i<numThreads;i++){
+                final int startIndex = i * 32;
+//                int startIndex = 0;
+                for(int j=0;j<32;j++){
+                    output[startIndex + j] = input[startIndex + j];
+                }
+                
+                for(int j=i+numThreads;j<numElements;j+=numThreads){
+                    final int startElement = (i+j) * 32;
+                    for(int k=0;k<32;k++){
+                        output[startIndex + k] += input[startElement + k];
+                    }
+                }
+            }
+        }
 
 	public static void reduce1( final float[] output,  final ImageFloat8 input) {
 		final int numThreads = output.length / 32;
@@ -124,7 +160,68 @@ public class IterativeClosestPoint {
 
 	}
 
-	public static void reduceInner(final float[] sums, final ImageFloat8 trackingResults,
+	public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults,
+			int resultIndex) {
+
+		final int jtj = startIndex + 7;
+		final int info = startIndex + 28;
+
+		final Float8 value = trackingResults.get(resultIndex);
+		final int result = (int) value.getS7();
+		final float error = value.getS6();
+
+		if (result < 1) {
+			sums[info + 1] += (result == -4) ? 1 : 0;
+			sums[info + 2] += (result == -5) ? 1 : 0;
+			sums[info + 3] += (result > -4) ? 1 : 0;
+			return;
+		}
+
+		// float base[0] += error^2
+		sums[startIndex] += (error * error);
+
+		// System.out.printf("row error: error=%.4e, acc=%.4e\n",error,base.get(0));
+
+		// Float6 base(+1) += row.scale(error)
+		for (int i = 0; i < 6; i++) {
+			sums[startIndex + i + 1] += error * value.get(i);
+		}
+
+		// is this jacobian transpose jacobian?
+		sums[jtj + 0] += (value.get(0) * value.get(0));
+		sums[jtj + 1] += (value.get(0) * value.get(1));
+		sums[jtj + 2] += (value.get(0) * value.get(2));
+		sums[jtj + 3] += (value.get(0) * value.get(3));
+
+		sums[jtj + 4] += (value.get(0) * value.get(4));
+		sums[jtj + 5] += (value.get(0) * value.get(5));
+
+		sums[jtj + 6] += (value.get(1) * value.get(1));
+		sums[jtj + 7] += (value.get(1) * value.get(2));
+		sums[jtj + 8] += (value.get(1) * value.get(3));
+		sums[jtj + 9] += (value.get(1) * value.get(4));
+
+		sums[jtj + 10] += (value.get(1) * value.get(5));
+
+		sums[jtj + 11] += (value.get(2) * value.get(2));
+		sums[jtj + 12] += (value.get(2) * value.get(3));
+		sums[jtj + 13] += (value.get(2) * value.get(4));
+		sums[jtj + 14] += (value.get(2) * value.get(5));
+
+		sums[jtj + 15] += (value.get(3) * value.get(3));
+		sums[jtj + 16] += (value.get(3) * value.get(4));
+		sums[jtj + 17] += (value.get(3) * value.get(5));
+
+		sums[jtj + 18] += (value.get(4) * value.get(4));
+		sums[jtj + 19] += (value.get(4) * value.get(5));
+
+		sums[jtj + 20] += (value.get(5) * value.get(5));
+
+		sums[info]++;
+
+	}
+        
+        public static void reduceInner(final float[] sums, final ImageFloat8 trackingResults,
 			int resultIndex) {
 
 		final int jtj = 7;
@@ -184,6 +281,8 @@ public class IterativeClosestPoint {
 		sums[info]++;
 
 	}
+        
+        
 
 	public static void reduce( final float[] globalSums,
 			 final ImageFloat8 trackingResults) {

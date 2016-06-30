@@ -1,7 +1,5 @@
 package kfusion.pipeline;
 
-import static tornado.collections.types.Float4.mult;
-import tornado.common.RuntimeUtilities;
 import kfusion.TornadoModel;
 import kfusion.devices.Device;
 import kfusion.tornado.algorithms.Integration;
@@ -14,11 +12,13 @@ import tornado.collections.matrix.MatrixFloatOps;
 import tornado.collections.matrix.MatrixMath;
 import tornado.collections.types.Float3;
 import tornado.collections.types.Float4;
+import static tornado.collections.types.Float4.mult;
 import tornado.collections.types.ImageFloat3;
 import tornado.collections.types.Matrix4x4Float;
-import tornado.runtime.api.TaskGraph;
-import tornado.runtime.api.CompilableTask;
+import tornado.common.RuntimeUtilities;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.runtime.api.CompilableTask;
+import tornado.runtime.api.TaskGraph;
 import static tornado.runtime.api.TaskUtils.createTask;
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
@@ -33,6 +33,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 	
 	private Matrix4x4Float[] scaledInvKs;
 	private Matrix4x4Float pyramidPose;
+        
+        private float[] icpResultIntermediate1;
+        private float[] icpResultIntermediate2;
+        private float[] icpResult;
 
 	public TornadoBenchmarkPipeline(TornadoModel config) {
 		super(config);
@@ -147,6 +151,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		pyramidDepths[0] = filteredDepthImage;
 		pyramidVerticies[0] = currentView.getVerticies();
 		pyramidNormals[0] = currentView.getNormals();
+                icpResultIntermediate1 = new float[2048*32];
+                icpResultIntermediate2 = new float[512*32];
+                icpResult = new float[32];
 		
 		final Matrix4x4Float scenePose = sceneView.getPose();
 		
@@ -201,7 +208,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 			trackingPyramid[i] = new TaskGraph()
 					.streamIn(pyramidPose)
 					.add(trackPose)
-					.streamOut(pyramidTrackingResults[i])
+                                .add(IterativeClosestPoint::mapReduce,icpResultIntermediate1,pyramidTrackingResults[i])
+//                                .add(IterativeClosestPoint::reduceIntermediate,icpResultIntermediate2,icpResultIntermediate1)
+//                                .add(IterativeClosestPoint::reduceIntermediate,icpResult,icpResultIntermediate2)
+					.streamOut(icpResultIntermediate1)
 					.mapAllTo(deviceMapping);
 			//@formatter:on
 		}
@@ -270,9 +280,17 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		for (int level = pyramidIterations.length - 1; level >= 0; level--) {
 			for (int i = 0; i < pyramidIterations[level]; i++) {
 				trackingPyramid[level].schedule().waitOn();
+                                
+                                IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
 
-				boolean updated = IterativeClosestPoint.estimateNewPose(config, trackingResult,
-						pyramidTrackingResults[level], pyramidPose, 1e-5f);
+                                
+                                
+                                 trackingResult.resultImage = pyramidTrackingResults[level];
+                final boolean updated = IterativeClosestPoint.estimateNewPose(config,trackingResult,icpResult,pyramidPose,1e-5f);
+                
+                                
+//				boolean updated = IterativeClosestPoint.estimateNewPose(config, trackingResult,
+//						pyramidTrackingResults[level], pyramidPose, 1e-5f);
 
 				//System.out.printf("tracking: %s\n",trackingResult.toString());
 				pyramidPose.set(trackingResult.getPose());
