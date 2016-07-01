@@ -4,20 +4,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EtchedBorder;
-
+import kfusion.TornadoModel;
 import tornado.common.DeviceMapping;
 import tornado.drivers.opencl.OCLDriver;
-import tornado.drivers.opencl.enums.OCLDeviceType;
-import tornado.runtime.TornadoRuntime;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import kfusion.TornadoModel;
+import tornado.runtime.TornadoRuntime;
 
 public class TornadoConfigPanel extends JPanel implements ActionListener {
 
@@ -62,7 +59,7 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 		deviceComboBox.setModel(deviceSelectModel);
 		deviceComboBox.setEnabled(false);
 		deviceComboBox.addActionListener(this);
-		
+                
 		enableTornadoCheckBox = new JCheckBox("Use Tornado");
 		enableTornadoCheckBox.setSelected(false);
 		enableTornadoCheckBox.addActionListener(this);
