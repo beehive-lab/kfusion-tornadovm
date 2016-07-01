@@ -1,10 +1,10 @@
 package kfusion.ui;
 
+import com.jogamp.opengl.util.Animator;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-
 import javax.media.opengl.awt.GLCanvas;
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
@@ -12,9 +12,6 @@ import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.Timer;
 import javax.swing.WindowConstants;
-
-import com.jogamp.opengl.util.Animator;
-
 import kfusion.TornadoModel;
 import kfusion.devices.Device;
 
@@ -92,7 +89,7 @@ public class TornadoWorkbenchFrame extends JFrame implements WindowListener {
 
         final JSplitPane p1 = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
                 modelConfigPanel, p);
-        p1.setDividerLocation(150);
+        p1.setDividerLocation(200);
 
         getContentPane().add(p1);
 
@@ -100,7 +97,7 @@ public class TornadoWorkbenchFrame extends JFrame implements WindowListener {
 
         pack();
 
-        setSize(640 * 2 + 200, 480 + 200);
+        setSize(640 * 2 + 200, 480 + 250);
 
     }
 
