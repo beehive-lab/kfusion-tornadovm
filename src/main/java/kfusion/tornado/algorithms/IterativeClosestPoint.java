@@ -113,7 +113,7 @@ public class IterativeClosestPoint {
                 }
                 
                 for(int j=i+numThreads;j<numElements;j+=numThreads){
-                    final int startElement = (i+j) * 32;
+                    final int startElement = j * 32;
                     for(int k=0;k<32;k++){
                         output[startIndex + k] += input[startElement + k];
                     }
