@@ -42,7 +42,8 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
 	private Matrix4x4Float[] scaledInvKs;
 	private float[] icpResult;
 	private Matrix4x4Float pyramidPose;
-	private float[] icpResultIntermediate;
+	private float[] icpResultIntermediate1;
+        private float[] icpResultIntermediate2;
         
 	@Override
 	public void configure(Device device) {
@@ -55,7 +56,8 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
 		pyramidVerticies[0] = currentView.getVerticies();
 		pyramidNormals[0] = currentView.getNormals();
 		icpResult = new float[32];
-                icpResultIntermediate = new float[32*16*32];
+                icpResultIntermediate1 = new float[4096*32];
+                icpResultIntermediate2 = new float[512*32];
 		
 		final int iterations = pyramidIterations.length;
 		for (int i = 0; i < iterations; i++) {
@@ -71,15 +73,15 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
 			    .streamOut(pyramidDepths[i]);
 		}
 		 
-		graph2 = new TaskGraph();
+//		graph2 = new TaskGraph();
 		for (int i = 0; i < iterations; i++) {
-		    graph2
+		    graph1
 				.streamIn(scaledInvKs[i])
 				.add(GraphicsMath::depth2vertex,pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
 				.add(GraphicsMath::vertex2normal,pyramidNormals[i], pyramidVerticies[i])
 				.streamOut(pyramidVerticies[i],pyramidNormals[i]);
 		}
-		graph2.streamIn(projectReference);
+		graph1.streamIn(projectReference);
 		
 		trackingPyramid = new TaskGraph[iterations];
         for (int i = 0; i < iterations; i++) {
@@ -93,15 +95,17 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
             trackingPyramid[i] = new TaskGraph()
                     .streamIn(pyramidPose)
                     .add(trackPose)
-                    .add(IterativeClosestPoint::mapReduce,icpResultIntermediate,pyramidTrackingResults[i])
+//                    .add(IterativeClosestPoint::zero,icpResultIntermediate1)
+                    .add(IterativeClosestPoint::mapReduce,icpResultIntermediate1,pyramidTrackingResults[i])
+                    .add(IterativeClosestPoint::reduceIntermediate,icpResultIntermediate2, icpResultIntermediate1)
 //                    .add(IterativeClosestPoint::reduce1,icpResult,pyramidTrackingResults[i])
-                    .streamOut(icpResultIntermediate,pyramidTrackingResults[i])
+                    .streamOut(icpResultIntermediate2,pyramidTrackingResults[i])
                     .mapAllTo(config.getTornadoDevice());
             //@formatter:on
         }
 		
 		graph1.mapAllTo(config.getTornadoDevice());
-		graph2.mapAllTo(config.getTornadoDevice());
+//		graph2.mapAllTo(config.getTornadoDevice());
 	}
 
 	private void loadFrame(String path, int index) {
@@ -197,10 +201,10 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
 		    System.out.println("depths: " + depths.summerise());
 		}
 		
-		graph2.schedule().waitOn();
+//		graph2.schedule().waitOn();
 		long end = System.nanoTime();
 		graph1.dumpTimes();
-		graph2.dumpTimes();
+//		graph2.dumpTimes();
 		System.out.printf("elapsed time=%s\n",RuntimeUtilities.elapsedTimeInSeconds(start, end));
 
 		
@@ -211,13 +215,19 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
             for (int i = 0; i < pyramidIterations[level]; i++) {
                 trackingPyramid[level].schedule().waitOn();
                 
-                config.getTornadoDevice().sync();
-                IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate);
+//                config.getTornadoDevice().sync();
+                IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate2);
+                
+                
 
 //                boolean updated = IterativeClosestPoint.estimateNewPose(config, trackingResult,
 //                        pyramidTrackingResults[level], pyramidPose, 1e-5f);
                 
                 System.out.println("icp: " + Arrays.toString(icpResult));
+                
+                IterativeClosestPoint.mapReduce(icpResultIntermediate1, pyramidTrackingResults[level]);
+                 IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
+                 System.out.println("host: " + Arrays.toString(icpResult));
                 
                 final float[] refIcp = new float[32];
                 IterativeClosestPoint.reduce(refIcp, pyramidTrackingResults[level]);
