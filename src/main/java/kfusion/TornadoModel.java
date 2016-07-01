@@ -1,6 +1,5 @@
 package kfusion;
 
-import kfusion.KfusionConfig;
 import tornado.common.DeviceMapping;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 
@@ -52,4 +51,7 @@ public class TornadoModel extends KfusionConfig {
         return Boolean.parseBoolean(settings.getProperty("kfusion.kernels.print","False"));
     }
 
+    public int getReductionSize() {
+        return Integer.parseInt(settings.getProperty("kfusion.model.reduce","1024"));
+    }
 }
