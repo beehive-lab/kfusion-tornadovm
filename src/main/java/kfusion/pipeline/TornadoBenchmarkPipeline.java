@@ -1,6 +1,7 @@
 package kfusion.pipeline;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 import kfusion.TornadoModel;
 import kfusion.devices.Device;
 import kfusion.tornado.algorithms.Integration;
@@ -15,11 +16,16 @@ import tornado.collections.types.Float3;
 import tornado.collections.types.Float4;
 import static tornado.collections.types.Float4.mult;
 import tornado.collections.types.ImageFloat3;
+import tornado.collections.types.ImageFloat8;
 import tornado.collections.types.Matrix4x4Float;
 import tornado.common.RuntimeUtilities;
+import tornado.common.enums.Access;
+import tornado.drivers.opencl.OCLKernelConfig;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.CompilableTask;
+import tornado.runtime.api.PrebuiltTask;
 import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskUtils;
 import static tornado.runtime.api.TaskUtils.createTask;
 
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
@@ -38,6 +44,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
     private float[] icpResultIntermediate1;
     private float[] icpResult;
+    
+    private int cus;
 
     private final PrintStream out;
 
@@ -45,6 +53,11 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         super(config);
         this.out = out;
         initialPosition = new Float3();
+    }
+    
+    private static final int roundToWgs(int value, int wgs) {
+        final int numWgs = value / wgs;
+        return numWgs * wgs;
     }
 
     @Override
@@ -148,12 +161,25 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
          */
         final OCLDeviceMapping deviceMapping = (OCLDeviceMapping) config.getTornadoDevice();
         System.err.printf("mapping onto %s\n", deviceMapping.toString());
+        
+        final long localMemSize = deviceMapping.getDevice().getLocalMemorySize();
+        cus = deviceMapping.getDevice().getMaxComputeUnits();
+        final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
+        final int maxBinsPerCU = roundToWgs(maxBinsPerResource,128);
+
+        final int maxwgs = maxBinsPerCU * cus;
+       
+
+        System.out.printf("local mem size   : %s\n", RuntimeUtilities.humanReadableByteCount(localMemSize, false));
+        System.out.printf("num compute units: %d\n", cus);
+        System.out.printf("max bins per cu  : %d\n", maxBinsPerCU);
+        System.out.printf("reduce ratio 1   : %d\n", maxwgs);
+
 
         pyramidPose = new Matrix4x4Float();
         pyramidDepths[0] = filteredDepthImage;
         pyramidVerticies[0] = currentView.getVerticies();
         pyramidNormals[0] = currentView.getNormals();
-        icpResultIntermediate1 = new float[config.getReductionSize() * 32];
         icpResult = new float[32];
 
         final Matrix4x4Float scenePose = sceneView.getPose();
@@ -195,20 +221,41 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         estimatePoseGraph
                 .streamIn(projectReference)
                 .mapAllTo(deviceMapping);
+        
+        icpResultIntermediate1 = new float[cus * 32];
 
         trackingPyramid = new TaskGraph[iterations];
         for (int i = 0; i < iterations; i++) {
+            final ImageFloat8 result = pyramidTrackingResults[i];
+            final int numElements = result.X() * result.Y();
+            
+            final int numWgs = Math.min(roundToWgs(numElements/cus,128), maxwgs);
+            
 
             final CompilableTask trackPose = createTask(IterativeClosestPoint::trackPose,
                     pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
                     referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
                     projectReference, distanceThreshold, normalThreshold);
+            
+            final PrebuiltTask customMapReduce = TaskUtils.createTask(
+                    "optMapReduce",
+                    "./opencl/optMapReduce.cl",
+                    new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
+                    new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
+                    deviceMapping,
+                    new int[]{numWgs});
+
+            final OCLKernelConfig kernelConfig = OCLKernelConfig.create(customMapReduce.meta());
+            kernelConfig.getGlobalWork()[0] = maxwgs;
+            kernelConfig.getLocalWork()[0] = maxBinsPerCU;
 
             //@formatter:off
             trackingPyramid[i] = new TaskGraph()
                     .streamIn(pyramidPose)
                     .add(trackPose)
-                    .add(IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
+//                    .add(IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
+//                    .add(IterativeClosestPoint::reduceIntermediate, icpResultIntermediate2, icpResultIntermediate1)
+                    .add(customMapReduce)
                     .streamOut(icpResultIntermediate1)
                     .mapAllTo(deviceMapping);
             //@formatter:on
@@ -284,7 +331,21 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             for (int i = 0; i < pyramidIterations[level]; i++) {
                 trackingPyramid[level].schedule().waitOn();
 
-                IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
+//                IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate2);
+
+                   Arrays.fill(icpResult,0);
+                
+                //IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
+                for(int k=0;k<cus;k++){
+                    final int index = k * 32;
+                    for(int j=0;j<32;j++){
+                        
+                        icpResult[j] += icpResultIntermediate1[index + j];
+                    }
+                }
+                
+//                 System.out.println("icp: " + Arrays.toString(icpResult));
+
 
                 trackingResult.resultImage = pyramidTrackingResults[level];
                 final boolean updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, 1e-5f);
