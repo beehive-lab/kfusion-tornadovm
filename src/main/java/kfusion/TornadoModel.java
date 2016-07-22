@@ -54,4 +54,12 @@ public class TornadoModel extends KfusionConfig {
     public int getReductionSize() {
         return Integer.parseInt(settings.getProperty("kfusion.model.reduce","1024"));
     }
+
+    public boolean useCustomReduce() {
+     return Boolean.parseBoolean(settings.getProperty("kfusion.reduce.custom","False"));  
+    }
+    
+    public boolean useSimpleReduce() {
+        return Boolean.parseBoolean(settings.getProperty("kfusion.reduce.simple","False"));
+    }
 }
