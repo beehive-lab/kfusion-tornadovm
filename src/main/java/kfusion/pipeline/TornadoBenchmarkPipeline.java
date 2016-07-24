@@ -18,6 +18,7 @@ import tornado.collections.types.ImageFloat3;
 import tornado.collections.types.ImageFloat8;
 import tornado.collections.types.Matrix4x4Float;
 import tornado.common.RuntimeUtilities;
+import tornado.common.Tornado;
 import tornado.common.enums.Access;
 import tornado.drivers.opencl.OCLKernelConfig;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
@@ -99,16 +100,12 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
                 timings[5] = System.nanoTime();
 
-                /*
-				 * missing rendering code here
-                 */
                 if (frames % renderingRate == 0) {
                     renderGraph.schedule().waitOn();
                 }
 
                 timings[6] = System.nanoTime();
                 final Float3 currentPos = currentView.getPose().column(3).asFloat3();
-                //System.out.printf("[%d]: pos=%s\n",frames,currentPos.toString());
                 final Float3 pos = Float3.sub(currentPos, initialPosition);
 
                 out
@@ -121,7 +118,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                                 RuntimeUtilities.elapsedTimeInSeconds(timings[5], timings[6]),
                                 RuntimeUtilities.elapsedTimeInSeconds(timings[1], timings[5]),
                                 RuntimeUtilities.elapsedTimeInSeconds(timings[0], timings[6]),
-                                //RuntimeUtilities.elapsedTimeInSeconds(timings[0],timings[1]),
                                 pos.getX(), pos.getY(), pos.getZ(),
                                 (hasTracked) ? 1 : 0, (doIntegrate) ? 1 : 0);
 
@@ -164,7 +160,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         System.err.printf("mapping onto %s\n", deviceMapping.toString());
 
         final long localMemSize = deviceMapping.getDevice().getLocalMemorySize();
-        cus = deviceMapping.getDevice().getMaxComputeUnits();
+        final float fraction = Float.parseFloat(Tornado.getProperty("kfusion.reduce.fraction", "1.0"));
+        cus = (int) ((float) deviceMapping.getDevice().getMaxComputeUnits() * fraction);
         final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
         final int maxBinsPerCU = roundToWgs(maxBinsPerResource, 128);
 
