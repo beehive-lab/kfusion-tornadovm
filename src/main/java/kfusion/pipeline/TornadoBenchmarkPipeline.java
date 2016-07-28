@@ -56,7 +56,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         initialPosition = new Float3();
     }
 
-    private static final int roundToWgs(int value, int wgs) {
+    private static int roundToWgs(int value, int wgs) {
         final int numWgs = value / wgs;
         return numWgs * wgs;
     }
@@ -132,9 +132,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             if (config.printKernels()) {
                 preprocessingGraph.dumpProfiles();
                 estimatePoseGraph.dumpProfiles();
-                for (int i = 0; i < trackingPyramid.length; i++) {
-                    trackingPyramid[i].dumpProfiles();
-//                    reducePyramid[i].dumpProfiles();
+                for (TaskGraph trackingPyramid1 : trackingPyramid) {
+                    trackingPyramid1.dumpProfiles();
                 }
                 integrateGraph.dumpProfiles();
                 raycastGraph.dumpProfiles();
@@ -149,15 +148,15 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         super.configure(device);
 
         Float3.mult(config.getOffset(), volumeDims, initialPosition);
-
-//		System.err.println("init pos: " + initialPosition.toString());
         frames = 0;
 
+        info("initial offset: %s",initialPosition.toString("%.2f,.2f,.2f"));
+        
         /**
          * Tornado tasks
          */
         final OCLDeviceMapping deviceMapping = (OCLDeviceMapping) config.getTornadoDevice();
-        System.err.printf("mapping onto %s\n", deviceMapping.toString());
+        info("mapping onto %s\n", deviceMapping.toString());
 
         final long localMemSize = deviceMapping.getDevice().getLocalMemorySize();
         final float fraction = Float.parseFloat(Tornado.getProperty("kfusion.reduce.fraction", "1.0"));
@@ -167,10 +166,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
         final int maxwgs = maxBinsPerCU * cus;
 
-        System.err.printf("local mem size   : %s\n", RuntimeUtilities.humanReadableByteCount(localMemSize, false));
-        System.err.printf("num compute units: %d\n", cus);
-        System.err.printf("max bins per cu  : %d\n", maxBinsPerCU);
-        System.err.printf("reduce ratio 1   : %d\n", maxwgs);
+        info("local mem size   : %s\n", RuntimeUtilities.humanReadableByteCount(localMemSize, false));
+        info("num compute units: %d\n", cus);
+        info("max bins per cu  : %d\n", maxBinsPerCU);
 
         pyramidPose = new Matrix4x4Float();
         pyramidDepths[0] = filteredDepthImage;
@@ -245,7 +243,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 final int numWgs = Math.min(roundToWgs(numElements / cus, 128), maxwgs);
 
                 final PrebuiltTask customMapReduce = TaskUtils.createTask(
-                        "optMapReduce",
+                        deviceMapping.getDeviceContext().needsBump() ?  "optMapReduceBump" : "optMapReduce",
                         "./opencl/optMapReduce.cl",
                         new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
                         new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
@@ -260,7 +258,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                         .streamOut(icpResultIntermediate1);
             } else if (config.useSimpleReduce()) {
                 trackingPyramid[i].add(IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
-                        //                        .add(IterativeClosestPoint::reduceIntermediate, icpResultIntermediate2, icpResultIntermediate1)
+                        //.add(IterativeClosestPoint::reduceIntermediate, icpResultIntermediate2, icpResultIntermediate1)
                         .streamOut(icpResultIntermediate1);
             } else {
                 trackingPyramid[i].streamOut(pyramidTrackingResults[i]);
@@ -298,21 +296,22 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 .streamIn(scenePose)
                 .add(Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
                 //BUG need to fix render depth issue
-                //                .add(Renderer::renderDepth,renderedDepthImage, filteredDepthImage, nearPlane, farPlane)	
+                // .add(Renderer::renderDepth,renderedDepthImage, filteredDepthImage, nearPlane, farPlane)	
                 .add(renderVolume)
                 .mapAllTo(deviceMapping);
         //@formatter:on
 
         preprocessingGraph.warmup();
         estimatePoseGraph.warmup();
-        for (int i = 0; i < trackingPyramid.length; i++) {
-            trackingPyramid[i].warmup();
+        for (TaskGraph trackingPyramid1 : trackingPyramid) {
+            trackingPyramid1.warmup();
         }
         integrateGraph.warmup();
         raycastGraph.warmup();
         renderGraph.warmup();
     }
 
+    @Override
     protected void preprocessing() {
         preprocessingGraph.schedule().waitOn();
     }
@@ -325,6 +324,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         integrateGraph.schedule().waitOn();
     }
 
+    @Override
     protected boolean estimatePose() {
 
         invReferencePose.set(referenceView.getPose());

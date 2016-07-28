@@ -51,11 +51,10 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
          * Tornado tasks
          */
         deviceMapping = (OCLDeviceMapping) config.getTornadoDevice();
-        System.err.printf(
-                "mapping onto %s\n", deviceMapping.toString());
+        info( "mapping onto %s\n", deviceMapping.toString());
 
         /*
-		 * Cleanup after previous configurations
+         * Cleanup after previous configurations
          */
         deviceMapping.getBackend().reset();
 
@@ -74,7 +73,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
                 .streamIn(depthImageInput)
                 .add(ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
                 .add(ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian, eDelta, radius)
-                //			.streamOut(scaledDepthImage,filteredDepthImage,pyramidDepths[0])
+//                .streamOut(scaledDepthImage, filteredDepthImage, pyramidDepths[0])
                 .mapAllTo(deviceMapping);
         //@formatter:on
 
@@ -151,13 +150,22 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
                 renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep,
                 largeStep, light, ambient);
 
+//        final PrebuiltTask renderDepth = TaskUtils.createTask(
+//                "renderDepth",
+//                "opencl/renderDepth-debug.cl",
+//                new Object[]{renderedDepthImage, filteredDepthImage, nearPlane, farPlane},
+//                new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
+//                deviceMapping,
+//                new int[]{renderedDepthImage.X(), renderedDepthImage.Y()});
+
         //@formatter:off
         renderGraph = new TaskGraph()
                 .streamIn(scenePose)
                 .add(Renderer::renderLight, renderedCurrentViewImage, pyramidVerticies[0], pyramidNormals[0], light, ambient)
                 .add(Renderer::renderLight, renderedReferenceViewImage, verticies, normals, light, ambient)
                 .add(Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
-                //			.add(Renderer::renderDepth,renderedDepthImage, filteredDepthImage, nearPlane, farPlane)	
+                //                .add(Renderer::renderDepth, renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
+                //              .add(renderDepth)
                 .add(renderVolume)
                 .streamOut(renderedCurrentViewImage, renderedReferenceViewImage, renderedTrackingImage, renderedDepthImage, renderedScene)
                 .mapAllTo(deviceMapping);
@@ -165,9 +173,8 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         preprocessingGraph.warmup();
         estimatePoseGraph.warmup();
-        for (int i = 0; i < trackingPyramid.length; i++) {
-            trackingPyramid[i].warmup();
-//                    reducePyramid[i].warmup();
+        for (TaskGraph trackingPyramid1 : trackingPyramid) {
+            trackingPyramid1.warmup();
         }
         integrateGraph.warmup();
         raycastGraph.warmup();
@@ -176,7 +183,6 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
     @Override
     protected boolean estimatePose() {
-        // long t0 = System.nanoTime();
         if (config.debug()) {
             info("============== estimaing pose ==============");
         }
@@ -198,7 +204,6 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         estimatePoseGraph.schedule().waitOn();
 
-        // long t1 = System.nanoTime();
         // perform ICP
         pyramidPose.set(currentView.getPose());
         for (int level = pyramidIterations.length - 1; level >= 0; level--) {
@@ -219,7 +224,6 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
             }
         }
 
-        // long t2 = System.nanoTime();
         // if the tracking result meets our constraints, update the current view with the estimated
         // pose
         final boolean hasTracked = trackingResult.getRSME() < RSMEThreshold
@@ -228,13 +232,6 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
             currentView.getPose().set(
                     trackingResult.getPose());
         }
-
-        // long t3 = System.nanoTime();
-        // System.out.printf("estimatePose: prepare=%.8f s, pyramid=%.8f s, post=%.8f s\n",
-        // RuntimeUtilities.elapsedTimeInSeconds(t0, t1),
-        // RuntimeUtilities.elapsedTimeInSeconds(t1, t2),
-        // RuntimeUtilities.elapsedTimeInSeconds(t3, t3)
-        // );
         return hasTracked;
     }
 
@@ -303,7 +300,6 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
             renderGraph.schedule().waitOn();
 
         }
-
     }
 
     @Override
