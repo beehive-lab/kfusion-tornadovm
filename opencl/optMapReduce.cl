@@ -73,7 +73,7 @@ __inline__ void mapValues(float8 tr, __local float * sums){
 
 #define WGS 384
 
-__kernel void optMapReduce(__global void *_heap_base, ulong _stack_base)
+__kernel void optMapReduce(__global uchar *_heap_base, ulong _stack_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
 {
     /*
      * obtain arguments from the stack
@@ -149,7 +149,7 @@ __kernel void optMapReduce(__global void *_heap_base, ulong _stack_base)
 }
 
 
-__kernel void optMapReduceBump(__global void *bump, __global void *_heap_base, ulong _stack_base)
+__kernel void optMapReduceBump(__global void *bump, __global uchar *_heap_base, ulong _stack_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
 {
     /*
      * obtain arguments from the stack
