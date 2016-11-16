@@ -9,19 +9,9 @@ import tornado.api.Read;
 import tornado.api.Write;
 import tornado.collections.graphics.GraphicsMath;
 import tornado.collections.matrix.MatrixMath;
-import tornado.collections.types.Float2;
-import tornado.collections.types.Float3;
-import tornado.collections.types.Float6;
-import tornado.collections.types.Float8;
-import tornado.collections.types.FloatOps;
-import tornado.collections.types.FloatSE3;
-import tornado.collections.types.ImageFloat3;
-import tornado.collections.types.ImageFloat8;
-import tornado.collections.types.Int2;
-import tornado.collections.types.Matrix4x4Float;
-import tornado.collections.types.MatrixFloat;
-import static tornado.collections.types.MatrixFloat.*;
-import tornado.collections.types.VectorFloat;
+import tornado.collections.types.*;
+
+import static tornado.collections.types.MatrixFloat.transpose;
 
 public class IterativeClosestPoint {
 
@@ -134,7 +124,7 @@ public class IterativeClosestPoint {
     public static void reduce1(final float[] output, final ImageFloat8 input) {
         final int numThreads = output.length / 32;
 
-        for (int tid = 0; tid < numThreads; tid++) {
+        for (@Parallel int tid = 0; tid < numThreads; tid++) {
 
             final float[] sums = new float[32];
             for (int i = 0; i < sums.length; i++) {
