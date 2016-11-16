@@ -11,13 +11,7 @@ import tornado.collections.graphics.ImagingOps;
 import tornado.collections.graphics.Renderer;
 import tornado.collections.matrix.MatrixFloatOps;
 import tornado.collections.matrix.MatrixMath;
-import tornado.collections.types.Float3;
-import tornado.collections.types.Float4;
-import static tornado.collections.types.Float4.mult;
-import tornado.collections.types.ImageFloat3;
-import tornado.collections.types.ImageFloat8;
-import tornado.collections.types.Matrix4x4Float;
-import tornado.common.RuntimeUtilities;
+import tornado.collections.types.*;
 import tornado.common.Tornado;
 import tornado.common.enums.Access;
 import tornado.drivers.opencl.OCLKernelConfig;
@@ -26,11 +20,15 @@ import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.PrebuiltTask;
 import tornado.runtime.api.TaskGraph;
 import tornado.runtime.api.TaskUtils;
+
+import static tornado.collections.types.Float4.mult;
+import static tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.runtime.api.TaskUtils.createTask;
 
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
-    private final Float3 initialPosition;
+    private Float3 initialPosition;
 
     private TaskGraph preprocessingGraph;
     private TaskGraph estimatePoseGraph;
@@ -110,14 +108,14 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
                 out
                         .printf("%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\t%d\n", frames,
-                                RuntimeUtilities.elapsedTimeInSeconds(timings[0], timings[1]),
-                                RuntimeUtilities.elapsedTimeInSeconds(timings[1], timings[2]),
-                                RuntimeUtilities.elapsedTimeInSeconds(timings[2], timings[3]),
-                                RuntimeUtilities.elapsedTimeInSeconds(timings[3], timings[4]),
-                                RuntimeUtilities.elapsedTimeInSeconds(timings[4], timings[5]),
-                                RuntimeUtilities.elapsedTimeInSeconds(timings[5], timings[6]),
-                                RuntimeUtilities.elapsedTimeInSeconds(timings[1], timings[5]),
-                                RuntimeUtilities.elapsedTimeInSeconds(timings[0], timings[6]),
+                                elapsedTimeInSeconds(timings[0], timings[1]),
+                                elapsedTimeInSeconds(timings[1], timings[2]),
+                                elapsedTimeInSeconds(timings[2], timings[3]),
+                                elapsedTimeInSeconds(timings[3], timings[4]),
+                                elapsedTimeInSeconds(timings[4], timings[5]),
+                                elapsedTimeInSeconds(timings[5], timings[6]),
+                                elapsedTimeInSeconds(timings[1], timings[5]),
+                                elapsedTimeInSeconds(timings[0], timings[6]),
                                 pos.getX(), pos.getY(), pos.getZ(),
                                 (hasTracked) ? 1 : 0, (doIntegrate) ? 1 : 0);
 
@@ -147,11 +145,11 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     public void configure(Device device) {
         super.configure(device);
 
-        Float3.mult(config.getOffset(), volumeDims, initialPosition);
+        initialPosition = Float3.mult(config.getOffset(), volumeDims);
         frames = 0;
 
-        info("initial offset: %s",initialPosition.toString("%.2f,.2f,.2f"));
-        
+        info("initial offset: %s", initialPosition.toString("%.2f,.2f,.2f"));
+
         /**
          * Tornado tasks
          */
@@ -160,13 +158,13 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
         final long localMemSize = deviceMapping.getDevice().getLocalMemorySize();
         final float fraction = Float.parseFloat(Tornado.getProperty("kfusion.reduce.fraction", "1.0"));
-        cus = (int) ((float) deviceMapping.getDevice().getMaxComputeUnits() * fraction);
+        cus = (int) (deviceMapping.getDevice().getMaxComputeUnits() * fraction);
         final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
         final int maxBinsPerCU = roundToWgs(maxBinsPerResource, 128);
 
         final int maxwgs = maxBinsPerCU * cus;
 
-        info("local mem size   : %s\n", RuntimeUtilities.humanReadableByteCount(localMemSize, false));
+        info("local mem size   : %s\n", humanReadableByteCount(localMemSize, false));
         info("num compute units: %d\n", cus);
         info("max bins per cu  : %d\n", maxBinsPerCU);
 
@@ -243,7 +241,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 final int numWgs = Math.min(roundToWgs(numElements / cus, 128), maxwgs);
 
                 final PrebuiltTask customMapReduce = TaskUtils.createTask(
-                        deviceMapping.getDeviceContext().needsBump() ?  "optMapReduceBump" : "optMapReduce",
+                        deviceMapping.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
                         "./opencl/optMapReduce.cl",
                         new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
                         new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
@@ -278,7 +276,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         final ImageFloat3 normals = referenceView.getNormals();
 
         CompilableTask raycast = createTask(Raycast::raycast, verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep);
-//	
+//
 
         //@formatter:off
         raycastGraph = new TaskGraph()
@@ -296,7 +294,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 .streamIn(scenePose)
                 .add(Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
                 //BUG need to fix render depth issue
-                // .add(Renderer::renderDepth,renderedDepthImage, filteredDepthImage, nearPlane, farPlane)	
+                // .add(Renderer::renderDepth,renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
                 .add(renderVolume)
                 .mapAllTo(deviceMapping);
         //@formatter:on
