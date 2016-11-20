@@ -37,8 +37,6 @@ public class Benchmark {
 		
 		// update model config here
 		config.setDevice(device);
-//		config.setIntegrationRate(1);
-//		config.setVolumeDimensions(new Float3(4.8f,4.8f,4.8f));
 		config.setCamera(new Float4(481.2f,480f,320f,240f));
 			
 		pipeline.reset();
