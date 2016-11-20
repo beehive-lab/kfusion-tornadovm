@@ -1,8 +1,6 @@
 package kfusion.tornado.algorithms;
 
 import tornado.api.Parallel;
-import tornado.api.Read;
-import tornado.api.ReadWrite;
 import tornado.collections.graphics.GraphicsMath;
 import tornado.collections.types.*;
 
@@ -13,7 +11,7 @@ public class Raycast {
 
     private static final float INVALID = -2;
 
-    public static final void raycast(@ReadWrite ImageFloat3 verticies, @ReadWrite ImageFloat3 normals, @Read VolumeShort2 volume, @Read Float3 volumeDims, @Read Matrix4x4Float view, @Read float nearPlane, @Read float farPlane, @Read float largeStep, @Read float smallStep) {
+    public static final void raycast(ImageFloat3 verticies, ImageFloat3 normals, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane, float largeStep, float smallStep) {
 
         // use volume model to generate a reference view by raycasting ...
         for (@Parallel int y = 0; y < verticies.Y(); y++) {

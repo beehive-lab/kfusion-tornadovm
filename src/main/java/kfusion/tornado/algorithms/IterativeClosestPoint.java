@@ -5,8 +5,6 @@ import kfusion.algorithms.TrackingResult;
 import kfusion.numerics.Constants;
 import kfusion.numerics.EjmlSVD2;
 import tornado.api.Parallel;
-import tornado.api.Read;
-import tornado.api.Write;
 import tornado.collections.graphics.GraphicsMath;
 import tornado.collections.matrix.MatrixMath;
 import tornado.collections.types.*;
@@ -75,7 +73,7 @@ public class IterativeClosestPoint {
 
     }
 
-    public static void mapReduce(@Write final float[] output, @Read final ImageFloat8 input) {
+    public static void mapReduce(final float[] output, final ImageFloat8 input) {
         final int numThreads = output.length / 32;
         final int numElements = input.X() * input.Y();
 
@@ -91,7 +89,7 @@ public class IterativeClosestPoint {
         }
     }
 
-    public static void reduceIntermediate(@Write final float[] output, @Read final float[] input) {
+    public static void reduceIntermediate(final float[] output, final float[] input) {
         final int elementSize = 32;
         final int numDestElements = output.length / elementSize;
         final int numSrcElements = input.length / elementSize;
@@ -403,11 +401,11 @@ public class IterativeClosestPoint {
         }
     }
 
-    public static void trackPose(@Write final ImageFloat8 results,
-            @Read final ImageFloat3 verticies, @Read final ImageFloat3 normals,
-            @Read final ImageFloat3 referenceVerticies, @Read final ImageFloat3 referenceNormals,
-            @Read final Matrix4x4Float currentPose, @Read final Matrix4x4Float view,
-            @Read final float distanceThreshold, @Read final float normalThreshold) {
+    public static void trackPose(final ImageFloat8 results,
+            final ImageFloat3 verticies, final ImageFloat3 normals,
+            final ImageFloat3 referenceVerticies, final ImageFloat3 referenceNormals,
+            final Matrix4x4Float currentPose, final Matrix4x4Float view,
+            final float distanceThreshold, final float normalThreshold) {
 
         final Float8 NO_INPUT = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.BLACK);
         final Float8 NOT_IN_IMAGE = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.RED);
