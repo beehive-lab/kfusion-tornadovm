@@ -1,3 +1,18 @@
+/* 
+ * Copyright 2017 James Clarkson.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package kfusion.pipeline;
 
 import kfusion.TornadoModel;
@@ -11,13 +26,14 @@ import tornado.collections.graphics.Renderer;
 import tornado.collections.matrix.MatrixFloatOps;
 import tornado.collections.matrix.MatrixMath;
 import tornado.collections.types.Float4;
-import static tornado.collections.types.Float4.mult;
 import tornado.collections.types.ImageFloat3;
 import tornado.collections.types.Matrix4x4Float;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.CompilableTask;
-import tornado.runtime.api.TaskGraph;
-import static tornado.runtime.api.TaskUtils.createTask;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
+import static tornado.collections.matrix.MatrixMath.sgemm;
+import static tornado.collections.types.Float4.mult;
 
 public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenGLPipeline<T> {
 
@@ -25,17 +41,17 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         super(config);
     }
 
-    private OCLDeviceMapping deviceMapping;
+    private OCLDeviceMapping oclDevice;
 
     /**
      * Tornado
      */
-    private TaskGraph preprocessingGraph;
-    private TaskGraph estimatePoseGraph;
-    private TaskGraph trackingPyramid[];
-    private TaskGraph integrateGraph;
-    private TaskGraph raycastGraph;
-    private TaskGraph renderGraph;
+    private TaskSchedule preprocessingSchedule;
+    private TaskSchedule estimatePoseSchedule;
+    private TaskSchedule trackingPyramid[];
+    private TaskSchedule integrateSchedule;
+    private TaskSchedule raycastSchedule;
+    private TaskSchedule renderSchedule;
 
     private Matrix4x4Float pyramidPose;
     private Matrix4x4Float[] scaledInvKs;
@@ -50,13 +66,13 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         /**
          * Tornado tasks
          */
-        deviceMapping = (OCLDeviceMapping) config.getTornadoDevice();
-        info( "mapping onto %s\n", deviceMapping.toString());
+        oclDevice = (OCLDeviceMapping) config.getTornadoDevice();
+        info("mapping onto %s\n", oclDevice.toString());
 
         /*
          * Cleanup after previous configurations
          */
-        deviceMapping.getBackend().reset();
+        oclDevice.getBackend().reset();
 
         pyramidPose = new Matrix4x4Float();
         pyramidDepths[0] = filteredDepthImage;
@@ -69,12 +85,11 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         final Matrix4x4Float scenePose = sceneView.getPose();
 
         //@formatter:off
-        preprocessingGraph = new TaskGraph()
+        preprocessingSchedule = new TaskSchedule("pp")
                 .streamIn(depthImageInput)
-                .add(ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
-                .add(ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian, eDelta, radius)
-//                .streamOut(scaledDepthImage, filteredDepthImage, pyramidDepths[0])
-                .mapAllTo(deviceMapping);
+                .task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
+                .task("bilateralFilter", ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian, eDelta, radius)
+                .mapAllTo(oclDevice);
         //@formatter:on
 
         final int iterations = pyramidIterations.length;
@@ -83,72 +98,62 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
             final Float4 cameraDup = mult(
                     scaledCamera, 1f / (1 << i));
             scaledInvKs[i] = new Matrix4x4Float();
-            GraphicsMath.getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
+            getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
         }
 
-        estimatePoseGraph = new TaskGraph();
+        estimatePoseSchedule = new TaskSchedule("estimatePose");
 
         for (int i = 1; i < iterations; i++) {
             //@formatter:off
-            estimatePoseGraph
-                    .add(ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2);
+            estimatePoseSchedule
+                    .task("resizeImage" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2);
             //@formatter:on
         }
 
         for (int i = 0; i < iterations; i++) {
             //@formatter:off
-            estimatePoseGraph
-                    .add(GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
-                    .add(GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]);
+            estimatePoseSchedule
+                    .task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
+                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]);
             //@formatter:on
         }
 
-        estimatePoseGraph
+        estimatePoseSchedule
                 .streamIn(projectReference)
-                .mapAllTo(deviceMapping);
+                .mapAllTo(oclDevice);
 
-        trackingPyramid = new TaskGraph[iterations];
+        trackingPyramid = new TaskSchedule[iterations];
         for (int i = 0; i < iterations; i++) {
 
-            final CompilableTask trackPose = createTask(IterativeClosestPoint::trackPose,
-                    pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
-                    referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
-                    projectReference, distanceThreshold, normalThreshold);
-
             //@formatter:off
-            trackingPyramid[i] = new TaskGraph()
+            trackingPyramid[i] = new TaskSchedule("icp" + i)
                     .streamIn(pyramidPose)
-                    .add(trackPose)
-                    .add(IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
+                    .task("track" + i, IterativeClosestPoint::trackPose,
+                            pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
+                            referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
+                            projectReference, distanceThreshold, normalThreshold)
+                    .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
                     .streamOut(icpResultIntermediate1)
-                    .mapAllTo(deviceMapping);
+                    .mapAllTo(oclDevice);
             //@formatter:on
         }
 
         //@formatter:off
-        integrateGraph = new TaskGraph()
+        integrateSchedule = new TaskSchedule("integrate")
                 .streamIn(invTrack)
-                .add(Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight)
-                .mapAllTo(deviceMapping);
+                .task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight)
+                .mapAllTo(oclDevice);
         //@formatter:on
 
         final ImageFloat3 verticies = referenceView.getVerticies();
         final ImageFloat3 normals = referenceView.getNormals();
 
-        final CompilableTask raycast = createTask(Raycast::raycast,
-                verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep,
-                smallStep);
-
         //@formatter:off
-        raycastGraph = new TaskGraph()
+        raycastSchedule = new TaskSchedule("raycast")
                 .streamIn(referencePose)
-                .add(raycast)
-                .mapAllTo(deviceMapping);
+                .task("raycast", Raycast::raycast, verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep)
+                .mapAllTo(oclDevice);
         //@formatter:on
-
-        final CompilableTask renderVolume = createTask(Renderer::renderVolume,
-                renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep,
-                largeStep, light, ambient);
 
 //        final PrebuiltTask renderDepth = TaskUtils.createTask(
 //                "renderDepth",
@@ -157,58 +162,55 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 //                new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
 //                deviceMapping,
 //                new int[]{renderedDepthImage.X(), renderedDepthImage.Y()});
-
         //@formatter:off
-        renderGraph = new TaskGraph()
+        renderSchedule = new TaskSchedule("render")
                 .streamIn(scenePose)
-                .add(Renderer::renderLight, renderedCurrentViewImage, pyramidVerticies[0], pyramidNormals[0], light, ambient)
-                .add(Renderer::renderLight, renderedReferenceViewImage, verticies, normals, light, ambient)
-                .add(Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
-                //                .add(Renderer::renderDepth, renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
-                //              .add(renderDepth)
-                .add(renderVolume)
+                .task("renderCurrentView", Renderer::renderLight, renderedCurrentViewImage, pyramidVerticies[0], pyramidNormals[0], light, ambient)
+                .task("renderReferenceView", Renderer::renderLight, renderedReferenceViewImage, verticies, normals, light, ambient)
+                .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
+                //                .task("renderDepth", Renderer::renderDepth, renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
+                // .task(renderDepth)
+                .task("renderVolume", Renderer::renderVolume,
+                        renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep,
+                        largeStep, light, ambient)
                 .streamOut(renderedCurrentViewImage, renderedReferenceViewImage, renderedTrackingImage, renderedDepthImage, renderedScene)
-                .mapAllTo(deviceMapping);
+                .mapAllTo(oclDevice);
         //@formatter:on
 
-        preprocessingGraph.warmup();
-        estimatePoseGraph.warmup();
-        for (TaskGraph trackingPyramid1 : trackingPyramid) {
+        preprocessingSchedule.warmup();
+        estimatePoseSchedule.warmup();
+        for (TaskSchedule trackingPyramid1 : trackingPyramid) {
             trackingPyramid1.warmup();
         }
-        integrateGraph.warmup();
-        raycastGraph.warmup();
-        renderGraph.warmup();
+        integrateSchedule.warmup();
+        raycastSchedule.warmup();
+        renderSchedule.warmup();
     }
 
     @Override
     protected boolean estimatePose() {
         if (config.debug()) {
-            info("============== estimaing pose ==============");
+            info("============== estimating pose ==============");
         }
 
         invReferencePose.set(referenceView.getPose());
         MatrixFloatOps.inverse(invReferencePose);
 
-        MatrixMath.sgemm(
-                K, invReferencePose, projectReference);
+        sgemm(K, invReferencePose, projectReference);
 
         if (config.debug()) {
-            info(
-                    "camera matrix    :\n%s", K.toString());
-            info(
-                    "inv ref pose     :\n%s", invReferencePose.toString());
-            info(
-                    "project reference:\n%s", projectReference.toString());
+            info("camera matrix    :\n%s", K.toString());
+            info("inv ref pose     :\n%s", invReferencePose.toString());
+            info("project reference:\n%s", projectReference.toString());
         }
 
-        estimatePoseGraph.schedule().waitOn();
+        estimatePoseSchedule.execute();
 
         // perform ICP
         pyramidPose.set(currentView.getPose());
         for (int level = pyramidIterations.length - 1; level >= 0; level--) {
             for (int i = 0; i < pyramidIterations[level]; i++) {
-                trackingPyramid[level].schedule().waitOn();
+                trackingPyramid[level].execute();
 
                 IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
 
@@ -297,7 +299,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
             MatrixMath.sgemm(
                     tmp2, invK, scenePose);
 
-            renderGraph.schedule().waitOn();
+            renderSchedule.execute();
 
         }
     }
@@ -307,13 +309,13 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         invTrack.set(currentView.getPose());
         MatrixFloatOps.inverse(invTrack);
 
-        integrateGraph.schedule().waitOn();
+        integrateSchedule.execute();
 
     }
 
     @Override
     protected void preprocessing() {
-        preprocessingGraph.schedule().waitOn();
+        preprocessingSchedule.execute();
     }
 
     @Override
@@ -330,6 +332,6 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         MatrixMath.sgemm(
                 currentView.getPose(), scaledInvK, referencePose);
 
-        raycastGraph.schedule().waitOn();
+        raycastSchedule.execute();
     }
 }

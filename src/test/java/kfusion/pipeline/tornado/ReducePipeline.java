@@ -1,3 +1,18 @@
+/* 
+ * Copyright 2017 James Clarkson.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package kfusion.pipeline.tornado;
 
 import java.util.Arrays;
@@ -11,24 +26,18 @@ import tornado.collections.graphics.GraphicsMath;
 import tornado.collections.graphics.ImagingOps;
 import tornado.collections.matrix.MatrixFloatOps;
 import tornado.collections.matrix.MatrixMath;
-import tornado.collections.types.Float4;
-import static tornado.collections.types.Float4.mult;
-import tornado.collections.types.FloatOps;
-import tornado.collections.types.FloatingPointError;
-import tornado.collections.types.ImageFloat;
-import tornado.collections.types.Matrix4x4Float;
-import tornado.collections.types.VectorFloat;
+import tornado.collections.types.*;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.enums.Access;
 import tornado.drivers.opencl.OCLKernelConfig;
 import tornado.drivers.opencl.OpenCL;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.PrebuiltTask;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 import tornado.runtime.api.TaskUtils;
-import static tornado.runtime.api.TaskUtils.createTask;
+
+import static tornado.collections.types.Float4.mult;
 
 public class ReducePipeline extends AbstractPipeline<TornadoModel> {
 
@@ -47,15 +56,15 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
                 : "out");
     }
 
-    private TaskGraph graph1;
-    private TaskGraph graph2;
-    private TaskGraph[] trackingPyramid;
+    private TaskSchedule graph1;
+    private TaskSchedule graph2;
+    private TaskSchedule[] trackingPyramid;
     private Matrix4x4Float[] scaledInvKs;
     private float[] icpResult;
     private Matrix4x4Float pyramidPose;
     private float[] icpResultIntermediate1;
     private float[] icpResultIntermediate2;
-    
+
     private int cus;
 
     @Override
@@ -70,10 +79,9 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
         final float wgLF = Float.parseFloat(Tornado.getProperty("wglf", "1.0"));
 
         final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
-        final int maxBinsPerCU = roundToWgs(maxBinsPerResource,128);
+        final int maxBinsPerCU = roundToWgs(maxBinsPerResource, 128);
 
         final int wgs = maxBinsPerCU * cus;
-       
 
         System.out.printf("local mem size   : %s\n", RuntimeUtilities.humanReadableByteCount(localMemSize, false));
         System.out.printf("num compute units: %d\n", cus);
@@ -95,34 +103,29 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
             scaledInvKs[i] = new Matrix4x4Float();
         }
 
-        graph1 = new TaskGraph()
+        graph1 = new TaskSchedule("s0")
                 .streamIn(pyramidDepths[0]);
 
         for (int i = 1; i < iterations; i++) {
             graph1
-                    .add(ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2)
+                    .task("resizeImage" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2)
                     .streamOut(pyramidDepths[i]);
         }
 
-//		graph2 = new TaskGraph();
+//		graph2 = new TaskSchedule();
         for (int i = 0; i < iterations; i++) {
             graph1
                     .streamIn(scaledInvKs[i])
-                    .add(GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
-                    .add(GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i])
+                    .task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
+                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i])
                     .streamOut(pyramidVerticies[i], pyramidNormals[i]);
         }
         graph1.streamIn(projectReference);
 
-        trackingPyramid = new TaskGraph[iterations];
+        trackingPyramid = new TaskSchedule[iterations];
         for (int i = 0; i < iterations; i++) {
 
-            final CompilableTask trackPose = createTask(IterativeClosestPoint::trackPose,
-                    pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
-                    referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
-                    projectReference, distanceThreshold, normalThreshold);
-
-            final PrebuiltTask customMapReduce = TaskUtils.createTask(
+            final PrebuiltTask customMapReduce = TaskUtils.createTask("optMapReduce" + i,
                     "optMapReduce",
                     "./opencl/optMapReduce.cl",
                     new Object[]{icpResultIntermediate1, pyramidTrackingResults[i], pyramidTrackingResults[i].X(), pyramidTrackingResults[i].Y()},
@@ -135,14 +138,17 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
             kernelConfig.getLocalWork()[0] = maxBinsPerCU;
 
             //@formatter:off
-            trackingPyramid[i] = new TaskGraph()
+            trackingPyramid[i] = new TaskSchedule("s0")
                     .streamIn(pyramidPose)
-                    .add(trackPose)
-                    //                    .add(IterativeClosestPoint::zero,icpResultIntermediate1)
-                    //                    .add(IterativeClosestPoint::mapReduce,icpResultIntermediate1,pyramidTrackingResults[i])
-                    //                    .add(IterativeClosestPoint::reduceIntermediate,icpResultIntermediate2, icpResultIntermediate1)
-                    //                    .add(IterativeClosestPoint::reduce1,icpResult,pyramidTrackingResults[i])
-                    .add(customMapReduce)
+                    .task("track" + i, IterativeClosestPoint::trackPose,
+                            pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
+                            referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
+                            projectReference, distanceThreshold, normalThreshold)
+                    // .add(IterativeClosestPoint::zero,icpResultIntermediate1)
+                    // .add(IterativeClosestPoint::mapReduce,icpResultIntermediate1,pyramidTrackingResults[i])
+                    // .add(IterativeClosestPoint::reduceIntermediate,icpResultIntermediate2, icpResultIntermediate1)
+                    // .add(IterativeClosestPoint::reduce1,icpResult,pyramidTrackingResults[i])
+                    .task(customMapReduce)
                     .streamOut(icpResultIntermediate1, pyramidTrackingResults[i])
                     .mapAllTo(oclDevice);
             //@formatter:on
@@ -264,13 +270,13 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
                 trackingPyramid[level].dumpProfiles();
                 trackingPyramid[level].dumpTimes();
 
-                Arrays.fill(icpResult,0);
-                
+                Arrays.fill(icpResult, 0);
+
                 //IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
-                for(int k=0;k<cus;k++){
+                for (int k = 0; k < cus; k++) {
                     final int index = k * 32;
-                    for(int j=0;j<32;j++){
-                        
+                    for (int j = 0; j < 32; j++) {
+
                         icpResult[j] += icpResultIntermediate1[index + j];
                     }
                 }
@@ -282,7 +288,6 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
 //                IterativeClosestPoint.mapReduce(icpResultIntermediate1, pyramidTrackingResults[level]);
 //                IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
 //                System.out.println("host: " + Arrays.toString(icpResult));
-
                 final float[] refIcp = new float[32];
                 IterativeClosestPoint.reduce(refIcp, pyramidTrackingResults[level]);
 
