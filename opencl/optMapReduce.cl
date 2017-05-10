@@ -71,7 +71,9 @@ __inline__ void mapValues(float8 tr, __local float * sums){
     
 }
 
+#ifndef WGS
 #define WGS 384
+#endif
 
 __kernel void optMapReduce(__global uchar *_heap_base, ulong _stack_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
 {
