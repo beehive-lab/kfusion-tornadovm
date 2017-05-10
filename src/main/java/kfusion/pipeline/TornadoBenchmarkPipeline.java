@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2017 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@ import kfusion.devices.Device;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
+import tornado.api.meta.TaskMetaData;
 import tornado.collections.graphics.GraphicsMath;
 import tornado.collections.graphics.ImagingOps;
 import tornado.collections.graphics.Renderer;
@@ -29,11 +30,8 @@ import tornado.collections.matrix.MatrixMath;
 import tornado.collections.types.*;
 import tornado.common.Tornado;
 import tornado.common.enums.Access;
-import tornado.drivers.opencl.OCLKernelConfig;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.PrebuiltTask;
 import tornado.runtime.api.TaskSchedule;
-import tornado.runtime.api.TaskUtils;
 
 import static tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
 import static tornado.collections.types.Float4.mult;
@@ -252,21 +250,31 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
                 final int numWgs = Math.min(roundToWgs(numElements / cus, 128), maxwgs);
 
-                final PrebuiltTask customMapReduce = TaskUtils.createTask("customReduce" + i,
-                        oclDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
-                        "./opencl/optMapReduce.cl",
-                        new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
-                        new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
-                        oclDevice,
-                        new int[]{numWgs});
-
-                final OCLKernelConfig kernelConfig = OCLKernelConfig.create(customMapReduce.meta());
-                kernelConfig.getGlobalWork()[0] = maxwgs;
-                kernelConfig.getLocalWork()[0] = maxBinsPerCU;
-
+//                final PrebuiltTask customMapReduce = TaskUtils.createTask("customReduce" + i,
+//                        oclDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
+//                        "./opencl/optMapReduce.cl",
+//                        new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
+//                        new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
+//                        oclDevice,
+//                        new int[]{numWgs});
+//                final OCLKernelConfig kernelConfig = OCLKernelConfig.create(customMapReduce.meta());
+//                kernelConfig.getGlobalWork()[0] = maxwgs;
+//                kernelConfig.getLocalWork()[0] = maxBinsPerCU;
                 trackingPyramid[i]
-                        .task(customMapReduce)
+                        .prebuiltTask("customReduce" + i,
+                                oclDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
+                                "./opencl/optMapReduce.cl",
+                                new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
+                                new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
+                                oclDevice,
+                                new int[]{numWgs})
                         .streamOut(icpResultIntermediate1);
+
+                TaskMetaData meta = trackingPyramid[i].getTask("icp" + i + "." + "customReduce" + i).meta();
+                String compilerFlags = meta.getOpenclCompilerFlags();
+                meta.setOpenclCompilerFlags(compilerFlags + " -DWGS=" + maxBinsPerCU);
+                meta.setGlobalWork(new long[]{maxwgs});
+                meta.setLocalWork(new long[]{maxBinsPerCU});
             } else if (config.useSimpleReduce()) {
                 trackingPyramid[i]
                         .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
@@ -339,7 +347,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         MatrixFloatOps.inverse(invReferencePose);
         MatrixMath.sgemm(K, invReferencePose, projectReference);
 
-        estimatePoseSchedule.schedule().waitOn();
+        estimatePoseSchedule.execute();
 
         // perform ICP
         pyramidPose.set(currentView.getPose());

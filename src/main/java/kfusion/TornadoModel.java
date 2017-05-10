@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2017 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,6 +39,7 @@ public class TornadoModel extends KfusionConfig {
         return Integer.parseInt(settings.getProperty("kfusion.tornado.device", "0"));
     }
 
+    @Override
     public void reset() {
         super.reset();
         useTornado = Boolean.parseBoolean(settings.getProperty("kfusion.tornado.enable",

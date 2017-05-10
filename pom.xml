@@ -113,11 +113,7 @@
             <type>jar</type>
         </dependency>
 
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-common</artifactId>
-            <version>0.0.2-SNAPSHOT</version>
-        </dependency>
+        
 
         <dependency>
             <groupId>tornado</groupId>

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2017 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,30 +16,34 @@
 package kfusion.tornado;
 
 import java.awt.EventQueue;
-
 import kfusion.TornadoModel;
+import kfusion.ui.KfusionTornadoCanvas;
 import kfusion.ui.TornadoConfigPanel;
 import kfusion.ui.TornadoWorkbenchFrame;
-import kfusion.ui.KfusionTornadoCanvas;
+
+import static java.lang.System.getProperty;
+import static tornado.common.Tornado.loadSettings;
 
 public class GUI {
 
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
+    public static void main(String[] args) {
+        EventQueue.invokeLater(new Runnable() {
 
-			@Override
-			public void run() {
-			    final TornadoModel config = new TornadoModel();
-			    final TornadoConfigPanel tornadoConfig = new TornadoConfigPanel(config);
-			    final KfusionTornadoCanvas canvas = new KfusionTornadoCanvas(config,660 * 2, 500, tornadoConfig);
-			    TornadoWorkbenchFrame frame  = new TornadoWorkbenchFrame(config,canvas, tornadoConfig);
-				frame.setVisible(true);
-			}
-			
-			
-		});
-		
+            @Override
+            public void run() {
+                final TornadoModel config = new TornadoModel();
+                if (getProperty("tornado.config") != null) {
+                    loadSettings(getProperty("tornado.config"));
+                }
 
-	}
+                final TornadoConfigPanel tornadoConfig = new TornadoConfigPanel(config);
+                final KfusionTornadoCanvas canvas = new KfusionTornadoCanvas(config, 660 * 2, 500, tornadoConfig);
+                TornadoWorkbenchFrame frame = new TornadoWorkbenchFrame(config, canvas, tornadoConfig);
+                frame.setVisible(true);
+            }
+
+        });
+
+    }
 
 }

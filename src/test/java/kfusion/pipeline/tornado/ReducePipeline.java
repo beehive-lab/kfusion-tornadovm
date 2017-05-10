@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2017 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@ import kfusion.devices.Device;
 import kfusion.devices.TestingDevice;
 import kfusion.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
+import tornado.api.meta.TaskMetaData;
 import tornado.collections.graphics.GraphicsMath;
 import tornado.collections.graphics.ImagingOps;
 import tornado.collections.matrix.MatrixFloatOps;
@@ -30,13 +31,11 @@ import tornado.collections.types.*;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.enums.Access;
-import tornado.drivers.opencl.OCLKernelConfig;
 import tornado.drivers.opencl.OpenCL;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.PrebuiltTask;
 import tornado.runtime.api.TaskSchedule;
-import tornado.runtime.api.TaskUtils;
 
+import static tornado.collections.types.Float4.mult;
 import static tornado.collections.types.Float4.mult;
 
 public class ReducePipeline extends AbstractPipeline<TornadoModel> {
@@ -125,18 +124,17 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
         trackingPyramid = new TaskSchedule[iterations];
         for (int i = 0; i < iterations; i++) {
 
-            final PrebuiltTask customMapReduce = TaskUtils.createTask("optMapReduce" + i,
-                    "optMapReduce",
-                    "./opencl/optMapReduce.cl",
-                    new Object[]{icpResultIntermediate1, pyramidTrackingResults[i], pyramidTrackingResults[i].X(), pyramidTrackingResults[i].Y()},
-                    new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
-                    oclDevice,
-                    new int[]{wgs});
-
-            final OCLKernelConfig kernelConfig = OCLKernelConfig.create(customMapReduce.meta());
-            kernelConfig.getGlobalWork()[0] = wgs;
-            kernelConfig.getLocalWork()[0] = maxBinsPerCU;
-
+//            final PrebuiltTask customMapReduce = TaskUtils.createTask("optMapReduce" + i,
+//                    "optMapReduce",
+//                    "./opencl/optMapReduce.cl",
+//                    new Object[]{icpResultIntermediate1, pyramidTrackingResults[i], pyramidTrackingResults[i].X(), pyramidTrackingResults[i].Y()},
+//                    new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
+//                    oclDevice,
+//                    new int[]{wgs});
+//
+//            final OCLKernelConfig kernelConfig = OCLKernelConfig.create(customMapReduce.meta());
+//            kernelConfig.getGlobalWork()[0] = wgs;
+//            kernelConfig.getLocalWork()[0] = maxBinsPerCU;
             //@formatter:off
             trackingPyramid[i] = new TaskSchedule("s0")
                     .streamIn(pyramidPose)
@@ -148,9 +146,19 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
                     // .add(IterativeClosestPoint::mapReduce,icpResultIntermediate1,pyramidTrackingResults[i])
                     // .add(IterativeClosestPoint::reduceIntermediate,icpResultIntermediate2, icpResultIntermediate1)
                     // .add(IterativeClosestPoint::reduce1,icpResult,pyramidTrackingResults[i])
-                    .task(customMapReduce)
+                    .prebuiltTask("optMapReduce" + i,
+                            "optMapReduce",
+                            "./opencl/optMapReduce.cl",
+                            new Object[]{icpResultIntermediate1, pyramidTrackingResults[i], pyramidTrackingResults[i].X(), pyramidTrackingResults[i].Y()},
+                            new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
+                            oclDevice,
+                            new int[]{wgs})
                     .streamOut(icpResultIntermediate1, pyramidTrackingResults[i])
                     .mapAllTo(oclDevice);
+
+            TaskMetaData meta = trackingPyramid[i].getTask("s0.optMapReduce" + i).meta();
+            meta.getGlobalWork()[0] = wgs;
+            meta.getLocalWork()[0] = maxBinsPerCU;
             //@formatter:on
         }
 
