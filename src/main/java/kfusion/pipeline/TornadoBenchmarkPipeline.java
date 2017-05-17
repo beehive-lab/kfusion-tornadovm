@@ -111,7 +111,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 timings[5] = System.nanoTime();
 
                 if (frames % renderingRate == 0) {
-//                    renderSchedule.execute();
+                    renderSchedule.execute();
                 }
 
                 timings[6] = System.nanoTime();
@@ -309,8 +309,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         renderSchedule = new TaskSchedule("render")
                 .streamIn(scenePose)
                 .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
-                //BUG need to fix render depth issue
-                // .task("renderDepth",Renderer::renderDepth,renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
+                //BUG need to investigate crashes in render depth
+                .task("renderDepth", Renderer::renderDepth, renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
                 .task("renderVolume", Renderer::renderVolume,
                         renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep,
                         largeStep, light, ambient)
