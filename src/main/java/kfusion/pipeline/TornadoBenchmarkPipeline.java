@@ -160,7 +160,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         initialPosition = Float3.mult(config.getOffset(), volumeDims);
         frames = 0;
 
-        info("initial offset: %s", initialPosition.toString("%.2f,.2f,.2f"));
+        info("initial offset: %s", initialPosition.toString("%.2f,%.2f,%.2f"));
 
         /**
          * Tornado tasks
@@ -310,7 +310,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 .streamIn(scenePose)
                 .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
                 //BUG need to investigate crashes in render depth
-                .task("renderDepth", Renderer::renderDepth, renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
+                //                .task("renderDepth", Renderer::renderDepth, renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
                 .task("renderVolume", Renderer::renderVolume,
                         renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep,
                         largeStep, light, ambient)
