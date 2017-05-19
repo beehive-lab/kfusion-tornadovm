@@ -152,13 +152,15 @@ for variable in sorted(fulldata.keys()) :
     
 
     header += ("%s min," % str(variable).rstrip())
-    data += "%6.6f," % min(fulldata[variable])
+    data += "%6.6f," % min(fulldata[variable][4:])
     header += ("%s max," % str(variable).rstrip())
-    data += "%0.6f,"  % max(fulldata[variable])
+    data += "%0.6f,"  % max(fulldata[variable][4:])
     header += ("%s mean," % str(variable).rstrip())
-    data += "%0.6f," % numpy.mean(fulldata[variable])
+    data += "%0.6f," % numpy.mean(fulldata[variable][4:])
+    header += ("%s sd," % str(variable).rstrip())
+    data += "%0.6f," % numpy.std(fulldata[variable][4:])
     header += ("%s sum," % str(variable).rstrip())
-    data += "%0.8f," % sum(fulldata[variable])
+    data += "%0.8f," % sum(fulldata[variable][4:])
 
 #print header[0:-1]
 print data[0:-1]
