@@ -18,7 +18,7 @@
         <graal.version>0.17</graal.version>
         <jvmci.version>1.8.0_73</jvmci.version>
         <jvmci.root>/Users/jamesclarkson/hg/graal-jvmci-8/jdk1.8.0_73/product</jvmci.root>
-        <netbeans.hint.license>apache20</netbeans.hint.license>
+        <netbeans.hint.license>LICENSE</netbeans.hint.license>
     </properties>
 
     <build>
