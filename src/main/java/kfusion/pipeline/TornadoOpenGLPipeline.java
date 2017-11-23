@@ -37,7 +37,7 @@ import tornado.collections.matrix.MatrixMath;
 import tornado.collections.types.Float4;
 import tornado.collections.types.ImageFloat3;
 import tornado.collections.types.Matrix4x4Float;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import tornado.runtime.api.TaskSchedule;
 
 import static tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
@@ -50,7 +50,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         super(config);
     }
 
-    private OCLDeviceMapping oclDevice;
+    private OCLTornadoDevice oclDevice;
 
     /**
      * Tornado
@@ -75,7 +75,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         /**
          * Tornado tasks
          */
-        oclDevice = (OCLDeviceMapping) config.getTornadoDevice();
+        oclDevice = (OCLTornadoDevice) config.getTornadoDevice();
         info("mapping onto %s\n", oclDevice.toString());
 
         /*

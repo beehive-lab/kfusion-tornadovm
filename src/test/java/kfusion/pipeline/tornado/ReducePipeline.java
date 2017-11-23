@@ -41,7 +41,7 @@ import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.enums.Access;
 import tornado.drivers.opencl.OpenCL;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import tornado.runtime.api.TaskSchedule;
 
 import static tornado.collections.types.Float4.mult;
@@ -79,7 +79,7 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
     public void configure(Device device) {
         super.configure(device);
 
-        final OCLDeviceMapping oclDevice = OpenCL.defaultDevice();
+        final OCLTornadoDevice oclDevice = OpenCL.defaultDevice();
         final long localMemSize = oclDevice.getDevice().getLocalMemorySize();
         cus = oclDevice.getDevice().getMaxComputeUnits();
 

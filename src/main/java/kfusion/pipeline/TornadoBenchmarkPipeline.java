@@ -39,7 +39,7 @@ import tornado.collections.matrix.MatrixMath;
 import tornado.collections.types.*;
 import tornado.common.Tornado;
 import tornado.common.enums.Access;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import tornado.runtime.api.TaskSchedule;
 
 import static tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
@@ -174,7 +174,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         /**
          * Tornado tasks
          */
-        final OCLDeviceMapping oclDevice = (OCLDeviceMapping) config.getTornadoDevice();
+        final OCLTornadoDevice oclDevice = (OCLTornadoDevice) config.getTornadoDevice();
         info("mapping onto %s\n", oclDevice.toString());
 
         final long localMemSize = oclDevice.getDevice().getLocalMemorySize();
