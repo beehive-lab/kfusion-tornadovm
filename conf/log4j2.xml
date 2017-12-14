@@ -11,12 +11,15 @@
 		</Root>
 		<Logger name="kfusion" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
-    		</Logger>
+    	</Logger>
 		<Logger name="tornado" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
-    		</Logger>
+    	</Logger>
 		<Logger name="tornado.runtime.TornadoVM" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
-    		</Logger>
+     	</Logger>
+		<Logger name="tornado.graal.compiler.TornadoCodeGenerator" level="warn" additivity="false">
+			<AppenderRef ref="Console"/>
+     	</Logger>
 	</Loggers>
 </Configuration>
