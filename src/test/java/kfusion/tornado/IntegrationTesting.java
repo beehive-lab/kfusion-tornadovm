@@ -26,7 +26,7 @@ package kfusion.tornado;
 
 import kfusion.TornadoModel;
 import kfusion.Utils;
-import kfusion.algorithms.Integration;
+import kfusion.tornado.algorithms.Integration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

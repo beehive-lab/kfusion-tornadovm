@@ -52,9 +52,13 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
                 : "out");
     }
 
-    private TaskSchedule graph1;
-    private TaskSchedule graph2;
+    private TaskSchedule estimatePoseSchedule;
+    private TaskSchedule trackingPyramid[];
+    private Matrix4x4Float pyramidPose;
     private Matrix4x4Float[] scaledInvKs;
+
+    private float[] icpResultIntermediate1;
+    private float[] icpResult;
 
     @Override
     public void configure(Device device) {
@@ -62,42 +66,62 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
 
         scaledInvKs = new Matrix4x4Float[pyramidIterations.length];
 
+        pyramidPose = new Matrix4x4Float();
         pyramidDepths[0] = filteredDepthImage;
         pyramidVerticies[0] = currentView.getVerticies();
         pyramidNormals[0] = currentView.getNormals();
+
+        icpResultIntermediate1 = new float[config.getReductionSize() * 32];
+        icpResult = new float[32];
 
         final int iterations = pyramidIterations.length;
         for (int i = 0; i < iterations; i++) {
             scaledInvKs[i] = new Matrix4x4Float();
         }
 
-        graph1 = new TaskSchedule("s0")
+        estimatePoseSchedule = new TaskSchedule("s0")
                 .streamIn(pyramidDepths[0]);
 
         for (int i = 1; i < iterations; i++) {
-            graph1
+            estimatePoseSchedule
                     .task("resize" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2)
                     .streamOut(pyramidDepths[i]);
         }
 
-        graph2 = new TaskSchedule("s1");
         for (int i = 0; i < iterations; i++) {
-            graph2
+            estimatePoseSchedule
                     .streamIn(scaledInvKs[i])
                     .task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
                     .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i])
                     .streamOut(pyramidVerticies[i], pyramidNormals[i]);
         }
 
-        graph1.mapAllTo(config.getTornadoDevice());
-        graph2.mapAllTo(config.getTornadoDevice());
+        estimatePoseSchedule.streamIn(projectReference);
+
+        trackingPyramid = new TaskSchedule[iterations];
+        for (int i = 0; i < iterations; i++) {
+
+            //@formatter:off
+            trackingPyramid[i] = new TaskSchedule("icp" + i)
+                    .streamIn(pyramidPose)
+                    .task("track" + i, IterativeClosestPoint::trackPose,
+                            pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
+                            referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
+                            projectReference, distanceThreshold, normalThreshold)
+                    .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
+                    .streamOut(icpResultIntermediate1)
+                    .mapAllTo(config.getTornadoDevice());
+            //@formatter:on
+        }
+
+        estimatePoseSchedule.mapAllTo(config.getTornadoDevice());
     }
 
     private void loadFrame(String path, int index) {
         try {
 
             Utils.loadData(makeFilename(path, index, "tracking", "ScaledDepth", true),
-                    filteredDepthImage.asBuffer());
+                    pyramidDepths[0].asBuffer());
 
             Utils.loadData(makeFilename(path, index, "tracking", "k", true),
                     scaledCamera.asBuffer());
@@ -170,16 +194,15 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
         }
 
         long start = System.nanoTime();
-        graph1.execute();
+
+        estimatePoseSchedule.execute();
 
         for (ImageFloat depths : pyramidDepths) {
             System.out.println("depths: " + depths.summerise());
         }
-
-        graph2.execute();
         long end = System.nanoTime();
 //        graph1.dumpTimes();
-//        graph2.dumpTimes();
+//        estimatePoseSchedule.dumpTimes();
         System.out.printf("elapsed time=%s\n", RuntimeUtilities.elapsedTimeInSeconds(start, end));
 
         final Matrix4x4Float invReferencePose = referenceView.getPose().duplicate();
@@ -194,7 +217,7 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
         }
 
         // perform ICP
-        final Matrix4x4Float pose = currentView.getPose().duplicate();
+        pyramidPose.set(currentView.getPose());
         for (int level = pyramidIterations.length - 1; level >= 0; level--) {
             for (int i = 0; i < pyramidIterations[level]; i++) {
                 if (config.debug()) {
@@ -208,22 +231,17 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
                     info(String
                             .format("ref verticies: " + referenceView.getVerticies().summerise()));
                     info(String.format("ref normals: " + referenceView.getNormals().summerise()));
-                    info(String.format("pose: \n%s\n", pose.toString(FloatOps.fmt4em)));
+                    info(String.format("pose: \n%s\n", pyramidPose.toString(FloatOps.fmt4em)));
                 }
 
-                IterativeClosestPoint.trackPose(pyramidTrackingResults[level],
-                        pyramidVerticies[level], pyramidNormals[level],
-                        referenceView.getVerticies(), referenceView.getNormals(), pose,
-                        projectReference, distanceThreshold, normalThreshold);
+                trackingPyramid[level].execute();
 
-                boolean updated = IterativeClosestPoint.estimateNewPose(config, trackingResult,
-                        pyramidTrackingResults[level], pose, 1e-5f);
+                IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
 
-                if (config.debug()) {
-                    info("solve: %s", trackingResult.toString());
-                }
+                trackingResult.resultImage = pyramidTrackingResults[level];
+                final boolean updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, 1e-5f);
 
-                pose.set(trackingResult.getPose());
+                pyramidPose.set(trackingResult.getPose());
 
                 if (config.debug()) {
                     info("estimated pose:\n%s", trackingResult.toString());

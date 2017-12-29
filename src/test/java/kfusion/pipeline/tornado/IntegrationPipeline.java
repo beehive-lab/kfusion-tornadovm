@@ -35,7 +35,9 @@ import tornado.collections.math.TornadoMath;
 import tornado.collections.matrix.MatrixFloatOps;
 import tornado.collections.types.Matrix4x4Float;
 import tornado.collections.types.Short2;
+import tornado.collections.types.VectorFloat3;
 import tornado.collections.types.VolumeShort2;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import tornado.runtime.api.TaskSchedule;
 
 public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
@@ -47,11 +49,12 @@ public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
     private VolumeShort2 refVolume;
 
     private TaskSchedule graph;
+    private VectorFloat3 output;
 
     @Override
     public void configure(Device device) {
         super.configure(device);
-
+        output = new VectorFloat3(256);
         graph = new TaskSchedule("s0");
 
 //        final PrebuiltTask integrate = TaskUtils.createTask("customIntegrate",
@@ -64,10 +67,8 @@ public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
 //                new int[]{volume.X(), volume.Y()});
         graph
                 .streamIn(volume, scaledDepthImage, invTrack, K)
-                .task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims,
-                        volume, mu, maxWeight)
-                //                .task(integrate)
-                .streamOut(volume)
+                .task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight)
+                .streamOut(volume, output)
                 .mapAllTo(config.getTornadoDevice());
     }
 
@@ -107,10 +108,17 @@ public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
     @Override
     public void execute() {
 
-//	    Integration.integrate(scaledDepthImage, invTrack, K, volumeDims,
-//      volume, mu, maxWeight);
-        graph.execute();
-        graph.dumpTimes();
+        if (System.getProperty("java") != null) {
+            kfusion.algorithms.Integration.integrate(scaledDepthImage, invTrack, K, volumeDims,
+                    volume, mu, maxWeight);
+        } else {
+            graph.execute();
+            for (int i = 0; i < 256; i++) {
+                System.out.printf("pos=%s\n", output.get(i).toString());
+            }
+            ((OCLTornadoDevice) graph.getDeviceForTask("s0.integrate")).dumpMemory("hw.dump");
+            graph.dumpTimes();
+        }
 
     }
 
@@ -123,8 +131,9 @@ public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
                     if (!TornadoMath.isEqual(volume.get(x, y, z).asBuffer().array(), refVolume.get(x, y, z).asBuffer().array())) {
                         final Short2 calc = volume.get(x, y, z);
                         final Short2 ref = refVolume.get(x, y, z);
-                        //if(x==83 && y==68 && z== 203)
-                        System.out.printf("[%d, %d, %d] error: %s != %s\n", x, y, z, calc.toString(), ref.toString());
+                        if (x == 38 && y == 66 && z == 201) {
+                            System.out.printf("[%d, %d, %d] error: %s != %s\n", x, y, z, calc.toString(), ref.toString());
+                        }
                         errors++;
                     }
                 }

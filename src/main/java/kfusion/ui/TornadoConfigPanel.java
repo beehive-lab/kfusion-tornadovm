@@ -33,14 +33,14 @@ import javax.swing.border.EtchedBorder;
 import kfusion.TornadoModel;
 import tornado.common.TornadoDevice;
 import tornado.drivers.opencl.OCLDriver;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class TornadoConfigPanel extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 4887971237978617495L;
-    final JComboBox<TornadoDevice> deviceComboBox;
+    public final JComboBox<TornadoDevice> deviceComboBox;
     public final JCheckBox enableTornadoCheckBox;
 
     private final TornadoModel config;
@@ -56,7 +56,7 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 
             for (int platformIndex = 0; platformIndex < driver.getNumPlatforms(); platformIndex++) {
                 for (int deviceIndex = 0; deviceIndex < driver.getNumDevices(platformIndex); deviceIndex++) {
-                    final OCLDeviceMapping device = new OCLDeviceMapping(platformIndex, deviceIndex);
+                    final OCLTornadoDevice device = new OCLTornadoDevice(platformIndex, deviceIndex);
                     //if(device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_GPU)
                     tmpDevices.add(device);
                 }
@@ -73,7 +73,7 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
         deviceComboBox = new JComboBox<>();
         deviceComboBox.setModel(deviceSelectModel);
         deviceComboBox.setEnabled(false);
-        deviceComboBox.addActionListener(this);
+//        deviceComboBox.addActionListener(this);
 
         enableTornadoCheckBox = new JCheckBox("Use Tornado");
         enableTornadoCheckBox.setSelected(false);
@@ -91,15 +91,13 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
     }
 
     public void updateModel() {
-        config.setTornadoDevice((TornadoDevice) deviceComboBox.getSelectedItem());
+//        config.setTornadoDevice((TornadoDevice) deviceComboBox.getSelectedItem());
         config.setUseTornado(enableTornadoCheckBox.isSelected());
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         deviceComboBox.setEnabled(enableTornadoCheckBox.isSelected());
-        updateModel();
-
+//        updateModel();
     }
-
 }

@@ -111,9 +111,11 @@ public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
         for (int i = 0; i < pyramidIterations.length; i++) {
 //        int i = 0;
             final FloatingPointError verticiesError = pyramidVerticies[i].calculateULP(refVerticies[i]);
+            System.out.printf("\tlevel %d: vertex  - %s\n", i, pyramidVerticies[i].summerise());
             System.out.printf("\tlevel %d: vertex  error - %s\n", i, verticiesError.toString());
 
             final FloatingPointError normalsError = pyramidNormals[i].calculateULP(refNormals[i]);
+            System.out.printf("\tlevel %d: normals - %s\n", i, pyramidNormals[i].summerise());
             System.out.printf("\tlevel %d: normals error - %s\n", i, normalsError.toString());
 
             valid &= (verticiesError.getMaxUlp() < 5f && normalsError.getMaxUlp() < 5f);

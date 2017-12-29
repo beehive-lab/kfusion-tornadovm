@@ -191,9 +191,8 @@ public class RaycastPipeline extends AbstractPipeline<TornadoModel> {
             info("reference pose: %s", referencePose.toString());
         }
 
-        Raycast.raycast(verticies, normals, volume, volumeDims, referencePose,
-                nearPlane, farPlane, largeStep, smallStep);
-
+//        Raycast.raycast(verticies, normals, volume, volumeDims, referencePose,
+//                nearPlane, farPlane, largeStep, smallStep);
         graph.execute();
 
         System.out.printf("verticies [J]: %s\n", verticies.summerise());

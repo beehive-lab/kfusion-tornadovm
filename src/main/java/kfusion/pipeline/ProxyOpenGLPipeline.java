@@ -26,64 +26,87 @@ package kfusion.pipeline;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
+import javax.media.opengl.GLAutoDrawable;
+import javax.media.opengl.GLEventListener;
 import javax.media.opengl.awt.GLCanvas;
-
 import kfusion.TornadoModel;
-import kfusion.pipeline.AbstractOpenGLPipeline;
-import kfusion.pipeline.JavaOpenGLPipeline;
-import kfusion.pipeline.TornadoOpenGLPipeline;
 import kfusion.ui.TornadoConfigPanel;
+import tornado.common.TornadoDevice;
 
-public class ProxyOpenGLPipeline<T extends TornadoModel> implements ActionListener {
-	
-	private final JavaOpenGLPipeline<T> javaPipeline;
-	private final TornadoOpenGLPipeline<T> tornadoPipeline;
-	private AbstractOpenGLPipeline<T> currentPipeline;
-	
-	private final T config;
-	private final GLCanvas canvas;
-	private final TornadoConfigPanel tornadoConfig;
-	
-	public ProxyOpenGLPipeline(final T config, final GLCanvas canvas, final TornadoConfigPanel tornadoConfig){
-	    this.config = config;
-	    this.canvas = canvas;
-		this.tornadoConfig = tornadoConfig;
-		
-		
-		javaPipeline = new JavaOpenGLPipeline<T>(config);
-		tornadoPipeline = new TornadoOpenGLPipeline<T>(config);
-		currentPipeline = javaPipeline;
-		canvas.addGLEventListener(currentPipeline);
-		
-		tornadoConfig.enableTornadoCheckBox.addActionListener(this);
-	}
-	
-	
-	public void execute() {
-		currentPipeline.execute();	
-	}
+public class ProxyOpenGLPipeline<T extends TornadoModel> implements ActionListener, GLEventListener {
 
+    private final JavaOpenGLPipeline<T> javaPipeline;
+    private final MigratingOpenGLPipeline<T> tornadoPipeline;
+    private AbstractOpenGLPipeline<T> currentPipeline;
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		if(tornadoConfig.enableTornadoCheckBox.isSelected() && currentPipeline != tornadoPipeline){
-			config.reset();
-			canvas.removeGLEventListener(currentPipeline);
-			currentPipeline = tornadoPipeline;
-			canvas.addGLEventListener(currentPipeline);
-			
-			config.setReset();
-		} else if (!tornadoConfig.enableTornadoCheckBox.isSelected() && currentPipeline != javaPipeline){
-		    config.reset();
-			canvas.removeGLEventListener(currentPipeline);
-			currentPipeline = javaPipeline;
-			canvas.addGLEventListener(currentPipeline);
-			config.setReset();
-		}
-		
-	}
-	
-	
+    private final T config;
+    private final GLCanvas canvas;
+    private final TornadoConfigPanel tornadoConfig;
+    private TornadoDevice currentDevice;
+    private TornadoDevice selectedDevice;
+    private volatile boolean migrate;
+
+    public ProxyOpenGLPipeline(final T config, final GLCanvas canvas, final TornadoConfigPanel tornadoConfig) {
+        this.config = config;
+        this.canvas = canvas;
+        this.tornadoConfig = tornadoConfig;
+
+        javaPipeline = new JavaOpenGLPipeline<>(config);
+        tornadoPipeline = new MigratingOpenGLPipeline<>(config);
+        currentPipeline = javaPipeline;
+//        canvas.addGLEventListener(currentPipeline);
+
+        tornadoConfig.enableTornadoCheckBox.addActionListener(this);
+        tornadoConfig.deviceComboBox.addActionListener(this);
+        currentDevice = null;
+        selectedDevice = null;
+        migrate = false;
+
+        canvas.addGLEventListener(this);
+    }
+
+    @Override
+    public void display(GLAutoDrawable drawable) {
+        if (migrate) {
+            System.out.printf("switching from %s to %s\n", currentDevice, selectedDevice);
+            tornadoPipeline.migrateTo(selectedDevice);
+            currentDevice = selectedDevice;
+            migrate = false;
+        }
+        currentPipeline.display(drawable);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (tornadoConfig.enableTornadoCheckBox.isSelected() && currentPipeline != tornadoPipeline) {
+            config.reset();
+            currentPipeline = tornadoPipeline;
+            config.setReset();
+        } else if (!tornadoConfig.enableTornadoCheckBox.isSelected() && currentPipeline != javaPipeline) {
+            config.reset();
+            currentPipeline = javaPipeline;
+            config.setReset();
+        }
+
+        selectedDevice = (TornadoDevice) tornadoConfig.deviceComboBox.getSelectedItem();
+        if (selectedDevice != currentDevice) {
+            migrate = true;
+        }
+    }
+
+    @Override
+    public void dispose(GLAutoDrawable glad) {
+        currentPipeline.dispose(glad);
+    }
+
+    @Override
+    public void init(GLAutoDrawable glad) {
+        currentPipeline.init(glad);
+    }
+
+    @Override
+    public void reshape(GLAutoDrawable glad, int i, int i1, int i2, int i3) {
+        currentPipeline.reshape(glad, i, i, i3, i3);
+    }
 
 }
