@@ -36,12 +36,15 @@ import tornado.collections.graphics.GraphicsMath;
 import tornado.collections.graphics.ImagingOps;
 import tornado.collections.matrix.MatrixFloatOps;
 import tornado.collections.matrix.MatrixMath;
+import tornado.collections.types.*;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.enums.Access;
 import tornado.drivers.opencl.OpenCL;
 import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import tornado.runtime.api.TaskSchedule;
+
+import static tornado.collections.types.Float4.mult;
 
 public class ReducePipeline extends AbstractPipeline<TornadoModel> {
 
