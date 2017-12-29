@@ -4,21 +4,15 @@
 
     <groupId>slambench</groupId>
     <artifactId>slambench-tornado</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>slambench-tornado</name>
-    <url>http://maven.apache.org</url>
+    <url>https://github.com/beehive-lab/slambench-tornado</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
         <tornado.version>0.0.2-SNAPSHOT</tornado.version>
-        <graal.root>/Users/jamesclarkson/git/graal/graal/graal-core/mxbuild/dists</graal.root>
-        <graal.version>0.17</graal.version>
-        <jvmci.version>1.8.0_73</jvmci.version>
-        <jvmci.root>/Users/jamesclarkson/hg/graal-jvmci-8/jdk1.8.0_73/product</jvmci.root>
-        <netbeans.hint.license>LICENSE</netbeans.hint.license>
     </properties>
 
     <build>
@@ -30,6 +24,9 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                    <compilerArgs>
+                        <arg>-Djava.ext.dirs=${tornado.sdk}/share/java/tornado:${jvmci.root}/jre/lib/jvmci</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
@@ -69,8 +66,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-
         </plugins>
     </build>
 
@@ -110,57 +105,16 @@
             <groupId>slambench</groupId>
             <artifactId>slambench-java</artifactId>
             <version>0.0.2</version>
-            <type>jar</type>
         </dependency>
 
-        
-
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-collections</artifactId>
-            <version>0.0.2-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-runtime</artifactId>
-            <version>0.0.2-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-drivers-opencl</artifactId>
-            <version>0.0.2-SNAPSHOT</version>
-        </dependency>
         <dependency>
             <groupId>freenect</groupId>
             <artifactId>freenect</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-            <systemPath>/Users/jamesclarkson/NetBeansProjects/slambench-tornado/lib/freenect-0.0.1-SNAPSHOT.jar</systemPath>
+            <systemPath>${basedir}/lib/freenect-0.0.1-SNAPSHOT.jar</systemPath>
             <scope>system</scope>
-        </dependency>
-        <dependency>
-            <groupId>graal</groupId>
-            <artifactId>graal</artifactId>
-            <scope>system</scope>
-            <systemPath>${graal.root}/graal.jar</systemPath>
-            <version>${graal.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>api</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
-            <version>${jvmci.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>hotspot</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-            <version>${jvmci.version}</version>
-        </dependency>
 
     </dependencies>
 </project>
