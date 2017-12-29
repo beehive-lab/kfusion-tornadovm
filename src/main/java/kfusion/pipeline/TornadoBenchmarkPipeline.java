@@ -39,13 +39,14 @@ import tornado.collections.matrix.MatrixMath;
 import tornado.collections.types.*;
 import tornado.common.Tornado;
 import tornado.common.enums.Access;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import tornado.runtime.api.TaskSchedule;
 
 import static tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
 import static tornado.collections.types.Float4.mult;
 import static tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static tornado.collections.types.Float4.mult;
 
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
@@ -174,8 +175,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         /**
          * Tornado tasks
          */
-        final OCLDeviceMapping oclDevice = (OCLDeviceMapping) config.getTornadoDevice();
-        info("mapping onto %s\n", oclDevice.toString());
+        final OCLTornadoDevice oclDevice = (OCLTornadoDevice) config.getTornadoDevice();
+        info("mapping onto %s", oclDevice.toString());
 
         final long localMemSize = oclDevice.getDevice().getLocalMemorySize();
         final float fraction = Float.parseFloat(Tornado.getProperty("kfusion.reduce.fraction", "1.0"));
@@ -185,9 +186,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
         final int maxwgs = maxBinsPerCU * cus;
 
-        info("local mem size   : %s\n", humanReadableByteCount(localMemSize, false));
-        info("num compute units: %d\n", cus);
-        info("max bins per cu  : %d\n", maxBinsPerCU);
+        info("local mem size   : %s", humanReadableByteCount(localMemSize, false));
+        info("num compute units: %d", cus);
+        info("max bins per cu  : %d", maxBinsPerCU);
 
         pyramidPose = new Matrix4x4Float();
         pyramidDepths[0] = filteredDepthImage;
@@ -259,16 +260,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
                 final int numWgs = Math.min(roundToWgs(numElements / cus, 128), maxwgs);
 
-//                final PrebuiltTask customMapReduce = TaskUtils.createTask("customReduce" + i,
-//                        oclDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
-//                        "./opencl/optMapReduce.cl",
-//                        new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
-//                        new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
-//                        oclDevice,
-//                        new int[]{numWgs});
-//                final OCLKernelConfig kernelConfig = OCLKernelConfig.create(customMapReduce.meta());
-//                kernelConfig.getGlobalWork()[0] = maxwgs;
-//                kernelConfig.getLocalWork()[0] = maxBinsPerCU;
                 trackingPyramid[i]
                         .prebuiltTask("customReduce" + i,
                                 oclDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",

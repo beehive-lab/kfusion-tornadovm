@@ -37,10 +37,12 @@ import tornado.collections.matrix.MatrixMath;
 import tornado.collections.types.Float4;
 import tornado.collections.types.ImageFloat3;
 import tornado.collections.types.Matrix4x4Float;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import tornado.runtime.api.TaskSchedule;
 
 import static tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
+import static tornado.collections.matrix.MatrixMath.sgemm;
+import static tornado.collections.types.Float4.mult;
 import static tornado.collections.matrix.MatrixMath.sgemm;
 import static tornado.collections.types.Float4.mult;
 
@@ -50,7 +52,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         super(config);
     }
 
-    private OCLDeviceMapping oclDevice;
+    private OCLTornadoDevice oclDevice;
 
     /**
      * Tornado
@@ -75,7 +77,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         /**
          * Tornado tasks
          */
-        oclDevice = (OCLDeviceMapping) config.getTornadoDevice();
+        oclDevice = (OCLTornadoDevice) config.getTornadoDevice();
         info("mapping onto %s\n", oclDevice.toString());
 
         /*
@@ -177,7 +179,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
                 .task("renderCurrentView", Renderer::renderLight, renderedCurrentViewImage, pyramidVerticies[0], pyramidNormals[0], light, ambient)
                 .task("renderReferenceView", Renderer::renderLight, renderedReferenceViewImage, verticies, normals, light, ambient)
                 .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
-                //                .task("renderDepth", Renderer::renderDepth, renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
+                .task("renderDepth", Renderer::renderDepth, renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
                 // .task(renderDepth)
                 .task("renderVolume", Renderer::renderVolume,
                         renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep,

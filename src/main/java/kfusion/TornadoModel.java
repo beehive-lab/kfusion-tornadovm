@@ -25,7 +25,7 @@
 package kfusion;
 
 import tornado.common.TornadoDevice;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class TornadoModel extends KfusionConfig {
 
@@ -53,7 +53,7 @@ public class TornadoModel extends KfusionConfig {
         super.reset();
         useTornado = Boolean.parseBoolean(settings.getProperty("kfusion.tornado.enable",
                 "False"));
-        tornadoDevice = new OCLDeviceMapping(getPlatformIndex(), getDeviceIndex());
+        tornadoDevice = new OCLTornadoDevice(getPlatformIndex(), getDeviceIndex());
     }
 
     public void setTornadoDevice(TornadoDevice value) {
