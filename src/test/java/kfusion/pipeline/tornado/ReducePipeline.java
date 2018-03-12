@@ -34,7 +34,6 @@ import kfusion.devices.Device;
 import kfusion.devices.TestingDevice;
 import kfusion.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
-<<<<<<< HEAD
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.collections.graphics.ImagingOps;
@@ -47,23 +46,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.collections.types.*;
-=======
-import tornado.api.meta.TaskMetaData;
-import tornado.collections.graphics.GraphicsMath;
-import tornado.collections.graphics.ImagingOps;
-import tornado.collections.matrix.MatrixFloatOps;
-import tornado.collections.matrix.MatrixMath;
-import tornado.collections.types.*;
-import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
-import tornado.common.enums.Access;
-import tornado.drivers.opencl.OpenCL;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import tornado.runtime.api.TaskSchedule;
 
-import static tornado.collections.types.Float4.mult;
-import static tornado.collections.types.Float4.mult;
->>>>>>> origin/adapt-newtornado
 
 public class ReducePipeline extends AbstractPipeline<TornadoModel> {
 

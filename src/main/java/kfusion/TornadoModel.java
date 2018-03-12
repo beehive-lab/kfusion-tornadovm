@@ -24,13 +24,8 @@
  */
 package kfusion;
 
-<<<<<<< HEAD
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-=======
-import tornado.common.TornadoDevice;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
->>>>>>> origin/adapt-newtornado
 
 public class TornadoModel extends KfusionConfig {
 

@@ -24,11 +24,7 @@
  */
 package kfusion.ui;
 
-<<<<<<< HEAD
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-=======
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
->>>>>>> origin/adapt-newtornado
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -43,15 +39,9 @@ import javax.swing.JPanel;
 import javax.swing.border.EtchedBorder;
 
 import kfusion.TornadoModel;
-<<<<<<< HEAD
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-=======
-import tornado.common.TornadoDevice;
-import tornado.drivers.opencl.OCLDriver;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
->>>>>>> origin/adapt-newtornado
 
 public class TornadoConfigPanel extends JPanel implements ActionListener {
 
