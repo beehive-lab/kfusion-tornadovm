@@ -81,21 +81,18 @@ public class TrackingPipeline extends AbstractPipeline<KfusionConfig> {
             kernel.execute();
             boolean valid = kernel.validate(path, i);
             System.out.printf("\tframe %s valid\n", (valid) ? "is" : "is not");
-            if (valid)
+            if (valid) {
                 validFrames++;
+            }
         }
-
         double pctValid = (((double) validFrames) / ((double) numFrames)) * 100.0;
         System.out.printf("Found %d valid frames (%.2f %%)\n", validFrames, pctValid);
-
     }
 
     @Override
     public void execute() {
-
         boolean hasTracked = estimatePose();
         System.out.printf("[%d]: %s\n", frames, hasTracked);
-
     }
 
     public boolean validate(String path, int index) {
@@ -109,8 +106,6 @@ public class TrackingPipeline extends AbstractPipeline<KfusionConfig> {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        // System.out.printf("expected: %s\n",values.toString("%.4e"));
 
         boolean match = true;
         if (!FloatOps.compare(trackingResult.getError(), values.get(0))) {
