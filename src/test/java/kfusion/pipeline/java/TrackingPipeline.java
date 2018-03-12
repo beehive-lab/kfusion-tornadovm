@@ -112,35 +112,30 @@ public class TrackingPipeline extends AbstractPipeline<KfusionConfig> {
             System.out.printf("\terror       : %.4e != %.4e (ref)\n", trackingResult.getError(), values.get(0));
             match = false;
         }
-
         if (!FloatOps.compare(trackingResult.getTracked(), values.get(28)))
             ;
         {
             System.out.printf("\ttracked     : %.4e != %.4e (ref)\n", trackingResult.getTracked(), values.get(28));
             match = false;
         }
-
         if (!FloatOps.compare(trackingResult.getTooFar(), values.get(29)))
             ;
         {
             System.out.printf("\ttoo far     : %.4e != %.4e (ref)\n", trackingResult.getTooFar(), values.get(29));
             match = false;
         }
-
         if (!FloatOps.compare(trackingResult.getWrongNormal(), values.get(30)))
             ;
         {
             System.out.printf("\twrong normal: %.4e != %.4e (ref)\n", trackingResult.getWrongNormal(), values.get(30));
             match = false;
         }
-
         if (!FloatOps.compare(trackingResult.getOther(), values.get(31)))
             ;
         {
             System.out.printf("\tother       : %.4e != %.4e (ref)\n", trackingResult.getOther(), values.get(31));
             match = false;
         }
-
         Matrix4x4Float calcPose = trackingResult.getPose();
         int errors = 0;
         for (int y = 0; y < refPose.M(); y++) {
