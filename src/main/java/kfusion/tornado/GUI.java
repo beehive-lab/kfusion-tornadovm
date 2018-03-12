@@ -31,7 +31,7 @@ import kfusion.ui.TornadoConfigPanel;
 import kfusion.ui.TornadoWorkbenchFrame;
 
 import static java.lang.System.getProperty;
-import static tornado.common.Tornado.loadSettings;
+import static uk.ac.manchester.tornado.common.Tornado.loadSettings;
 
 public class GUI {
 

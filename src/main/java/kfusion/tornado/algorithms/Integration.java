@@ -24,16 +24,16 @@
  */
 package kfusion.tornado.algorithms;
 
-import tornado.api.Parallel;
-import tornado.collections.math.TornadoMath;
-import tornado.collections.types.*;
+import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.rigidTransform;
+import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.rotate;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.min;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.sqrt;
+import static uk.ac.manchester.tornado.collections.types.Float2.mult;
+import static uk.ac.manchester.tornado.collections.types.Float3.add;
 
-import static tornado.collections.graphics.GraphicsMath.rigidTransform;
-import static tornado.collections.graphics.GraphicsMath.rotate;
-import static tornado.collections.math.TornadoMath.min;
-import static tornado.collections.math.TornadoMath.sqrt;
-import static tornado.collections.types.Float2.mult;
-import static tornado.collections.types.Float3.add;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.collections.types.*;
 
 public class Integration {
 
@@ -57,19 +57,13 @@ public class Integration {
                         continue;
                     }
 
-                    final Float2 pixel = new Float2(
-                            (cameraX.getX() / cameraX.getZ()) + 0.5f,
-                            (cameraX.getY() / cameraX.getZ()) + 0.5f);
+                    final Float2 pixel = new Float2((cameraX.getX() / cameraX.getZ()) + 0.5f, (cameraX.getY() / cameraX.getZ()) + 0.5f);
 
-                    if ((pixel.getX() < 0)
-                            || (pixel.getX() > (filteredDepthImage.X() - 1))
-                            || (pixel.getY() < 0)
-                            || (pixel.getY() > (filteredDepthImage.Y() - 1))) {
+                    if ((pixel.getX() < 0) || (pixel.getX() > (filteredDepthImage.X() - 1)) || (pixel.getY() < 0) || (pixel.getY() > (filteredDepthImage.Y() - 1))) {
                         continue;
                     }
 
-                    final Int2 px = new Int2((int) pixel.getX(),
-                            (int) pixel.getY());
+                    final Int2 px = new Int2((int) pixel.getX(), (int) pixel.getY());
 
                     final float depth = filteredDepthImage.get(px.getX(), px.getY());
 
@@ -77,10 +71,7 @@ public class Integration {
                         continue;
                     }
 
-                    final float diff = (depth - cameraX.getZ())
-                            * sqrt(1f
-                                    + FloatOps.sq(pos.getX() / pos.getZ())
-                                    + FloatOps.sq(pos.getY() / pos.getZ()));
+                    final float diff = (depth - cameraX.getZ()) * sqrt(1f + FloatOps.sq(pos.getX() / pos.getZ()) + FloatOps.sq(pos.getY() / pos.getZ()));
 
                     if (diff > -mu) {
 
@@ -106,10 +97,7 @@ public class Integration {
     }
 
     private static Float3 pos(final VolumeShort2 volume, final Float3 volumeDims, final Int3 p) {
-        return new Float3(
-                ((p.getX() + 0.5f) * volumeDims.getX()) / volume.X(),
-                ((p.getY() + 0.5f) * volumeDims.getY()) / volume.Y(),
-                ((p.getZ() + 0.5f) * volumeDims.getZ()) / volume.Z());
+        return new Float3(((p.getX() + 0.5f) * volumeDims.getX()) / volume.X(), ((p.getY() + 0.5f) * volumeDims.getY()) / volume.Y(), ((p.getZ() + 0.5f) * volumeDims.getZ()) / volume.Z());
     }
 
 }

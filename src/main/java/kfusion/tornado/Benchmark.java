@@ -24,15 +24,16 @@
  */
 package kfusion.tornado;
 
+import static java.lang.System.getProperty;
+import static uk.ac.manchester.tornado.common.Tornado.loadSettings;
+
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+
 import kfusion.TornadoModel;
 import kfusion.devices.Device;
 import kfusion.pipeline.TornadoBenchmarkPipeline;
-import tornado.collections.types.Float4;
-
-import static java.lang.System.getProperty;
-import static tornado.common.Tornado.loadSettings;
+import uk.ac.manchester.tornado.collections.types.Float4;
 
 public class Benchmark {
 
@@ -44,7 +45,7 @@ public class Benchmark {
         if (getProperty("tornado.config") != null) {
             loadSettings(getProperty("tornado.config"));
             config.loadSettingsFile(getProperty("tornado.config"));
-//            config.reset();
+            // config.reset();
         }
 
         PrintStream out = System.out;

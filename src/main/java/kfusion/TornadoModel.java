@@ -24,13 +24,13 @@
  */
 package kfusion;
 
-import tornado.common.TornadoDevice;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class TornadoModel extends KfusionConfig {
 
     private boolean useTornado;
-    private TornadoDevice tornadoDevice;
+    private OCLTornadoDevice tornadoDevice;
 
     public TornadoModel() {
         super();
@@ -51,12 +51,11 @@ public class TornadoModel extends KfusionConfig {
     @Override
     public void reset() {
         super.reset();
-        useTornado = Boolean.parseBoolean(settings.getProperty("kfusion.tornado.enable",
-                "False"));
-        tornadoDevice = new OCLDeviceMapping(getPlatformIndex(), getDeviceIndex());
+        useTornado = Boolean.parseBoolean(settings.getProperty("kfusion.tornado.enable", "False"));
+        tornadoDevice = new OCLTornadoDevice(getPlatformIndex(), getDeviceIndex());
     }
 
-    public void setTornadoDevice(TornadoDevice value) {
+    public void setTornadoDevice(OCLTornadoDevice value) {
         tornadoDevice = value;
     }
 

@@ -30,22 +30,23 @@ import kfusion.devices.Device;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
-import tornado.api.meta.TaskMetaData;
-import tornado.collections.graphics.GraphicsMath;
-import tornado.collections.graphics.ImagingOps;
-import tornado.collections.graphics.Renderer;
-import tornado.collections.matrix.MatrixFloatOps;
-import tornado.collections.matrix.MatrixMath;
-import tornado.collections.types.*;
-import tornado.common.Tornado;
-import tornado.common.enums.Access;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.collections.graphics.ImagingOps;
+import uk.ac.manchester.tornado.collections.graphics.Renderer;
+import uk.ac.manchester.tornado.collections.matrix.MatrixFloatOps;
+import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
+import uk.ac.manchester.tornado.collections.types.*;
+import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-import static tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
-import static tornado.collections.types.Float4.mult;
-import static tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
-import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
+import static uk.ac.manchester.tornado.collections.types.Float4.mult;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.collections.types.Float4.mult;
 
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
@@ -90,8 +91,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             timings[0] = System.nanoTime();
             boolean haveDepthImage = depthCamera.pollDepth(depthImageInput);
             videoCamera.skipVideoFrame();
-//			@SuppressWarnings("unused")
-//			boolean haveVideoImage = videoCamera.pollVideo(videoImageInput);
+            // @SuppressWarnings("unused")
+            // boolean haveVideoImage = videoCamera.pollVideo(videoImageInput);
 
             // read all frames
             while (haveDepthImage) {
@@ -127,25 +128,17 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 final Float3 currentPos = currentView.getPose().column(3).asFloat3();
                 final Float3 pos = Float3.sub(currentPos, initialPosition);
 
-                out
-                        .printf("%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\t%d\n", frames,
-                                elapsedTimeInSeconds(timings[0], timings[1]),
-                                elapsedTimeInSeconds(timings[1], timings[2]),
-                                elapsedTimeInSeconds(timings[2], timings[3]),
-                                elapsedTimeInSeconds(timings[3], timings[4]),
-                                elapsedTimeInSeconds(timings[4], timings[5]),
-                                elapsedTimeInSeconds(timings[5], timings[6]),
-                                elapsedTimeInSeconds(timings[1], timings[5]),
-                                elapsedTimeInSeconds(timings[0], timings[6]),
-                                pos.getX(), pos.getY(), pos.getZ(),
-                                (hasTracked) ? 1 : 0, (doIntegrate) ? 1 : 0);
+                out.printf("%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\t%d\n", frames, elapsedTimeInSeconds(timings[0], timings[1]), elapsedTimeInSeconds(timings[1], timings[2]),
+                        elapsedTimeInSeconds(timings[2], timings[3]), elapsedTimeInSeconds(timings[3], timings[4]), elapsedTimeInSeconds(timings[4], timings[5]),
+                        elapsedTimeInSeconds(timings[5], timings[6]), elapsedTimeInSeconds(timings[1], timings[5]), elapsedTimeInSeconds(timings[0], timings[6]), pos.getX(), pos.getY(), pos.getZ(),
+                        (hasTracked) ? 1 : 0, (doIntegrate) ? 1 : 0);
 
                 frames++;
 
                 timings[0] = System.nanoTime();
                 haveDepthImage = depthCamera.pollDepth(depthImageInput);
                 videoCamera.skipVideoFrame();
-//              haveVideoImage = videoCamera.pollVideo(videoImageInput);
+                // haveVideoImage = videoCamera.pollVideo(videoImageInput);
             }
 
             if (config.printKernels()) {
@@ -174,7 +167,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         /**
          * Tornado tasks
          */
-        final OCLDeviceMapping oclDevice = (OCLDeviceMapping) config.getTornadoDevice();
+        final OCLTornadoDevice oclDevice = (OCLTornadoDevice) config.getTornadoDevice();
         info("mapping onto %s\n", oclDevice.toString());
 
         final long localMemSize = oclDevice.getDevice().getLocalMemorySize();
@@ -208,8 +201,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         final int iterations = pyramidIterations.length;
         scaledInvKs = new Matrix4x4Float[iterations];
         for (int i = 0; i < iterations; i++) {
-            final Float4 cameraDup = mult(
-                    scaledCamera, 1f / (1 << i));
+            final Float4 cameraDup = mult(scaledCamera, 1f / (1 << i));
             scaledInvKs[i] = new Matrix4x4Float();
             getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
         }
@@ -231,9 +223,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             //@formatter:on
         }
 
-        estimatePoseSchedule
-                .streamIn(projectReference)
-                .mapAllTo(oclDevice);
+        estimatePoseSchedule.streamIn(projectReference).mapAllTo(oclDevice);
 
         if (config.useCustomReduce()) {
             icpResultIntermediate1 = new float[cus * 32];
@@ -391,10 +381,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             }
         }
 
-        // if the tracking result meets our constraints, update the current view with the estimated
+        // if the tracking result meets our constraints, update the current view with
+        // the estimated
         // pose
-        boolean hasTracked = trackingResult.getRSME() < RSMEThreshold
-                && trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold;
+        boolean hasTracked = trackingResult.getRSME() < RSMEThreshold && trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold;
         if (hasTracked) {
             currentView.getPose().set(trackingResult.getPose());
         }

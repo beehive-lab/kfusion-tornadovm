@@ -24,18 +24,24 @@
  */
 package kfusion.ui;
 
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.*;
-import javax.swing.border.EtchedBorder;
-import kfusion.TornadoModel;
-import tornado.common.TornadoDevice;
-import tornado.drivers.opencl.OCLDriver;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.border.EtchedBorder;
+
+import kfusion.TornadoModel;
+import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class TornadoConfigPanel extends JPanel implements ActionListener {
 
@@ -56,8 +62,9 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 
             for (int platformIndex = 0; platformIndex < driver.getNumPlatforms(); platformIndex++) {
                 for (int deviceIndex = 0; deviceIndex < driver.getNumDevices(platformIndex); deviceIndex++) {
-                    final OCLDeviceMapping device = new OCLDeviceMapping(platformIndex, deviceIndex);
-                    //if(device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_GPU)
+                    final OCLTornadoDevice device = new OCLTornadoDevice(platformIndex, deviceIndex);
+                    // if(device.getDevice().getDeviceType() ==
+                    // OCLDeviceType.CL_DEVICE_TYPE_GPU)
                     tmpDevices.add(device);
                 }
             }
@@ -79,9 +86,7 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
         enableTornadoCheckBox.setSelected(false);
         enableTornadoCheckBox.addActionListener(this);
 
-        setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
-                "Tornado Configuration"));
+        setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Tornado Configuration"));
 
         add(enableTornadoCheckBox);
 
@@ -91,7 +96,7 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
     }
 
     public void updateModel() {
-        config.setTornadoDevice((TornadoDevice) deviceComboBox.getSelectedItem());
+        config.setTornadoDevice((OCLTornadoDevice) deviceComboBox.getSelectedItem());
         config.setUseTornado(enableTornadoCheckBox.isSelected());
     }
 

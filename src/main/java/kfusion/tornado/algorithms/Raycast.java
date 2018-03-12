@@ -24,33 +24,31 @@
  */
 package kfusion.tornado.algorithms;
 
-import tornado.api.Parallel;
-import tornado.collections.graphics.GraphicsMath;
-import tornado.collections.types.*;
+import static uk.ac.manchester.tornado.collections.types.Float3.length;
+import static uk.ac.manchester.tornado.collections.types.Float3.normalise;
 
-import static tornado.collections.types.Float3.length;
-import static tornado.collections.types.Float3.normalise;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.collections.types.*;
 
 public class Raycast {
 
     private static final float INVALID = -2;
 
-    public static final void raycast(ImageFloat3 verticies, ImageFloat3 normals, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane, float largeStep, float smallStep) {
+    public static final void raycast(ImageFloat3 verticies, ImageFloat3 normals, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane, float largeStep,
+            float smallStep) {
 
         // use volume model to generate a reference view by raycasting ...
         for (@Parallel int y = 0; y < verticies.Y(); y++) {
             for (@Parallel int x = 0; x < verticies.X(); x++) {
-                final Float4 hit = GraphicsMath.raycastPoint(volume,
-                        volumeDims, x, y, view, nearPlane,
-                        farPlane, smallStep, largeStep);
+                final Float4 hit = GraphicsMath.raycastPoint(volume, volumeDims, x, y, view, nearPlane, farPlane, smallStep, largeStep);
 
                 final Float3 normal;
                 final Float3 position;
                 if (hit.getW() > 0f) {
                     position = hit.asFloat3();
 
-                    final Float3 surfNorm = VolumeOps.grad(volume,
-                            volumeDims, position);
+                    final Float3 surfNorm = VolumeOps.grad(volume, volumeDims, position);
 
                     if (length(surfNorm) != 0) {
                         normal = normalise(surfNorm);

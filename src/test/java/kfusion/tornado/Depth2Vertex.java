@@ -24,18 +24,19 @@
  */
 package kfusion.tornado;
 
-import kfusion.TornadoModel;
-import kfusion.Utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import tornado.collections.graphics.GraphicsMath;
-import tornado.collections.types.Float3;
-import tornado.collections.types.ImageFloat;
-import tornado.collections.types.ImageFloat3;
-import tornado.collections.types.Matrix4x4Float;
-import tornado.common.RuntimeUtilities;
-import tornado.runtime.api.TaskSchedule;
+
+import kfusion.TornadoModel;
+import kfusion.Utils;
+import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class Depth2Vertex {
 
@@ -43,9 +44,9 @@ public class Depth2Vertex {
     final private String FILE_PATH = "/Users/jamesclarkson/Downloads/kfusion_ut_data";
     final private float EPSILON = 1e-7f;
 
-    final private int[] frames = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-    final private int[] widths = {320, 160, 80, 320, 160, 80, 320, 160, 80};
-    final private int[] heights = {240, 120, 60, 240, 120, 60, 240, 120, 60};
+    final private int[] frames = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+    final private int[] widths = { 320, 160, 80, 320, 160, 80, 320, 160, 80 };
+    final private int[] heights = { 240, 120, 60, 240, 120, 60, 240, 120, 60 };
 
     private ImageFloat3[] vertex;
     private ImageFloat3[] vertexTruth;
@@ -86,14 +87,15 @@ public class Depth2Vertex {
 
         invK = new Matrix4x4Float();
 
-//		DomainTree domain = new DomainTree(2);
-//		domain.set(0, new IntDomain(0, 1, widths[0]));
-//		domain.set(1, new IntDomain(0, 1, heights[0]));
-//		ExecutableTask d2v = GraphicsMath.depthToVertexCode.invoke(vertex[0], depth[0], invK);
-//		d2v.meta().addProvider(DomainTree.class, domain);
-//		 d2v.disableJIT();
-//		 d2v.mapTo(EXTERNAL_GPU);
-//		d2v.loadFromFile("opencl/depth2vertex.cl");
+        // DomainTree domain = new DomainTree(2);
+        // domain.set(0, new IntDomain(0, 1, widths[0]));
+        // domain.set(1, new IntDomain(0, 1, heights[0]));
+        // ExecutableTask d2v = GraphicsMath.depthToVertexCode.invoke(vertex[0],
+        // depth[0], invK);
+        // d2v.meta().addProvider(DomainTree.class, domain);
+        // d2v.disableJIT();
+        // d2v.mapTo(EXTERNAL_GPU);
+        // d2v.loadFromFile("opencl/depth2vertex.cl");
         //@formatter:off
         depthToVertex = new TaskSchedule("s0")
                 .streamIn(depth[0], invK)
@@ -111,7 +113,8 @@ public class Depth2Vertex {
                 .mapAllTo(config.getTornadoDevice());
         //@formatter:on
 
-        // vertexToNormal = GraphicsMath.vertexToNormalTask.invoke(normalRef[0],vertexRef[0]);
+        // vertexToNormal =
+        // GraphicsMath.vertexToNormalTask.invoke(normalRef[0],vertexRef[0]);
         // vertexToNormal.mapTo(EXTERNAL_GPU);
         // vertexToNormal.getStack().getEvent().waitOn();
     }
@@ -134,14 +137,11 @@ public class Depth2Vertex {
             int height = heights[index];
 
             try {
-                Utils.loadData(String.format("%s/%svertex.out.%04d", FILE_PATH, d2v_prefix, frame),
-                        vertexTruth[refIndex].asBuffer());
+                Utils.loadData(String.format("%s/%svertex.out.%04d", FILE_PATH, d2v_prefix, frame), vertexTruth[refIndex].asBuffer());
 
-                Utils.loadData(String.format("%s/%sinvk.in.%04d", FILE_PATH, d2v_prefix, frame),
-                        invK.asBuffer());
+                Utils.loadData(String.format("%s/%sinvk.in.%04d", FILE_PATH, d2v_prefix, frame), invK.asBuffer());
 
-                Utils.loadData(String.format("%s/%sdepth.in.%04d", FILE_PATH, d2v_prefix, frame),
-                        depth[refIndex].asBuffer());
+                Utils.loadData(String.format("%s/%sdepth.in.%04d", FILE_PATH, d2v_prefix, frame), depth[refIndex].asBuffer());
             } catch (Exception e) {
                 System.out.printf("depth2vertex: [%d] %s\n", frame, e.getMessage());
                 e.printStackTrace();
@@ -150,15 +150,15 @@ public class Depth2Vertex {
             if (config.useTornado()) {
                 depthToVertex.schedule().waitOn();
                 depthToVertex.dumpTimes();
-                // System.out.printf("depth2vertex: execution time=%f total time=%f\n",task.getExecutionTime(),
+                // System.out.printf("depth2vertex: execution time=%f total
+                // time=%f\n",task.getExecutionTime(),
                 // task.getTotalTime());
 
             } else {
                 long start = System.nanoTime();
                 GraphicsMath.depth2vertex(vertex[refIndex], depth[refIndex], invK);
                 long end = System.nanoTime();
-                System.out.printf("depth2vertex: executime time=%f\n",
-                        RuntimeUtilities.elapsedTimeInSeconds(start, end));
+                System.out.printf("depth2vertex: executime time=%f\n", RuntimeUtilities.elapsedTimeInSeconds(start, end));
             }
 
             float maxULP = calculateULP(vertex[refIndex], vertexTruth[refIndex]);
@@ -193,10 +193,10 @@ public class Depth2Vertex {
                     minULP = Math.min(ulpFactor, minULP);
                     maxULP = Math.max(ulpFactor, maxULP);
 
-//					if (ulpFactor > 5f) {
-//						System.out.printf("error: %s != %s\n", v.toString(FloatOps.fmt3e),
-//								r.toString(FloatOps.fmt3e));
-//					}
+                    // if (ulpFactor > 5f) {
+                    // System.out.printf("error: %s != %s\n", v.toString(FloatOps.fmt3e),
+                    // r.toString(FloatOps.fmt3e));
+                    // }
                 }
             }
         }
@@ -217,14 +217,11 @@ public class Depth2Vertex {
             int height = heights[index];
 
             try {
-                Utils.loadData(String.format("%s/%svertex.out.%04d", FILE_PATH, d2v_prefix, frame),
-                        vertex[refIndex].asBuffer());
+                Utils.loadData(String.format("%s/%svertex.out.%04d", FILE_PATH, d2v_prefix, frame), vertex[refIndex].asBuffer());
 
-                Utils.loadData(String.format("%s/%snormal.out.%04d", FILE_PATH, v2n_prefix, frame),
-                        normalTruth[refIndex].asBuffer());
+                Utils.loadData(String.format("%s/%snormal.out.%04d", FILE_PATH, v2n_prefix, frame), normalTruth[refIndex].asBuffer());
 
-                Utils.loadData(String.format("%s/%sdepth.in.%04d", FILE_PATH, d2v_prefix, frame),
-                        depth[refIndex].asBuffer());
+                Utils.loadData(String.format("%s/%sdepth.in.%04d", FILE_PATH, d2v_prefix, frame), depth[refIndex].asBuffer());
             } catch (Exception e) {
                 System.out.printf("vertexToNormal: [%d] %s", frame, e.getMessage());
             }
@@ -239,8 +236,7 @@ public class Depth2Vertex {
                 long start = System.nanoTime();
                 GraphicsMath.vertex2normal(normal[refIndex], vertex[refIndex]);
                 long end = System.nanoTime();
-                System.out.printf("vertexToNormal: executime time=%f\n",
-                        RuntimeUtilities.elapsedTimeInSeconds(start, end));
+                System.out.printf("vertexToNormal: executime time=%f\n", RuntimeUtilities.elapsedTimeInSeconds(start, end));
 
             }
 

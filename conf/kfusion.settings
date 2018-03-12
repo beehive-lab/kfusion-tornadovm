@@ -15,11 +15,11 @@ kfusion.model.offset.z = 0.24
 
 kfusion.freenect.enable = false
 kfusion.nuim.enable = false
-kfusion.nuim.root=/Users/jamesclarkson/Downloads/living_room_traj2
+kfusion.nuim.root=/home/michalis/Tornado/Slam/Data/
 kfusion.nuim.traj=livingRoom2.gt.freiburg
 
 kfusion.raw.enable = true
-kfusion.raw.file = /Users/jamesclarkson/data/kfusion/living_room_traj2.raw
+kfusion.raw.file = /home/michalis/Tornado/Slam/Data/living_room_traj2.raw
 
 tornado.opencl.cflags = -cl-std=1.2 -Werror
 

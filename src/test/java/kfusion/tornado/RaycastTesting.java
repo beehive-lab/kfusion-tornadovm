@@ -24,18 +24,19 @@
  */
 package kfusion.tornado;
 
-import kfusion.TornadoModel;
-import kfusion.Utils;
-import kfusion.algorithms.Raycast;
+import static org.junit.Assert.fail;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import tornado.collections.types.*;
-import tornado.meta.domain.DomainTree;
-import tornado.meta.domain.IntDomain;
-import tornado.runtime.api.TaskSchedule;
 
-import static org.junit.Assert.fail;
+import kfusion.TornadoModel;
+import kfusion.Utils;
+import kfusion.algorithms.Raycast;
+import uk.ac.manchester.tornado.meta.domain.DomainTree;
+import uk.ac.manchester.tornado.meta.domain.IntDomain;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.*;
 
 public class RaycastTesting {
 
@@ -89,20 +90,18 @@ public class RaycastTesting {
 
         System.out.printf("      step: %f\n", step);
         System.out.printf("large step: %f\n", largeStep);
-//		TornadoExecuteTask raycast = Raycast.raycastCode.invoke(vOut,nOut,volume,volumeDims,view,nearPlane,farPlane,largeStep/0.75f,step);
-//		raycast.disableJIT();
-//		raycast.meta().addProvider(DomainTree.class, domain);
-//		raycast.mapTo(EXTERNAL_GPU);
-//		raycast.loadFromFile("opencl/raycast-golden.cl");
-//
+        // TornadoExecuteTask raycast =
+        // Raycast.raycastCode.invoke(vOut,nOut,volume,volumeDims,view,nearPlane,farPlane,largeStep/0.75f,step);
+        // raycast.disableJIT();
+        // raycast.meta().addProvider(DomainTree.class, domain);
+        // raycast.mapTo(EXTERNAL_GPU);
+        // raycast.loadFromFile("opencl/raycast-golden.cl");
+        //
 
-        graph = new TaskSchedule("s0")
-                .streamIn(volume, view)
-                .task("raycast", Raycast::raycast, vOut, nOut, volume, volumeDims, view, nearPlane, farPlane, largeStep / 0.75f, step)
-                .streamOut(vOut, nOut)
-                .mapAllTo(config.getTornadoDevice());
+        graph = new TaskSchedule("s0").streamIn(volume, view).task("raycast", Raycast::raycast, vOut, nOut, volume, volumeDims, view, nearPlane, farPlane, largeStep / 0.75f, step)
+                .streamOut(vOut, nOut).mapAllTo(config.getTornadoDevice());
 
-        //makeVolatile(volume,view);
+        // makeVolatile(volume,view);
     }
 
     @After
@@ -112,7 +111,7 @@ public class RaycastTesting {
     @Test
     public void testRaycast() {
 
-        final int[] frames = {0};
+        final int[] frames = { 0 };
 
         int errors = 0;
         for (int frame = 0; frame < frames.length; frame++) {

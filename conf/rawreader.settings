@@ -9,7 +9,7 @@ kfusion.model.offset.y = 0.5
 kfusion.model.offset.z = 0.24
 
 kfusion.raw.enable = true
-kfusion.raw.file = /Users/jamesclarkson/hg/kfusion_cpp/build/living_room/living_room_traj0.raw
+kfusion.raw.file = /home/michalis/Tornado/Slam/Data/living_room_traj0.raw
 #kfusion.raw.file = /Users/jamesclarkson/Downloads/living_room_traj2/living_room_traj2.raw
 
 

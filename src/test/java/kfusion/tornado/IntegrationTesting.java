@@ -24,16 +24,17 @@
  */
 package kfusion.tornado;
 
-import kfusion.TornadoModel;
-import kfusion.Utils;
-import kfusion.algorithms.Integration;
+import static org.junit.Assert.fail;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import tornado.collections.types.*;
-import tornado.runtime.api.TaskSchedule;
 
-import static org.junit.Assert.fail;
+import kfusion.TornadoModel;
+import kfusion.Utils;
+import kfusion.algorithms.Integration;
+import uk.ac.manchester.tornado.collections.types.*;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class IntegrationTesting {
 
@@ -54,7 +55,7 @@ public class IntegrationTesting {
     private float maxweight;
     private Float3 volumeDims;
 
-    private final float[] integrationDims = {2f, 2f, 2f};
+    private final float[] integrationDims = { 2f, 2f, 2f };
 
     private TaskSchedule graph;
 
@@ -76,23 +77,21 @@ public class IntegrationTesting {
         Utils.loadData(String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "maxweight.in", 0), tmp);
         maxweight = tmp[0];
 
-//        final PrebuiltTask integrate = TaskUtils.createTask("integrate",
-//                "integrate",
-//                "./opencl/integrate.cl",
-//                new Object[]{depth, invTrack, K, volumeDims, vol, mu, maxweight},
-//                new Access[]{Access.READ, Access.READ, Access.READ, Access.READ, Access.READ_WRITE, Access.READ, Access.READ},
-//                config.getTornadoDevice(),
-//                new int[]{vol.X(), vol.Y()});
-        graph = new TaskSchedule("s0")
-                .streamIn(vol, depth, invTrack, K)
-                .task("integrate", Integration::integrate, depth, invTrack, K, volumeDims, vol, mu, maxweight)
-                //                .task(integrate)
-                .streamOut(vol)
-                .mapAllTo(config.getTornadoDevice());
+        // final PrebuiltTask integrate = TaskUtils.createTask("integrate",
+        // "integrate",
+        // "./opencl/integrate.cl",
+        // new Object[]{depth, invTrack, K, volumeDims, vol, mu, maxweight},
+        // new Access[]{Access.READ, Access.READ, Access.READ, Access.READ,
+        // Access.READ_WRITE, Access.READ, Access.READ},
+        // config.getTornadoDevice(),
+        // new int[]{vol.X(), vol.Y()});
+        graph = new TaskSchedule("s0").streamIn(vol, depth, invTrack, K).task("integrate", Integration::integrate, depth, invTrack, K, volumeDims, vol, mu, maxweight)
+                // .task(integrate)
+                .streamOut(vol).mapAllTo(config.getTornadoDevice());
 
-        //integrateTask.mapTo(EXTERNAL_GPU);
-        //integrateTask.getStack().getEvent().waitOn();
-        //makeVolatile(vol,depth,invTrack,K);
+        // integrateTask.mapTo(EXTERNAL_GPU);
+        // integrateTask.getStack().getEvent().waitOn();
+        // makeVolatile(vol,depth,invTrack,K);
     }
 
     @After
@@ -109,20 +108,11 @@ public class IntegrationTesting {
             System.out.printf("integrate: test frame %d\n", i);
 
             try {
-                Utils.loadData(
-                        String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "vol.in", i),
-                        vol.asBuffer());
-                Utils.loadData(
-                        String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "vol.out", i),
-                        volTruth.asBuffer());
-                Utils.loadData(
-                        String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "depth.in", i),
-                        depth.asBuffer());
-                Utils.loadData(String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix,
-                        "invtrack.in", i), invTrack.asBuffer());
-                Utils.loadData(
-                        String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "k.in", i),
-                        K.asBuffer());
+                Utils.loadData(String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "vol.in", i), vol.asBuffer());
+                Utils.loadData(String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "vol.out", i), volTruth.asBuffer());
+                Utils.loadData(String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "depth.in", i), depth.asBuffer());
+                Utils.loadData(String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "invtrack.in", i), invTrack.asBuffer());
+                Utils.loadData(String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "k.in", i), K.asBuffer());
             } catch (Exception e) {
                 fail("Unable to load data: " + e.getMessage());
             }
@@ -146,7 +136,8 @@ public class IntegrationTesting {
                         final Short2 vRef = volTruth.get(x, y, z);
 
                         if (!Short2.isEqual(v, vRef)) {
-                            // System.out.printf("[%d,%d,%d] error: %s != %s\n",x,y,z,v.toString(),vRef.toString());
+                            // System.out.printf("[%d,%d,%d] error: %s !=
+                            // %s\n",x,y,z,v.toString(),vRef.toString());
                             errors++;
                         } else {
                             // System.out.printf("ok: %d != %d\n",v.get(ii),vRef.get(ii));
@@ -160,8 +151,8 @@ public class IntegrationTesting {
                 System.out.printf("errors: %d (%.2f %%)\n", errors, pct);
 
                 /*
-                 * try { Utils.dumpData(FILE_PATH + "/integrate.dat",vol.array);
-                 * } catch (Exception e) { e.printStackTrace(); }
+                 * try { Utils.dumpData(FILE_PATH + "/integrate.dat",vol.array); } catch
+                 * (Exception e) { e.printStackTrace(); }
                  */
                 foundErrors = true;
             } else {

@@ -34,6 +34,7 @@ import kfusion.pipeline.AbstractOpenGLPipeline;
 import kfusion.pipeline.JavaOpenGLPipeline;
 import kfusion.pipeline.TornadoOpenGLPipeline;
 import kfusion.ui.TornadoConfigPanel;
+import uk.ac.manchester.tornado.common.TornadoDevice;
 
 public class ProxyOpenGLPipeline<T extends TornadoModel> implements ActionListener {
 	

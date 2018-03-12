@@ -29,20 +29,22 @@ import kfusion.devices.Device;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
-import tornado.collections.graphics.GraphicsMath;
-import tornado.collections.graphics.ImagingOps;
-import tornado.collections.graphics.Renderer;
-import tornado.collections.matrix.MatrixFloatOps;
-import tornado.collections.matrix.MatrixMath;
-import tornado.collections.types.Float4;
-import tornado.collections.types.ImageFloat3;
-import tornado.collections.types.Matrix4x4Float;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.collections.graphics.ImagingOps;
+import uk.ac.manchester.tornado.collections.graphics.Renderer;
+import uk.ac.manchester.tornado.collections.matrix.MatrixFloatOps;
+import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
+import uk.ac.manchester.tornado.collections.types.Float4;
+import uk.ac.manchester.tornado.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-import static tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
-import static tornado.collections.matrix.MatrixMath.sgemm;
-import static tornado.collections.types.Float4.mult;
+import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
+import static uk.ac.manchester.tornado.collections.matrix.MatrixMath.sgemm;
+import static uk.ac.manchester.tornado.collections.types.Float4.mult;
+import static uk.ac.manchester.tornado.collections.matrix.MatrixMath.sgemm;
+import static uk.ac.manchester.tornado.collections.types.Float4.mult;
 
 public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenGLPipeline<T> {
 
@@ -50,7 +52,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         super(config);
     }
 
-    private OCLDeviceMapping oclDevice;
+    private OCLTornadoDevice oclDevice;
 
     /**
      * Tornado
@@ -75,7 +77,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         /**
          * Tornado tasks
          */
-        oclDevice = (OCLDeviceMapping) config.getTornadoDevice();
+        oclDevice = (OCLTornadoDevice) config.getTornadoDevice();
         info("mapping onto %s\n", oclDevice.toString());
 
         /*
@@ -104,8 +106,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         final int iterations = pyramidIterations.length;
         scaledInvKs = new Matrix4x4Float[iterations];
         for (int i = 0; i < iterations; i++) {
-            final Float4 cameraDup = mult(
-                    scaledCamera, 1f / (1 << i));
+            final Float4 cameraDup = mult(scaledCamera, 1f / (1 << i));
             scaledInvKs[i] = new Matrix4x4Float();
             getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
         }
@@ -127,9 +128,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
             //@formatter:on
         }
 
-        estimatePoseSchedule
-                .streamIn(projectReference)
-                .mapAllTo(oclDevice);
+        estimatePoseSchedule.streamIn(projectReference).mapAllTo(oclDevice);
 
         trackingPyramid = new TaskSchedule[iterations];
         for (int i = 0; i < iterations; i++) {
@@ -164,13 +163,13 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
                 .mapAllTo(oclDevice);
         //@formatter:on
 
-//        final PrebuiltTask renderDepth = TaskUtils.createTask(
-//                "renderDepth",
-//                "opencl/renderDepth-debug.cl",
-//                new Object[]{renderedDepthImage, filteredDepthImage, nearPlane, farPlane},
-//                new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
-//                deviceMapping,
-//                new int[]{renderedDepthImage.X(), renderedDepthImage.Y()});
+        // final PrebuiltTask renderDepth = TaskUtils.createTask(
+        // "renderDepth",
+        // "opencl/renderDepth-debug.cl",
+        // new Object[]{renderedDepthImage, filteredDepthImage, nearPlane, farPlane},
+        // new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
+        // deviceMapping,
+        // new int[]{renderedDepthImage.X(), renderedDepthImage.Y()});
         //@formatter:off
         renderSchedule = new TaskSchedule("render")
                 .streamIn(scenePose)
@@ -235,13 +234,12 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
             }
         }
 
-        // if the tracking result meets our constraints, update the current view with the estimated
+        // if the tracking result meets our constraints, update the current view with
+        // the estimated
         // pose
-        final boolean hasTracked = trackingResult.getRSME() < RSMEThreshold
-                && trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold;
+        final boolean hasTracked = trackingResult.getRSME() < RSMEThreshold && trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold;
         if (hasTracked) {
-            currentView.getPose().set(
-                    trackingResult.getPose());
+            currentView.getPose().set(trackingResult.getPose());
         }
         return hasTracked;
     }
@@ -271,8 +269,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         if (haveVideoImage) {
 
-            ImagingOps.resizeImage(
-                    scaledVideoImage, videoImageInput, scalingFactor);
+            ImagingOps.resizeImage(scaledVideoImage, videoImageInput, scalingFactor);
 
         }
 
@@ -282,31 +279,24 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
             final Matrix4x4Float tmp2 = new Matrix4x4Float();
 
             if (config.getAndClearRotateNegativeX()) {
-                updateRotation(
-                        rot, config.getUptrans());
+                updateRotation(rot, config.getUptrans());
             }
 
             if (config.getAndClearRotatePositiveX()) {
-                updateRotation(
-                        rot, config.getDowntrans());
+                updateRotation(rot, config.getDowntrans());
             }
 
             if (config.getAndClearRotatePositiveY()) {
-                updateRotation(
-                        rot, config.getRighttrans());
+                updateRotation(rot, config.getRighttrans());
             }
 
             if (config.getAndClearRotateNegativeY()) {
-                updateRotation(
-                        rot, config.getLefttrans());
+                updateRotation(rot, config.getLefttrans());
             }
 
-            MatrixMath.sgemm(
-                    trans, rot, tmp);
-            MatrixMath.sgemm(
-                    tmp, preTrans, tmp2);
-            MatrixMath.sgemm(
-                    tmp2, invK, scenePose);
+            MatrixMath.sgemm(trans, rot, tmp);
+            MatrixMath.sgemm(tmp, preTrans, tmp2);
+            MatrixMath.sgemm(tmp2, invK, scenePose);
 
             renderSchedule.execute();
 
@@ -338,8 +328,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         // convert the tracked pose into correct co-ordinate system for
         // raycasting
         // which system (homogeneous co-ordinates? or virtual image?)
-        MatrixMath.sgemm(
-                currentView.getPose(), scaledInvK, referencePose);
+        MatrixMath.sgemm(currentView.getPose(), scaledInvK, referencePose);
 
         raycastSchedule.execute();
     }

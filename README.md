@@ -17,4 +17,3 @@ $ kfusion kfusion.java.Benchmark <config file>
 
 Note: 
 * sample configuration files from SLAMBench are under conf/
-* you will need sample data from SLAMBench for it to work

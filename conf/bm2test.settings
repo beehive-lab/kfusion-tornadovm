@@ -1,3 +1,6 @@
+kfusion.tornado.platform=0
+kfusion.tornado.device=1
+
 kfusion.model.initialpositions.enable = false
 
 kfusion.model.integrationrate = 2
