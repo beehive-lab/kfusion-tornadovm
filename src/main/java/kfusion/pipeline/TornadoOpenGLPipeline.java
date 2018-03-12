@@ -29,6 +29,7 @@ import kfusion.devices.Device;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
+<<<<<<< HEAD
 import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.collections.graphics.ImagingOps;
 import uk.ac.manchester.tornado.collections.graphics.Renderer;
@@ -45,6 +46,22 @@ import static uk.ac.manchester.tornado.collections.matrix.MatrixMath.sgemm;
 import static uk.ac.manchester.tornado.collections.types.Float4.mult;
 import static uk.ac.manchester.tornado.collections.matrix.MatrixMath.sgemm;
 import static uk.ac.manchester.tornado.collections.types.Float4.mult;
+=======
+import tornado.collections.graphics.GraphicsMath;
+import tornado.collections.graphics.ImagingOps;
+import tornado.collections.graphics.Renderer;
+import tornado.collections.matrix.MatrixFloatOps;
+import tornado.collections.matrix.MatrixMath;
+import tornado.collections.types.Float4;
+import tornado.collections.types.ImageFloat3;
+import tornado.collections.types.Matrix4x4Float;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
+import static tornado.collections.matrix.MatrixMath.sgemm;
+import static tornado.collections.types.Float4.mult;
+>>>>>>> origin/adapt-newtornado
 
 public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenGLPipeline<T> {
 

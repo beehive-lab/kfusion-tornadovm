@@ -30,6 +30,7 @@ import kfusion.devices.Device;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
+<<<<<<< HEAD
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.collections.graphics.ImagingOps;
@@ -47,6 +48,24 @@ import static uk.ac.manchester.tornado.collections.types.Float4.mult;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.collections.types.Float4.mult;
+=======
+import tornado.api.meta.TaskMetaData;
+import tornado.collections.graphics.GraphicsMath;
+import tornado.collections.graphics.ImagingOps;
+import tornado.collections.graphics.Renderer;
+import tornado.collections.matrix.MatrixFloatOps;
+import tornado.collections.matrix.MatrixMath;
+import tornado.collections.types.*;
+import tornado.common.Tornado;
+import tornado.common.enums.Access;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
+import static tornado.collections.types.Float4.mult;
+import static tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+>>>>>>> origin/adapt-newtornado
 
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
