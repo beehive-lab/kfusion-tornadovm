@@ -2,10 +2,6 @@
 
 JARS=$(echo ${KFUSION_ROOT}/target/*.jar | tr ' ' ':')
 
-<<<<<<< HEAD
 JFLAGS="-Xms20G -Xmx26G -Dtornado.kernels.coarsener=False -Dlog4j.configurationFile=${KFUSION_ROOT}/conf/log4j2.xml"
-=======
-JFLAGS="-Xms8G -Xmx8G -Dtornado.kernels.coarsener=False -Dlog4j.configurationFile=${KFUSION_ROOT}/conf/log4j2.xml"
->>>>>>> origin/adapt-newtornado
 
 CLASSPATH=${CLASSPATH}:${JARS} tornado ${JFLAGS} $@
