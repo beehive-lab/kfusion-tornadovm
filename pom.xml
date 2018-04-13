@@ -1,4 +1,4 @@
-	<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,11 +13,11 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <tornado.version>0.0.2-SNAPSHOT-${TORNADO_REVISION}</tornado.version>
-        <graal.root>/home/michalis/Tornado/BackUpTars/</graal.root>
+        <tornado.version>0.0.2-${TORNADO_REVISION}</tornado.version>
+        <graal.root>/home/juan/manchester/graal/graal-core/mxbuild/dists</graal.root>
         <graal.version>${GRAAL_VERSION}</graal.version>
         <jvmci.version>${JVMCI_VERSION}</jvmci.version>
-        <jvmci.root>//home/michalis/Tornado/BackUpTars/jdk1.8.0_131</jvmci.root>
+        <jvmci.root>/home/juan/manchester/graal/jdk1.8.0_131</jvmci.root>
         <netbeans.hint.license>LICENSE</netbeans.hint.license>
     </properties>
 
@@ -111,38 +111,38 @@
             <artifactId>slambench-java</artifactId>
             <version>0.0.2</version>
             <type>jar</type>
-            <scope>system</scope>
-	    <systemPath>/home/michalis/.m2/repository/slambench/slambench-java/0.0.2/slambench-java-0.0.2.jar</systemPath>
+			<scope>system</scope>
+			<systemPath>/home/juan/bin/slambench-java-0.0.2.jar</systemPath>
         </dependency>
-        
+
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-collections</artifactId>
-            <version>0.0.2-SNAPSHOT-${TORNADO_REVISION}</version>
-	    <scope>system</scope>
-            <systemPath>/home/michalis/Tornado/tornado/collections/target/tornado-collections-0.0.2-SNAPSHOT-${TORNADO_REVISION}.jar</systemPath>
+             <version>0.0.2-SNAPSHOT-${TORNADO_REVISION}</version>
+            <systemPath>/home/juan/manchester/tornado/tornado/collections/target/tornado-collections-0.0.2-SNAPSHOT-${TORNADO_REVISION}.jar</systemPath>
+			<scope>system</scope>
         </dependency>
 
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-runtime</artifactId>
-            <version>0.0.2-SNAPSHOT-${TORNADO_REVISION} </version>
-            <scope>system</scope>
-            <systemPath>/home/michalis/Tornado/tornado/runtime/target/tornado-runtime-0.0.2-SNAPSHOT-${TORNADO_REVISION}.jar</systemPath>
+             <version>0.0.2-${TORNADO_REVISION}</version>
+            <systemPath>/home/juan/manchester/tornado/tornado/runtime/target/tornado-runtime-0.0.2-SNAPSHOT-${TORNADO_REVISION}.jar</systemPath>
+			<scope>system</scope>
 
         </dependency>
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-drivers-opencl</artifactId>
-            <version>0.0.2-SNAPSHOT-${TORNADO_REVISION}</version>
-	    <scope>system</scope>
-	    <systemPath>/home/michalis/Tornado/tornado/drivers/opencl/target/tornado-drivers-opencl-0.0.2-SNAPSHOT-${TORNADO_REVISION}.jar</systemPath>
+             <version>0.0.2-${TORNADO_REVISION}</version>
+            <systemPath>/home/juan/manchester/tornado/tornado/drivers/opencl/target/tornado-drivers-opencl-0.0.2-SNAPSHOT-${TORNADO_REVISION}.jar</systemPath>
+			<scope>system</scope>
         </dependency>
         <dependency>
             <groupId>freenect</groupId>
             <artifactId>freenect</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-            <systemPath>/home/michalis/Tornado/tornado/slambench-tornado/lib/freenect-0.0.1-SNAPSHOT.jar</systemPath>
+            <systemPath>/home/juan/manchester/slambench-tornado/lib/freenect-0.0.1-SNAPSHOT.jar</systemPath>
             <scope>system</scope>
         </dependency>
         <dependency>
