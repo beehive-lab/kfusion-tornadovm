@@ -37,64 +37,40 @@ import uk.ac.manchester.tornado.collections.types.*;
 
 public class IterativeClosestPoint {
 
-    private static void makeJTJ(final MatrixFloat a, final float[] vals, final int offset) {
-        a.set(
-                0, 0, vals[0 + offset]);
-        a.set(
-                0, 1, vals[1 + offset]);
-        a.set(
-                0, 2, vals[2 + offset]);
-        a.set(
-                0, 3, vals[3 + offset]);
-        a.set(
-                0, 4, vals[4 + offset]);
-        a.set(
-                0, 5, vals[5 + offset]);
+	private static void makeJTJ(final MatrixFloat a, final float[] vals, final int offset) {
+		a.set(0, 0, vals[0 + offset]);
+		a.set(0, 1, vals[1 + offset]);
+		a.set(0, 2, vals[2 + offset]);
+		a.set(0, 3, vals[3 + offset]);
+		a.set(0, 4, vals[4 + offset]);
+		a.set(0, 5, vals[5 + offset]);
 
-        a.set(
-                1, 1, vals[6 + offset]);
-        a.set(
-                1, 2, vals[7 + offset]);
-        a.set(
-                1, 3, vals[8 + offset]);
-        a.set(
-                1, 4, vals[9 + offset]);
-        a.set(
-                1, 5, vals[10 + offset]);
+		a.set(1, 1, vals[6 + offset]);
+		a.set(1, 2, vals[7 + offset]);
+		a.set(1, 3, vals[8 + offset]);
+		a.set(1, 4, vals[9 + offset]);
+		a.set(1, 5, vals[10 + offset]);
 
-        a.set(
-                2, 2, vals[11 + offset]);
-        a.set(
-                2, 3, vals[12 + offset]);
-        a.set(
-                2, 4, vals[13 + offset]);
-        a.set(
-                2, 5, vals[14 + offset]);
+		a.set(2, 2, vals[11 + offset]);
+		a.set(2, 3, vals[12 + offset]);
+		a.set(2, 4, vals[13 + offset]);
+		a.set(2, 5, vals[14 + offset]);
 
-        a.set(
-                3, 3, vals[15 + offset]);
-        a.set(
-                3, 4, vals[16 + offset]);
-        a.set(
-                3, 5, vals[17 + offset]);
+		a.set(3, 3, vals[15 + offset]);
+		a.set(3, 4, vals[16 + offset]);
+		a.set(3, 5, vals[17 + offset]);
 
-        a.set(
-                4, 4, vals[18 + offset]);
-        a.set(
-                4, 5, vals[19 + offset]);
+		a.set(4, 4, vals[18 + offset]);
+		a.set(4, 5, vals[19 + offset]);
 
-        a.set(
-                5, 5, vals[20 + offset]);
+		a.set(5, 5, vals[20 + offset]);
 
-        // assume that a is symmetric???
-        for (int r = 1; r < 6; r++) {
+		// assume that a is symmetric???
+		for (int r = 1; r < 6; r++) {
             for (int c = 0; c < r; c++) {
-                a.set(
-                        r, c, a.get(
-                                c, r));
+                a.set(r, c, a.get(c, r));
             }
         }
-
     }
 
     public static void mapReduce(final float[] output, final ImageFloat8 input) {
@@ -143,46 +119,45 @@ public class IterativeClosestPoint {
         }
     }
 
-    public static void reduce1(final float[] output, final ImageFloat8 input) {
-        final int numThreads = output.length / 32;
+//    public static void reduce1(final float[] output, final ImageFloat8 input) {
+//        final int numThreads = output.length / 32;
+//
+//        for (@Parallel int tid = 0; tid < numThreads; tid++) {
+//
+//            final float[] sums = new float[32];
+//            for (int i = 0; i < sums.length; i++) {
+//                sums[i] = 0f;
+//            }
+//
+//            final int numElements = input.X() * input.Y();
+//            for (int i = tid; i < numElements; i += numThreads) {
+//                reduceInner(
+//                        sums, input, i);
+//            }
+//
+//            for (int i = 0; i < 32; i++) {
+//                output[(tid * 32) + i] = sums[i];
+//            }
+//
+//        }
+//
+//    }
 
-        for (@Parallel int tid = 0; tid < numThreads; tid++) {
+//    public static void reduce2(final float[] output, final float[] input) {
+//        final int numThreads = 32;
+//
+//        for (int tid = 0; tid < numThreads; tid++) {
+//            float sum = 0f;
+//            for (int i = tid; i < input.length; i += numThreads) {
+//                sum += input[i];
+//            }
+//
+//            output[tid] = sum;
+//        }
+//
+//    }
 
-            final float[] sums = new float[32];
-            for (int i = 0; i < sums.length; i++) {
-                sums[i] = 0f;
-            }
-
-            final int numElements = input.X() * input.Y();
-            for (int i = tid; i < numElements; i += numThreads) {
-                reduceInner(
-                        sums, input, i);
-            }
-
-            for (int i = 0; i < 32; i++) {
-                output[(tid * 32) + i] = sums[i];
-            }
-
-        }
-
-    }
-
-    public static void reduce2(final float[] output, final float[] input) {
-        final int numThreads = 32;
-
-        for (int tid = 0; tid < numThreads; tid++) {
-            float sum = 0f;
-            for (int i = tid; i < input.length; i += numThreads) {
-                sum += input[i];
-            }
-
-            output[tid] = sum;
-        }
-
-    }
-
-    public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults,
-                                    int resultIndex) {
+    public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
 
         final int jtj = startIndex + 7;
         final int info = startIndex + 28;
@@ -302,68 +277,67 @@ public class IterativeClosestPoint {
 
     }
 
-    public static void reduceInner(final float[] sums, final ImageFloat8 trackingResults,
-                                   int resultIndex) {
+//    public static void reduceInner(final float[] sums, final ImageFloat8 trackingResults,
+//                                   int resultIndex) {
+//
+//        final int jtj = 7;
+//        final int info = 28;
+//
+//        final Float8 value = trackingResults.get(resultIndex);
+//        final int result = (int) value.getS7();
+//        final float error = value.getS6();
+//
+//        if (result < 1) {
+//            sums[info + 1] += (result == -4) ? 1 : 0;
+//            sums[info + 2] += (result == -5) ? 1 : 0;
+//            sums[info + 3] += (result > -4) ? 1 : 0;
+//            return;
+//        }
+//
+//        // float base[0] += error^2
+//        sums[0] += (error * error);
+//
+//        // System.out.printf("row error: error=%.4e, acc=%.4e\n",error,base.get(0));
+//        // Float6 base(+1) += row.scale(error)
+//        for (int i = 0; i < 6; i++) {
+//            sums[i + 1] += error * value.get(i);
+//        }
+//
+//        // is this jacobian transpose jacobian?
+//        sums[jtj + 0] += (value.get(0) * value.get(0));
+//        sums[jtj + 1] += (value.get(0) * value.get(1));
+//        sums[jtj + 2] += (value.get(0) * value.get(2));
+//        sums[jtj + 3] += (value.get(0) * value.get(3));
+//
+//        sums[jtj + 4] += (value.get(0) * value.get(4));
+//        sums[jtj + 5] += (value.get(0) * value.get(5));
+//
+//        sums[jtj + 6] += (value.get(1) * value.get(1));
+//        sums[jtj + 7] += (value.get(1) * value.get(2));
+//        sums[jtj + 8] += (value.get(1) * value.get(3));
+//        sums[jtj + 9] += (value.get(1) * value.get(4));
+//
+//        sums[jtj + 10] += (value.get(1) * value.get(5));
+//
+//        sums[jtj + 11] += (value.get(2) * value.get(2));
+//        sums[jtj + 12] += (value.get(2) * value.get(3));
+//        sums[jtj + 13] += (value.get(2) * value.get(4));
+//        sums[jtj + 14] += (value.get(2) * value.get(5));
+//
+//        sums[jtj + 15] += (value.get(3) * value.get(3));
+//        sums[jtj + 16] += (value.get(3) * value.get(4));
+//        sums[jtj + 17] += (value.get(3) * value.get(5));
+//
+//        sums[jtj + 18] += (value.get(4) * value.get(4));
+//        sums[jtj + 19] += (value.get(4) * value.get(5));
+//
+//        sums[jtj + 20] += (value.get(5) * value.get(5));
+//
+//        sums[info]++;
+//
+//    }
 
-        final int jtj = 7;
-        final int info = 28;
-
-        final Float8 value = trackingResults.get(resultIndex);
-        final int result = (int) value.getS7();
-        final float error = value.getS6();
-
-        if (result < 1) {
-            sums[info + 1] += (result == -4) ? 1 : 0;
-            sums[info + 2] += (result == -5) ? 1 : 0;
-            sums[info + 3] += (result > -4) ? 1 : 0;
-            return;
-        }
-
-        // float base[0] += error^2
-        sums[0] += (error * error);
-
-        // System.out.printf("row error: error=%.4e, acc=%.4e\n",error,base.get(0));
-        // Float6 base(+1) += row.scale(error)
-        for (int i = 0; i < 6; i++) {
-            sums[i + 1] += error * value.get(i);
-        }
-
-        // is this jacobian transpose jacobian?
-        sums[jtj + 0] += (value.get(0) * value.get(0));
-        sums[jtj + 1] += (value.get(0) * value.get(1));
-        sums[jtj + 2] += (value.get(0) * value.get(2));
-        sums[jtj + 3] += (value.get(0) * value.get(3));
-
-        sums[jtj + 4] += (value.get(0) * value.get(4));
-        sums[jtj + 5] += (value.get(0) * value.get(5));
-
-        sums[jtj + 6] += (value.get(1) * value.get(1));
-        sums[jtj + 7] += (value.get(1) * value.get(2));
-        sums[jtj + 8] += (value.get(1) * value.get(3));
-        sums[jtj + 9] += (value.get(1) * value.get(4));
-
-        sums[jtj + 10] += (value.get(1) * value.get(5));
-
-        sums[jtj + 11] += (value.get(2) * value.get(2));
-        sums[jtj + 12] += (value.get(2) * value.get(3));
-        sums[jtj + 13] += (value.get(2) * value.get(4));
-        sums[jtj + 14] += (value.get(2) * value.get(5));
-
-        sums[jtj + 15] += (value.get(3) * value.get(3));
-        sums[jtj + 16] += (value.get(3) * value.get(4));
-        sums[jtj + 17] += (value.get(3) * value.get(5));
-
-        sums[jtj + 18] += (value.get(4) * value.get(4));
-        sums[jtj + 19] += (value.get(4) * value.get(5));
-
-        sums[jtj + 20] += (value.get(5) * value.get(5));
-
-        sums[info]++;
-
-    }
-
-    public static void reduce(final float[] globalSums,
-                              final ImageFloat8 trackingResults) {
+    public static void reduce(final float[] globalSums, final ImageFloat8 trackingResults) {
 
         final float[] sums = new float[32];
         for (int i = 0; i < sums.length; i++) {
@@ -595,39 +569,28 @@ public class IterativeClosestPoint {
         result.other = icpResults[31];
 
         if (config.debug()) {
-            System.out.printf(
-                    "\tvalues: %s\n", new VectorFloat(icpResults).toString("%e "));
-            // System.out.printf("values{1,27}: %s\n", icpResults.subVector(1, 21)
-            // .toString("%e "));
+            System.out.printf("\tvalues: %s\n", new VectorFloat(icpResults).toString("%e "));
         }
 
-        // System.out.printf("icpResults[1:22] -> %s\n",icpResults.subVector(1, 21).toString());
-        solve(
-                result.x, icpResults, 1);
+        solve(result.x, icpResults, 1);
 
         if (config.debug()) {
-            System.out.printf(
-                    "\tx: %s\n", result.x.toString(FloatOps.fmt6e));
+            System.out.printf("\tx: %s\n", result.x.toString(FloatOps.fmt6e));
         }
 
         final Matrix4x4Float delta = new FloatSE3(result.x).toMatrix4();
 
         if (config.debug()) {
-            System.out.printf(
-                    "*delta:\n%s\n", delta.toString(FloatOps.fmt4em));
-            System.out.printf(
-                    "*current pose:\n%s\n", currentPose.toString());
+            System.out.printf("*delta:\n%s\n", delta.toString(FloatOps.fmt4em));
+            System.out.printf("*current pose:\n%s\n", currentPose.toString());
         }
 
-        MatrixMath.sgemm(
-                delta, currentPose, result.pose);
+        MatrixMath.sgemm(delta, currentPose, result.pose);
 
         if (config.debug()) {
-            System.out.printf(
-                    "*newPose:\n%s\n", result.pose.toString());
+            System.out.printf("*newPose:\n%s\n", result.pose.toString());
         }
 
-        // System.out.printf("length(x): %s, %.4e\n",result.x.toString(FloatOps.fmt6e),Float6.length(result.x));
         return (Float6.length(result.x) < icpThreshold);
     }
 
