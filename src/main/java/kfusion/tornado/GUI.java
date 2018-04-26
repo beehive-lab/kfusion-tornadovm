@@ -50,9 +50,6 @@ public class GUI {
                 TornadoWorkbenchFrame frame = new TornadoWorkbenchFrame(config, canvas, tornadoConfig);
                 frame.setVisible(true);
             }
-
         });
-
     }
-
 }

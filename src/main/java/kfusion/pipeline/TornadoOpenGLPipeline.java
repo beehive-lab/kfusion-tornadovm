@@ -46,7 +46,6 @@ import static uk.ac.manchester.tornado.collections.types.Float4.mult;
 import static uk.ac.manchester.tornado.collections.matrix.MatrixMath.sgemm;
 import static uk.ac.manchester.tornado.collections.types.Float4.mult;
 
-
 public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenGLPipeline<T> {
 
     public TornadoOpenGLPipeline(T config) {
