@@ -461,92 +461,92 @@ public class IterativeClosestPoint {
     }
 
     public static void trackPose(final ImageFloat8 results,
-                                 final ImageFloat3 verticies, final ImageFloat3 normals,
-                                 final ImageFloat3 referenceVerticies, final ImageFloat3 referenceNormals,
-                                 final Matrix4x4Float currentPose, final Matrix4x4Float view,
-                                 final float distanceThreshold, final float normalThreshold) {
+    		final ImageFloat3 verticies, final ImageFloat3 normals,
+    		final ImageFloat3 referenceVerticies, final ImageFloat3 referenceNormals,
+    		final Matrix4x4Float currentPose, final Matrix4x4Float view,
+    		final float distanceThreshold, final float normalThreshold) {
 
-        final Float8 NO_INPUT = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.BLACK);
-        final Float8 NOT_IN_IMAGE = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.RED);
-        final Float8 NO_CORRESPONDENCE = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.GREEN);
-        final Float8 TOO_FAR = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.BLUE);
-        final Float8 WRONG_NORMAL = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.YELLOW);
+    	final Float8 NO_INPUT = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.BLACK);
+    	final Float8 NOT_IN_IMAGE = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.RED);
+    	final Float8 NO_CORRESPONDENCE = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.GREEN);
+    	final Float8 TOO_FAR = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.BLUE);
+    	final Float8 WRONG_NORMAL = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.YELLOW);
 
-        for (@Parallel int y = 0; y < results.Y(); y++) {
-            for (@Parallel int x = 0; x < results.X(); x++) {
+    	for (@Parallel int y = 0; y < results.Y(); y++) {
+    		for (@Parallel int x = 0; x < results.X(); x++) {
 
-                if (normals.get(x, y).getX() == Constants.INVALID) {
-                    results.set(x, y, NO_INPUT);
-                } else {
+    			if (normals.get(x, y).getX() == Constants.INVALID) {
+    				results.set(x, y, NO_INPUT);
+    			} else {
 
-                    // rotate + translate projected vertex
-                    final Float3 projectedVertex = GraphicsMath.rigidTransform(
-                            currentPose, verticies.get(x, y));
+    				// rotate + translate projected vertex
+    				final Float3 projectedVertex = GraphicsMath.rigidTransform(
+    						currentPose, verticies.get(x, y));
 
-                    // rotate + translate projected position
-                    final Float3 projectedPos = GraphicsMath.rigidTransform(
-                            view, projectedVertex);
+    				// rotate + translate projected position
+    				final Float3 projectedPos = GraphicsMath.rigidTransform(
+    						view, projectedVertex);
 
-                    final Float2 projectedPixel = Float2.add(
-                            Float2.mult(
-                                    projectedPos.asFloat2(), 1f / projectedPos.getZ()), 0.5f);
+    				final Float2 projectedPixel = Float2.add(
+    						Float2.mult(
+    								projectedPos.asFloat2(), 1f / projectedPos.getZ()), 0.5f);
 
-                    boolean isNotInImage = (projectedPixel.getX() < 0)
-                            || (projectedPixel.getX() > (referenceVerticies.X() - 1))
-                            || (projectedPixel.getY() < 0)
-                            || (projectedPixel.getY() > (referenceVerticies.Y() - 1));
+    				boolean isNotInImage = (projectedPixel.getX() < 0)
+    						|| (projectedPixel.getX() > (referenceVerticies.X() - 1))
+    						|| (projectedPixel.getY() < 0)
+    						|| (projectedPixel.getY() > (referenceVerticies.Y() - 1));
 
-                    if (isNotInImage) {
-                        results.set(x, y, NOT_IN_IMAGE);
-                    } else {
+    				if (isNotInImage) {
+    					results.set(x, y, NOT_IN_IMAGE);
+    				} else {
 
-                        final Int2 refPixel = new Int2((int) projectedPixel.getX(),
-                                (int) projectedPixel.getY());
+    					final Int2 refPixel = new Int2((int) projectedPixel.getX(),
+    							(int) projectedPixel.getY());
 
-                        final Float3 referenceNormal = referenceNormals.get(
-                                refPixel.getX(), refPixel.getY());
+    					final Float3 referenceNormal = referenceNormals.get(
+    							refPixel.getX(), refPixel.getY());
 
-                        if (referenceNormal.getX() == Constants.INVALID) {
-                            results.set(
-                                    x, y, NO_CORRESPONDENCE);
-                        } else {
+    					if (referenceNormal.getX() == Constants.INVALID) {
+    						results.set(
+    								x, y, NO_CORRESPONDENCE);
+    					} else {
 
-                            final Float3 diff = Float3.sub(
-                                    referenceVerticies.get(
-                                            refPixel.getX(), refPixel.getY()), projectedVertex);
+    						final Float3 diff = Float3.sub(
+    								referenceVerticies.get(
+    										refPixel.getX(), refPixel.getY()), projectedVertex);
 
-                            if (Float3.length(diff) > distanceThreshold) {
-                                results.set(
-                                        x, y, TOO_FAR);
-                            } else {
+    						if (Float3.length(diff) > distanceThreshold) {
+    							results.set(
+    									x, y, TOO_FAR);
+    						} else {
 
-                                final Float3 projectedNormal = GraphicsMath.rotate(
-                                        currentPose, normals.get(
-                                                x, y));
+    							final Float3 projectedNormal = GraphicsMath.rotate(
+    									currentPose, normals.get(
+    											x, y));
 
-                                if (Float3.dot(
-                                        projectedNormal, referenceNormal) < normalThreshold) {
-                                    results.set(
-                                            x, y, WRONG_NORMAL);
-                                } else {
+    							if (Float3.dot(
+    									projectedNormal, referenceNormal) < normalThreshold) {
+    								results.set(
+    										x, y, WRONG_NORMAL);
+    							} else {
 
-                                    final Float3 b = Float3.cross(
-                                            projectedVertex, referenceNormal);
+    								final Float3 b = Float3.cross(
+    										projectedVertex, referenceNormal);
 
-                                    final Float8 tracking = new Float8(referenceNormal.getX(),
-                                            referenceNormal.getY(), referenceNormal.getZ(),
-                                            b.getX(), b.getY(), b.getZ(), Float3.dot(
-                                            referenceNormal, diff), (float) Constants.GREY);
+    								final Float8 tracking = new Float8(referenceNormal.getX(),
+    										referenceNormal.getY(), referenceNormal.getZ(),
+    										b.getX(), b.getY(), b.getZ(), Float3.dot(
+    												referenceNormal, diff), (float) Constants.GREY);
 
-                                    results.set(
-                                            x, y, tracking);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    								results.set(
+    										x, y, tracking);
+    							}
+    						}
+    					}
+    				}
+    			}
+    		}
+    	}
     }
 
     public static <T extends KfusionConfig> boolean estimateNewPose(final T config, final TrackingResult result,

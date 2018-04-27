@@ -235,8 +235,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         }
 
         trackingPyramid = new TaskSchedule[iterations];
+        
         for (int i = 0; i < iterations; i++) {
-
             //@formatter:off
             trackingPyramid[i] = new TaskSchedule("icp" + i)
                     .streamIn(pyramidPose)
@@ -248,19 +248,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             if (config.useCustomReduce()) {
                 final ImageFloat8 result = pyramidTrackingResults[i];
                 final int numElements = result.X() * result.Y();
-
                 final int numWgs = Math.min(roundToWgs(numElements / cus, 128), maxwgs);
-
-//                final PrebuiltTask customMapReduce = TaskUtils.createTask("customReduce" + i,
-//                        oclDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
-//                        "./opencl/optMapReduce.cl",
-//                        new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
-//                        new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
-//                        oclDevice,
-//                        new int[]{numWgs});
-//                final OCLKernelConfig kernelConfig = OCLKernelConfig.create(customMapReduce.meta());
-//                kernelConfig.getGlobalWork()[0] = maxwgs;
-//                kernelConfig.getLocalWork()[0] = maxBinsPerCU;
+                
                 trackingPyramid[i]
                         .prebuiltTask("customReduce" + i,
                                 oclDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
@@ -279,14 +268,13 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             } else if (config.useSimpleReduce()) {
                 trackingPyramid[i]
                         .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
-                        //.task(IterativeClosestPoint::reduceIntermediate, icpResultIntermediate2, icpResultIntermediate1)
                         .streamOut(icpResultIntermediate1);
             } else {
-                trackingPyramid[i]
-                        .streamOut(pyramidTrackingResults[i]);
+                trackingPyramid[i].streamOut(pyramidTrackingResults[i]);
             }
-            trackingPyramid[i].mapAllTo(oclDevice);
             //@formatter:on
+            
+            trackingPyramid[i].mapAllTo(oclDevice);
         }
 
         //@formatter:off
