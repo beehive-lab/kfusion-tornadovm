@@ -48,7 +48,6 @@ import static uk.ac.manchester.tornado.common.RuntimeUtilities.elapsedTimeInSeco
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.collections.types.Float4.mult;
 
-
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
     private Float3 initialPosition;
@@ -70,6 +69,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     private int cus;
 
     private final PrintStream out;
+    
+    public static final float ICP_THRESHOLD = 1e-5f;
 
     public TornadoBenchmarkPipeline(TornadoModel config, PrintStream out) {
         super(config);
@@ -364,13 +365,13 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                         }
                     }
                     trackingResult.resultImage = pyramidTrackingResults[level];
-                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResultIntermediate1, pyramidPose, 1e-5f);
+                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResultIntermediate1, pyramidPose, ICP_THRESHOLD);
                 } else if (config.useSimpleReduce()) {
                     IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
                     trackingResult.resultImage = pyramidTrackingResults[level];
                     updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, 1e-5f);
                 } else {
-                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, pyramidTrackingResults[level], pyramidPose, 1e-5f);
+                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, pyramidTrackingResults[level], pyramidPose, ICP_THRESHOLD);
                 }
 
                 pyramidPose.set(trackingResult.getPose());
