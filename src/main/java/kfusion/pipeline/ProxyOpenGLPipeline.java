@@ -50,41 +50,40 @@ public class ProxyOpenGLPipeline<T extends TornadoModel> implements ActionListen
 	    this.config = config;
 	    this.canvas = canvas;
 		this.tornadoConfig = tornadoConfig;
-		
-		
 		javaPipeline = new JavaOpenGLPipeline<T>(config);
 		tornadoPipeline = new TornadoOpenGLPipeline<T>(config);
 		currentPipeline = javaPipeline;
-		canvas.addGLEventListener(currentPipeline);
-		
+		canvas.addGLEventListener(currentPipeline);	
 		tornadoConfig.enableTornadoCheckBox.addActionListener(this);
 	}
-	
 	
 	public void execute() {
 		currentPipeline.execute();	
 	}
-
+	
+	private void setTorandoPipeline() {
+		config.reset();
+		canvas.removeGLEventListener(currentPipeline);
+		currentPipeline = tornadoPipeline;
+		canvas.addGLEventListener(currentPipeline);		
+		config.setReset();
+	}
+	
+	private void setJavaPipeline() {
+		config.reset();
+		canvas.removeGLEventListener(currentPipeline);
+		currentPipeline = javaPipeline;
+		canvas.addGLEventListener(currentPipeline);
+		config.setReset();
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(tornadoConfig.enableTornadoCheckBox.isSelected() && currentPipeline != tornadoPipeline){
-			config.reset();
-			canvas.removeGLEventListener(currentPipeline);
-			currentPipeline = tornadoPipeline;
-			canvas.addGLEventListener(currentPipeline);
-			
-			config.setReset();
+			setTorandoPipeline();
 		} else if (!tornadoConfig.enableTornadoCheckBox.isSelected() && currentPipeline != javaPipeline){
-		    config.reset();
-			canvas.removeGLEventListener(currentPipeline);
-			currentPipeline = javaPipeline;
-			canvas.addGLEventListener(currentPipeline);
-			config.setReset();
+		    setJavaPipeline();
 		}
-		
 	}
-	
-	
 
 }
