@@ -11,7 +11,7 @@ kfusion.model.offset.x = 0.34
 kfusion.model.offset.y = 0.5
 kfusion.model.offset.z = 0.24
 
-# kfusion.reduce.simple=True
+kfusion.reduce.simple=False
 
 ### ###############################
 ### Custom reductions
@@ -24,7 +24,7 @@ kfusion.model.offset.z = 0.24
 #tornado.opencl.gpu.block.x=128
 #tornado.opencl.gpu.block2d.x=16
 #tornado.opencl.gpu.block2d.y=4
-# ################################
+## ################################
 
 kfusion.raw.enable = true
 kfusion.raw.file = /home/juan/bin/SLAM/slambench-ICL-NUIM/living_room_traj2_loop.raw

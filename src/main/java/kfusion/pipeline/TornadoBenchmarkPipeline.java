@@ -160,7 +160,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     @Override
     public void configure(Device device) {
         super.configure(device);
-
+       
         initialPosition = Float3.mult(config.getOffset(), volumeDims);
         frames = 0;
 
@@ -357,7 +357,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 } else if (config.useSimpleReduce()) {
                     IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
                     trackingResult.resultImage = pyramidTrackingResults[level];
-                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, 1e-5f);
+                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, ICP_THRESHOLD);
                 } else {
                     updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, pyramidTrackingResults[level], pyramidPose, ICP_THRESHOLD);
                 }

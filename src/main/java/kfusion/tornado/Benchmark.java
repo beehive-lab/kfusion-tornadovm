@@ -38,6 +38,8 @@ import uk.ac.manchester.tornado.collections.types.Float4;
 public class Benchmark {
 
     public static void main(String[] args) {
+    	
+    	System.out.println("Running KFUSION");
 
         final TornadoModel config = new TornadoModel();
         config.loadSettingsFile(args[0]);

@@ -145,7 +145,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
                     .mapAllTo(oclDevice);
             //@formatter:on
         }
-
+        
         //@formatter:off
         integrateSchedule = new TaskSchedule("integrate")
                 .streamIn(invTrack)
@@ -219,7 +219,6 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         for (int level = pyramidIterations.length - 1; level >= 0; level--) {
             for (int i = 0; i < pyramidIterations[level]; i++) {
                 trackingPyramid[level].execute();
-
                 IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
 
                 trackingResult.resultImage = pyramidTrackingResults[level];

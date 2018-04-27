@@ -118,24 +118,24 @@
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-collections</artifactId>
-             <version>0.0.2-SNAPSHOT-${TORNADO_REVISION}</version>
-            <systemPath>/home/juan/manchester/tornado/tornado/collections/target/tornado-collections-0.0.2-SNAPSHOT-${TORNADO_REVISION}.jar</systemPath>
+             <version>0.0.2-SNAPSHOT-769dcf9</version>
+            <systemPath>/home/juan/manchester/tornado/tornado/collections/target/tornado-collections-0.0.2-SNAPSHOT-769dcf9.jar</systemPath>
 			<scope>system</scope>
         </dependency>
 
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-runtime</artifactId>
-             <version>0.0.2-${TORNADO_REVISION}</version>
-            <systemPath>/home/juan/manchester/tornado/tornado/runtime/target/tornado-runtime-0.0.2-SNAPSHOT-${TORNADO_REVISION}.jar</systemPath>
+             <version>0.0.2-769dcf9</version>
+            <systemPath>/home/juan/manchester/tornado/tornado/runtime/target/tornado-runtime-0.0.2-SNAPSHOT-769dcf9.jar</systemPath>
 			<scope>system</scope>
 
         </dependency>
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-drivers-opencl</artifactId>
-             <version>0.0.2-${TORNADO_REVISION}</version>
-            <systemPath>/home/juan/manchester/tornado/tornado/drivers/opencl/target/tornado-drivers-opencl-0.0.2-SNAPSHOT-${TORNADO_REVISION}.jar</systemPath>
+             <version>0.0.2-769dcf9</version>
+            <systemPath>/home/juan/manchester/tornado/tornado/drivers/opencl/target/tornado-drivers-opencl-0.0.2-SNAPSHOT-769dcf9.jar</systemPath>
 			<scope>system</scope>
         </dependency>
         <dependency>

@@ -24,16 +24,26 @@
  */
 package kfusion.tornado.algorithms;
 
-import static uk.ac.manchester.tornado.collections.types.MatrixFloat.transpose;
-
 import kfusion.KfusionConfig;
 import kfusion.algorithms.TrackingResult;
 import kfusion.numerics.Constants;
 import kfusion.numerics.EjmlSVD2;
 import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.Reduce;
 import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
-import uk.ac.manchester.tornado.collections.types.*;
+import uk.ac.manchester.tornado.collections.types.Float2;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.Float6;
+import uk.ac.manchester.tornado.collections.types.Float8;
+import uk.ac.manchester.tornado.collections.types.FloatOps;
+import uk.ac.manchester.tornado.collections.types.FloatSE3;
+import uk.ac.manchester.tornado.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.collections.types.Int2;
+import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.collections.types.VectorFloat;
 
 public class IterativeClosestPoint {
 
@@ -88,8 +98,8 @@ public class IterativeClosestPoint {
             }
         }
     }
-
     public static void reduceIntermediate(final float[] output, final float[] input) {
+
         final int elementSize = 32;
         final int numDestElements = output.length / elementSize;
         final int numSrcElements = input.length / elementSize;
@@ -436,7 +446,7 @@ public class IterativeClosestPoint {
 
             // System.out.printf("V:\n%s\n",V.toString());
             // System.out.printf("U:\n%s\n",U.toString());
-            transpose(U);
+            MatrixFloat.transpose(U);
 
             // System.out.printf("U':\n%s\n",U.toString());
             final MatrixFloat inv = svd.getSinv((float) 1e6);
