@@ -82,6 +82,30 @@ public class IterativeClosestPoint {
             }
         }
     }
+	
+	public static void mapInitData(final float[] output, final ImageFloat8 input) {
+        final int numThreads = output.length / 32;
+
+        for (@Parallel int i = 0; i < numThreads; i++) {
+            final int startIndex = i * 32;
+            for (int j = 0; j < 32; j++) {
+                output[startIndex + j] = 0f;
+            }
+        }
+    }
+	
+	public static void reduceData(final float[] output, final ImageFloat8 input) {
+        final int numThreads = output.length / 32;
+        final int numElements = input.X() * input.Y();
+
+        for (@Parallel int i = 0; i < numThreads; i++) {
+            final int startIndex = i * 32;
+            
+            for (int j = i; j < numElements; j += numThreads) {
+                reduceValues(output, startIndex, input, j);
+            }
+        }
+    }
 
     public static void mapReduce(final float[] output, final ImageFloat8 input) {
         final int numThreads = output.length / 32;
@@ -98,6 +122,7 @@ public class IterativeClosestPoint {
             }
         }
     }
+    
     public static void reduceIntermediate(final float[] output, final float[] input) {
 
         final int elementSize = 32;

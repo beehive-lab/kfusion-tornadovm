@@ -266,9 +266,15 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 meta.setGlobalWork(new long[]{maxwgs});
                 meta.setLocalWork(new long[]{maxBinsPerCU});
             } else if (config.useSimpleReduce()) {
+                //trackingPyramid[i]
+                //       .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
+                //       .streamOut(icpResultIntermediate1);
+                
                 trackingPyramid[i]
-                        .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
+                        .task("mapInitData" + i, IterativeClosestPoint::mapInitData, icpResultIntermediate1, pyramidTrackingResults[i])
+                        .task("reduceData" + i, IterativeClosestPoint::reduceData, icpResultIntermediate1, pyramidTrackingResults[i])
                         .streamOut(icpResultIntermediate1);
+                
             } else {
                 trackingPyramid[i].streamOut(pyramidTrackingResults[i]);
             }
