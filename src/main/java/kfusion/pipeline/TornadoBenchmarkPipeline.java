@@ -46,7 +46,6 @@ import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.getInve
 import static uk.ac.manchester.tornado.collections.types.Float4.mult;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.collections.types.Float4.mult;
 
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 

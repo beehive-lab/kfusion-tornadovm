@@ -29,7 +29,6 @@ import kfusion.algorithms.TrackingResult;
 import kfusion.numerics.Constants;
 import kfusion.numerics.EjmlSVD2;
 import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.api.Reduce;
 import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
 import uk.ac.manchester.tornado.collections.types.Float2;
@@ -101,7 +100,7 @@ public class IterativeClosestPoint {
         for (@Parallel int i = 0; i < numThreads; i++) {
             final int startIndex = i * 32;
             for (int j = i; j < numElements; j += numThreads) {
-            	reduceArrayValues(output, startIndex, input, j);
+            	reduceValues(output, startIndex, input, j);
             }
         }
     }
@@ -191,16 +190,25 @@ public class IterativeClosestPoint {
 //
 //    }
     
-    
-    
-    public static void reduceArrayValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
+    public static void reduceArrayValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex, int limit) {
 
     	final int base = startIndex + 7;
     	final int info = startIndex + 28;
 
         Float8 valueFloat8 = trackingResults.get(resultIndex);
-        float[] value = valueFloat8.getStorage();
-
+        
+        //float[] value = valueFloat8.getStorage();
+        float[] value =  new float[8];
+        
+        value[0] = valueFloat8.getS0();
+        value[1] = valueFloat8.getS1();
+        value[2] = valueFloat8.getS2();
+        value[3] = valueFloat8.getS3();
+        value[4] = valueFloat8.getS4();
+        value[5] = valueFloat8.getS5();
+        value[6] = valueFloat8.getS6();
+        value[7] = valueFloat8.getS7();
+        
     	final int result = (int) value[7];
     	final float error = value[6];
 
@@ -215,18 +223,55 @@ public class IterativeClosestPoint {
     	sums[startIndex] += (error * error);
 
     	// Float6 base(+1) += row.scale(error)
-    	for (int i = 0; i < 6; i++) {
+    	for (@Parallel int i = 0; i < limit; i++) {
     		float v = (error * value[i]);   
     		sums[startIndex + i + 1] += v;
     	}
 
-    	for (int i = 0; i < 6; i++) {
+    	for (int i = 0; i < limit; i++) {
     		int counter = 0;
-    		for (int j = i; j < 6; j++) {
+    		for (int j = i; j < limit; j++) {
     			sums[base + counter] += (value[i] * value[j]);
     			counter++;
     		}
     	}
+    	
+//    	 sums[startIndex + 0 + 1] += (error * value[0]);
+//         sums[startIndex + 1 + 1] += (error * value[1]);
+//         sums[startIndex + 2 + 1] += (error * value[2]);
+//         sums[startIndex + 3 + 1] += (error * value[3]);
+//         sums[startIndex + 4 + 1] += (error * value[4]);
+//         sums[startIndex + 5 + 1] += (error * value[5]);
+//
+////         // is this jacobian transpose jacobian?
+//         sums[base + 0] += (value[0] * value[0]);
+//         sums[base + 1] += (value[0] * value[1]);
+//         sums[base + 2] += (value[0] * value[2]);
+//         sums[base + 3] += (value[0] * value[3]);
+//         sums[base + 4] += (value[0] * value[4]);
+//         sums[base + 5] += (value[0] * value[5]);
+//
+//         sums[base + 6] += (value[0]* value[1]);
+//         sums[base + 7] += (value[0] * value[2]);
+//         sums[base + 8] += (value[0] * value[3]);
+//         sums[base + 9] += (value[0] * value[4]);
+//         sums[base + 10] += (value[0] * value[5]);
+//
+//         sums[base + 11] += (value[0] * value[2]);
+//         sums[base + 12] += (value[0] * value[3]);
+//         sums[base + 13] += (value[0] * value[4]);
+//         sums[base + 14] += (value[0] * value[5]);
+//
+//         sums[base + 15] += (value[0] * value[3]);
+//         sums[base + 16] += (value[0] * value[4]);
+//         sums[base + 17] += (value[0] * value[5]);
+//
+//         sums[base + 18] += (value[0] * value[4]);
+//         sums[base + 19] += (value[0] * value[5]);
+//
+//         sums[base + 20] += (value[0] * value[5]);
+
+
 
     	sums[info]++;
     }
