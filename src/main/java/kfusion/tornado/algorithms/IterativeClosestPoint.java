@@ -190,6 +190,19 @@ public class IterativeClosestPoint {
 //
 //    }
     
+    private static float[] getPlainArray(Float8 input) {
+    	float[] value =  new float[8];
+        value[0] = input.getS0();
+        value[1] = input.getS1();
+        value[2] = input.getS2();
+        value[3] = input.getS3();
+        value[4] = input.getS4();
+        value[5] = input.getS5();
+        value[6] = input.getS6();
+        value[7] = input.getS7();
+        return value;
+    }
+    
     public static void reduceArrayValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex, int limit) {
 
     	final int base = startIndex + 7;
@@ -197,17 +210,10 @@ public class IterativeClosestPoint {
 
         Float8 valueFloat8 = trackingResults.get(resultIndex);
         
+        // XXX: Due to a bug in Tornado, explicit copy does not currently work.
         //float[] value = valueFloat8.getStorage();
-        float[] value =  new float[8];
         
-        value[0] = valueFloat8.getS0();
-        value[1] = valueFloat8.getS1();
-        value[2] = valueFloat8.getS2();
-        value[3] = valueFloat8.getS3();
-        value[4] = valueFloat8.getS4();
-        value[5] = valueFloat8.getS5();
-        value[6] = valueFloat8.getS6();
-        value[7] = valueFloat8.getS7();
+        float[] value = getPlainArray(trackingResults.get(resultIndex));
         
     	final int result = (int) value[7];
     	final float error = value[6];
@@ -217,7 +223,7 @@ public class IterativeClosestPoint {
     		sums[info + 2] += (result == -5) ? 1 : 0;
     		sums[info + 3] += (result > -4) ? 1 : 0;
     		return;
-    	}
+    	} 
 
     	// float base[0] += error^2
     	sums[startIndex] += (error * error);
