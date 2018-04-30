@@ -276,6 +276,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                         .task("reduceData" + i, IterativeClosestPoint::reduceData, icpResultIntermediate1, pyramidTrackingResults[i])
                         .streamOut(icpResultIntermediate1);
                 
+                // XXX: perform final reduction from partial reduction after copy out on CPU.
+                
+                
             } else {
                 trackingPyramid[i].streamOut(pyramidTrackingResults[i]);
             }
