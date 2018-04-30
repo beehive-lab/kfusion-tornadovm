@@ -270,6 +270,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 //       .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
                 //       .streamOut(icpResultIntermediate1);
                 
+            	System.out.println("Using simple reduction");
                 trackingPyramid[i]
                         .task("mapInitData" + i, IterativeClosestPoint::mapInitData, icpResultIntermediate1, pyramidTrackingResults[i])
                         .task("reduceData" + i, IterativeClosestPoint::reduceData, icpResultIntermediate1, pyramidTrackingResults[i])

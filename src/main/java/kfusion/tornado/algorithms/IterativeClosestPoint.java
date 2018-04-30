@@ -100,9 +100,8 @@ public class IterativeClosestPoint {
 
         for (@Parallel int i = 0; i < numThreads; i++) {
             final int startIndex = i * 32;
-            
             for (int j = i; j < numElements; j += numThreads) {
-                reduceValues(output, startIndex, input, j);
+            	reduceArrayValues(output, startIndex, input, j);
             }
         }
     }
@@ -191,6 +190,47 @@ public class IterativeClosestPoint {
 //        }
 //
 //    }
+    
+    
+    
+    public static void reduceArrayValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
+
+    	final int base = startIndex + 7;
+    	final int info = startIndex + 28;
+
+        Float8 valueFloat8 = trackingResults.get(resultIndex);
+        float[] value = valueFloat8.getStorage();
+
+    	final int result = (int) value[7];
+    	final float error = value[6];
+
+    	if (result < 1) {
+    		sums[info + 1] += (result == -4) ? 1 : 0;
+    		sums[info + 2] += (result == -5) ? 1 : 0;
+    		sums[info + 3] += (result > -4) ? 1 : 0;
+    		return;
+    	}
+
+    	// float base[0] += error^2
+    	sums[startIndex] += (error * error);
+
+    	// Float6 base(+1) += row.scale(error)
+    	for (int i = 0; i < 6; i++) {
+    		float v = (error * value[i]);   
+    		sums[startIndex + i + 1] += v;
+    	}
+
+    	for (int i = 0; i < 6; i++) {
+    		int counter = 0;
+    		for (int j = i; j < 6; j++) {
+    			sums[base + counter] += (value[i] * value[j]);
+    			counter++;
+    		}
+    	}
+
+    	sums[info]++;
+    }
+
 
     public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
 
