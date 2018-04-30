@@ -217,19 +217,18 @@ public class IterativeClosestPoint {
         // sums[startIndex + i + 1] = value.get(i);
         // }
 
-        sums[startIndex + 0 + 1] += error * value.getS0();
-        sums[startIndex + 1 + 1] += error * value.getS1();
-        sums[startIndex + 2 + 1] += error * value.getS2();
-        sums[startIndex + 3 + 1] += error * value.getS3();
-        sums[startIndex + 4 + 1] += error * value.getS4();
-        sums[startIndex + 5 + 1] += error * value.getS5();
+        sums[startIndex + 0 + 1] += (error * value.getS0());
+        sums[startIndex + 1 + 1] += (error * value.getS1());
+        sums[startIndex + 2 + 1] += (error * value.getS2());
+        sums[startIndex + 3 + 1] += (error * value.getS3());
+        sums[startIndex + 4 + 1] += (error * value.getS4());
+        sums[startIndex + 5 + 1] += (error * value.getS5());
 
         // is this jacobian transpose jacobian?
         sums[jtj + 0] += (value.getS0() * value.getS0());
         sums[jtj + 1] += (value.getS0() * value.getS1());
         sums[jtj + 2] += (value.getS0() * value.getS2());
         sums[jtj + 3] += (value.getS0() * value.getS3());
-
         sums[jtj + 4] += (value.getS0() * value.getS4());
         sums[jtj + 5] += (value.getS0() * value.getS5());
 
