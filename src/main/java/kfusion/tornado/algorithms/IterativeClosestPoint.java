@@ -88,7 +88,7 @@ public class IterativeClosestPoint {
         for (@Parallel int i = 0; i < numThreads; i++) {
             final int startIndex = i * 32;
             for (int j = 0; j < 32; j++) {
-                output[startIndex + j] = 0f;
+                output[startIndex + j] = 0.0f;
             }
         }
     }
@@ -97,10 +97,12 @@ public class IterativeClosestPoint {
         final int numThreads = output.length / 32;
         final int numElements = input.X() * input.Y();
 
+        int N = 6;
         for (@Parallel int i = 0; i < numThreads; i++) {
             final int startIndex = i * 32;
             for (int j = i; j < numElements; j += numThreads) {
-            	reduceValues(output, startIndex, input, j);
+            	reduceArrayValues(output, startIndex, input, j);
+            	//reduceValues(output, startIndex, input, j);
             }
         }
     }
@@ -190,7 +192,8 @@ public class IterativeClosestPoint {
 //
 //    }
     
-    private static float[] getPlainArray(Float8 input) {
+    @SuppressWarnings("unused")
+	private static float[] getPlainArray(Float8 input) {
     	float[] value =  new float[8];
         value[0] = input.getS0();
         value[1] = input.getS1();
@@ -203,40 +206,50 @@ public class IterativeClosestPoint {
         return value;
     }
     
-    public static void reduceArrayValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex, int limit) {
+    public static void reduceArrayValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
 
     	final int base = startIndex + 7;
     	final int info = startIndex + 28;
-
-        Float8 valueFloat8 = trackingResults.get(resultIndex);
+    	
+    	final int N = 6;
+    	
+		Float8 valueFloat8 = trackingResults.get(resultIndex);
         
         // XXX: Due to a bug in Tornado, explicit copy does not currently work.
         //float[] value = valueFloat8.getStorage();
         
-        float[] value = getPlainArray(trackingResults.get(resultIndex));
+        //final float[] value = getPlainArray(trackingResults.get(resultIndex));
+        float[] value =  new float[8];
+        value[0] = valueFloat8.getS0();
+        value[1] = valueFloat8.getS1();
+        value[2] = valueFloat8.getS2();
+        value[3] = valueFloat8.getS3();
+        value[4] = valueFloat8.getS4();
+        value[5] = valueFloat8.getS5();
+        value[6] = valueFloat8.getS6();
+        value[7] = valueFloat8.getS7();
         
-    	final int result = (int) value[7];
-    	final float error = value[6];
+        final int result = (int) value[7];
+        final float error = value[6];
 
-    	if (result < 1) {
-    		sums[info + 1] += (result == -4) ? 1 : 0;
-    		sums[info + 2] += (result == -5) ? 1 : 0;
-    		sums[info + 3] += (result > -4) ? 1 : 0;
-    		return;
-    	} 
+        if (result < 1) {
+            sums[info + 1] += (result == -4) ? 1 : 0;
+            sums[info + 2] += (result == -5) ? 1 : 0;
+            sums[info + 3] += (result > -4) ? 1 : 0;
+            return;
+        }
 
     	// float base[0] += error^2
     	sums[startIndex] += (error * error);
 
     	// Float6 base(+1) += row.scale(error)
-    	for (@Parallel int i = 0; i < limit; i++) {
-    		float v = (error * value[i]);   
-    		sums[startIndex + i + 1] += v;
+    	for (int i = 0; i < N; i++) {   
+    		sums[startIndex + i + 1] += (error * value[i]);
     	}
 
-    	for (int i = 0; i < limit; i++) {
+    	for (int i = 0; i < N; i++) {
     		int counter = 0;
-    		for (int j = i; j < limit; j++) {
+    		for (int j = i; j < N; j++) {
     			sums[base + counter] += (value[i] * value[j]);
     			counter++;
     		}
@@ -248,7 +261,7 @@ public class IterativeClosestPoint {
 //         sums[startIndex + 3 + 1] += (error * value[3]);
 //         sums[startIndex + 4 + 1] += (error * value[4]);
 //         sums[startIndex + 5 + 1] += (error * value[5]);
-//
+////
 ////         // is this jacobian transpose jacobian?
 //         sums[base + 0] += (value[0] * value[0]);
 //         sums[base + 1] += (value[0] * value[1]);
@@ -276,8 +289,6 @@ public class IterativeClosestPoint {
 //         sums[base + 19] += (value[0] * value[5]);
 //
 //         sums[base + 20] += (value[0] * value[5]);
-
-
 
     	sums[info]++;
     }
@@ -353,10 +364,9 @@ public class IterativeClosestPoint {
 //        final float error = value.getS6();
 //
 //        if (result < 1) {
-//            sums[info + 1] += (result == -4) ? 1 : 0;
-//            sums[info + 2] += (result == -5) ? 1 : 0;
-//            sums[info + 3] += (result > -4) ? 1 : 0;
-//            return;
+//        	sums[info + 1] += (result == -4) ? 1 : 0;
+//        	sums[info + 3] += (result > -4) ? 1 : 0;
+//        	return;
 //        }
 //
 //        // float base[0] += error^2
@@ -365,7 +375,7 @@ public class IterativeClosestPoint {
 //        // System.out.printf("row error: error=%.4e, acc=%.4e\n",error,base.get(0));
 //        // Float6 base(+1) += row.scale(error)
 //        for (int i = 0; i < 6; i++) {
-//            sums[startIndex + i + 1] += error * value.get(i);
+//        	sums[startIndex + i + 1] += error * value.get(i);
 //        }
 //
 //        // is this jacobian transpose jacobian?
@@ -381,7 +391,6 @@ public class IterativeClosestPoint {
 //        sums[jtj + 7] += (value.get(1) * value.get(2));
 //        sums[jtj + 8] += (value.get(1) * value.get(3));
 //        sums[jtj + 9] += (value.get(1) * value.get(4));
-//
 //        sums[jtj + 10] += (value.get(1) * value.get(5));
 //
 //        sums[jtj + 11] += (value.get(2) * value.get(2));
@@ -400,6 +409,8 @@ public class IterativeClosestPoint {
 //
 //        sums[info]++;
 
+        
+        
     }
 
 //    public static void reduceInner(final float[] sums, final ImageFloat8 trackingResults,

@@ -11,12 +11,12 @@ kfusion.model.offset.x = 0.34
 kfusion.model.offset.y = 0.5
 kfusion.model.offset.z = 0.24
 
-kfusion.reduce.simple=False
+kfusion.reduce.simple=True
 
 ### ###############################
 ### Custom reductions
 ### ###############################
-kfusion.reduce.custom=True
+kfusion.reduce.custom=False
 kfusion.reduce.model=1024
 kfusion.reduce.fraction=2
 
