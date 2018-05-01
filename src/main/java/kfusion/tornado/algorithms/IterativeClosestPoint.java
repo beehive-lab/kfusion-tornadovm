@@ -97,7 +97,6 @@ public class IterativeClosestPoint {
         final int numThreads = output.length / 32;
         final int numElements = input.X() * input.Y();
 
-        int N = 6;
         for (@Parallel int i = 0; i < numThreads; i++) {
             final int startIndex = i * 32;
             for (int j = i; j < numElements; j += numThreads) {
@@ -118,7 +117,9 @@ public class IterativeClosestPoint {
             }
 
             for (int j = i; j < numElements; j += numThreads) {
-                reduceValues(output, startIndex, input, j);
+                //reduceValues(output, startIndex, input, j);
+            	reduceArrayValues(output, startIndex, input, j);
+
             }
         }
     }
@@ -242,53 +243,53 @@ public class IterativeClosestPoint {
     	// float base[0] += error^2
     	sums[startIndex] += (error * error);
 
-    	// Float6 base(+1) += row.scale(error)
-    	for (int i = 0; i < N; i++) {   
-    		sums[startIndex + i + 1] += (error * value[i]);
-    	}
-
-    	for (int i = 0; i < N; i++) {
-    		int counter = 0;
-    		for (int j = i; j < N; j++) {
-    			sums[base + counter] += (value[i] * value[j]);
-    			counter++;
-    		}
-    	}
+//    	// Float6 base(+1) += row.scale(error)
+//    	for (int i = 0; i < N; i++) {   
+//    		sums[startIndex + i + 1] += (error * value[i]);
+//    	}
+//
+//    	for (int i = 0; i < N; i++) {
+//    		int counter = 0;
+//    		for (int j = i; j < N; j++) {
+//    			sums[base + counter] += (value[i] * value[j]);
+//    			counter++;
+//    		}
+//    	}
     	
-//    	 sums[startIndex + 0 + 1] += (error * value[0]);
-//         sums[startIndex + 1 + 1] += (error * value[1]);
-//         sums[startIndex + 2 + 1] += (error * value[2]);
-//         sums[startIndex + 3 + 1] += (error * value[3]);
-//         sums[startIndex + 4 + 1] += (error * value[4]);
-//         sums[startIndex + 5 + 1] += (error * value[5]);
-////
-////         // is this jacobian transpose jacobian?
-//         sums[base + 0] += (value[0] * value[0]);
-//         sums[base + 1] += (value[0] * value[1]);
-//         sums[base + 2] += (value[0] * value[2]);
-//         sums[base + 3] += (value[0] * value[3]);
-//         sums[base + 4] += (value[0] * value[4]);
-//         sums[base + 5] += (value[0] * value[5]);
+    	 sums[startIndex + 0 + 1] += (error * value[0]);
+         sums[startIndex + 1 + 1] += (error * value[1]);
+         sums[startIndex + 2 + 1] += (error * value[2]);
+         sums[startIndex + 3 + 1] += (error * value[3]);
+         sums[startIndex + 4 + 1] += (error * value[4]);
+         sums[startIndex + 5 + 1] += (error * value[5]);
 //
-//         sums[base + 6] += (value[0]* value[1]);
-//         sums[base + 7] += (value[0] * value[2]);
-//         sums[base + 8] += (value[0] * value[3]);
-//         sums[base + 9] += (value[0] * value[4]);
-//         sums[base + 10] += (value[0] * value[5]);
-//
-//         sums[base + 11] += (value[0] * value[2]);
-//         sums[base + 12] += (value[0] * value[3]);
-//         sums[base + 13] += (value[0] * value[4]);
-//         sums[base + 14] += (value[0] * value[5]);
-//
-//         sums[base + 15] += (value[0] * value[3]);
-//         sums[base + 16] += (value[0] * value[4]);
-//         sums[base + 17] += (value[0] * value[5]);
-//
-//         sums[base + 18] += (value[0] * value[4]);
-//         sums[base + 19] += (value[0] * value[5]);
-//
-//         sums[base + 20] += (value[0] * value[5]);
+//         // is this jacobian transpose jacobian?
+         sums[base + 0] += (value[0] * value[0]);
+         sums[base + 1] += (value[0] * value[1]);
+         sums[base + 2] += (value[0] * value[2]);
+         sums[base + 3] += (value[0] * value[3]);
+         sums[base + 4] += (value[0] * value[4]);
+         sums[base + 5] += (value[0] * value[5]);
+
+         sums[base + 6] += (value[1] * value[1]);
+         sums[base + 7] += (value[1] * value[2]);
+         sums[base + 8] += (value[1] * value[3]);
+         sums[base + 9] += (value[1] * value[4]);
+         sums[base + 10] += (value[1] * value[5]);
+
+         sums[base + 11] += (value[2] * value[2]);
+         sums[base + 12] += (value[2] * value[3]);
+         sums[base + 13] += (value[2] * value[4]);
+         sums[base + 14] += (value[2] * value[5]);
+
+         sums[base + 15] += (value[3] * value[3]);
+         sums[base + 16] += (value[3] * value[4]);
+         sums[base + 17] += (value[3] * value[5]);
+
+         sums[base + 18] += (value[4] * value[4]);
+         sums[base + 19] += (value[4] * value[5]);
+
+         sums[base + 20] += (value[5] * value[5]);
 
     	sums[info]++;
     }

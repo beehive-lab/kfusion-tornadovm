@@ -16,14 +16,14 @@ kfusion.reduce.simple=True
 ### ###############################
 ### Custom reductions
 ### ###############################
-kfusion.reduce.custom=False
-kfusion.reduce.model=1024
-kfusion.reduce.fraction=2
-
-tornado.opencl.schedule=False
-tornado.opencl.gpu.block.x=128
-tornado.opencl.gpu.block2d.x=16
-tornado.opencl.gpu.block2d.y=4
+#kfusion.reduce.custom=False
+#kfusion.reduce.model=1024
+#kfusion.reduce.fraction=2
+#
+#tornado.opencl.schedule=False
+#tornado.opencl.gpu.block.x=128
+#tornado.opencl.gpu.block2d.x=16
+#tornado.opencl.gpu.block2d.y=4
 ## ################################
 
 kfusion.raw.enable = true
