@@ -193,7 +193,6 @@ public class IterativeClosestPoint {
 //
 //    }
     
-    @SuppressWarnings("unused")
 	private static float[] getPlainArray(Float8 input) {
     	float[] value =  new float[8];
         value[0] = input.getS0();
@@ -212,23 +211,14 @@ public class IterativeClosestPoint {
     	final int base = startIndex + 7;
     	final int info = startIndex + 28;
     	
-    	final int N = 6;
+    	int N = 6;
     	
 		Float8 valueFloat8 = trackingResults.get(resultIndex);
         
         // XXX: Due to a bug in Tornado, explicit copy does not currently work.
         //float[] value = valueFloat8.getStorage();
         
-        //final float[] value = getPlainArray(trackingResults.get(resultIndex));
-        float[] value =  new float[8];
-        value[0] = valueFloat8.getS0();
-        value[1] = valueFloat8.getS1();
-        value[2] = valueFloat8.getS2();
-        value[3] = valueFloat8.getS3();
-        value[4] = valueFloat8.getS4();
-        value[5] = valueFloat8.getS5();
-        value[6] = valueFloat8.getS6();
-        value[7] = valueFloat8.getS7();
+        final float[] value = getPlainArray(trackingResults.get(resultIndex));
         
         final int result = (int) value[7];
         final float error = value[6];
@@ -244,52 +234,52 @@ public class IterativeClosestPoint {
     	sums[startIndex] += (error * error);
 
 //    	// Float6 base(+1) += row.scale(error)
-//    	for (int i = 0; i < N; i++) {   
-//    		sums[startIndex + i + 1] += (error * value[i]);
-//    	}
-//
-//    	for (int i = 0; i < N; i++) {
-//    		int counter = 0;
-//    		for (int j = i; j < N; j++) {
-//    			sums[base + counter] += (value[i] * value[j]);
-//    			counter++;
-//    		}
-//    	}
+    	for (int i = 0; i < N; i++) {   
+    		sums[startIndex + i + 1] += (error * value[i]);
+    	}
+
+    	for (int i = 0; i < N; i++) {
+    		int counter = 0;
+    		for (int j = i; j < N; j++) {
+    			sums[base + counter] += (value[i] * value[j]);
+    			counter++;
+    		}
+    	}
     	
-    	 sums[startIndex + 0 + 1] += (error * value[0]);
-         sums[startIndex + 1 + 1] += (error * value[1]);
-         sums[startIndex + 2 + 1] += (error * value[2]);
-         sums[startIndex + 3 + 1] += (error * value[3]);
-         sums[startIndex + 4 + 1] += (error * value[4]);
-         sums[startIndex + 5 + 1] += (error * value[5]);
-//
+//    	 sums[startIndex + 0 + 1] += (error * value[0]);
+//         sums[startIndex + 1 + 1] += (error * value[1]);
+//         sums[startIndex + 2 + 1] += (error * value[2]);
+//         sums[startIndex + 3 + 1] += (error * value[3]);
+//         sums[startIndex + 4 + 1] += (error * value[4]);
+//         sums[startIndex + 5 + 1] += (error * value[5]);
+//         
 //         // is this jacobian transpose jacobian?
-         sums[base + 0] += (value[0] * value[0]);
-         sums[base + 1] += (value[0] * value[1]);
-         sums[base + 2] += (value[0] * value[2]);
-         sums[base + 3] += (value[0] * value[3]);
-         sums[base + 4] += (value[0] * value[4]);
-         sums[base + 5] += (value[0] * value[5]);
-
-         sums[base + 6] += (value[1] * value[1]);
-         sums[base + 7] += (value[1] * value[2]);
-         sums[base + 8] += (value[1] * value[3]);
-         sums[base + 9] += (value[1] * value[4]);
-         sums[base + 10] += (value[1] * value[5]);
-
-         sums[base + 11] += (value[2] * value[2]);
-         sums[base + 12] += (value[2] * value[3]);
-         sums[base + 13] += (value[2] * value[4]);
-         sums[base + 14] += (value[2] * value[5]);
-
-         sums[base + 15] += (value[3] * value[3]);
-         sums[base + 16] += (value[3] * value[4]);
-         sums[base + 17] += (value[3] * value[5]);
-
-         sums[base + 18] += (value[4] * value[4]);
-         sums[base + 19] += (value[4] * value[5]);
-
-         sums[base + 20] += (value[5] * value[5]);
+//         sums[base + 0] += (value[0] * value[0]);
+//         sums[base + 1] += (value[0] * value[1]);
+//         sums[base + 2] += (value[0] * value[2]);
+//         sums[base + 3] += (value[0] * value[3]);
+//         sums[base + 4] += (value[0] * value[4]);
+//         sums[base + 5] += (value[0] * value[5]);
+//
+//         sums[base + 6] += (value[1] * value[1]);
+//         sums[base + 7] += (value[1] * value[2]);
+//         sums[base + 8] += (value[1] * value[3]);
+//         sums[base + 9] += (value[1] * value[4]);
+//         sums[base + 10] += (value[1] * value[5]);
+//
+//         sums[base + 11] += (value[2] * value[2]);
+//         sums[base + 12] += (value[2] * value[3]);
+//         sums[base + 13] += (value[2] * value[4]);
+//         sums[base + 14] += (value[2] * value[5]);
+//
+//         sums[base + 15] += (value[3] * value[3]);
+//         sums[base + 16] += (value[3] * value[4]);
+//         sums[base + 17] += (value[3] * value[5]);
+//
+//         sums[base + 18] += (value[4] * value[4]);
+//         sums[base + 19] += (value[4] * value[5]);
+//
+//         sums[base + 20] += (value[5] * value[5]);
 
     	sums[info]++;
     }
