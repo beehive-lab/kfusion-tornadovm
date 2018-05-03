@@ -29,6 +29,7 @@ import kfusion.algorithms.TrackingResult;
 import kfusion.numerics.Constants;
 import kfusion.numerics.EjmlSVD2;
 import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.Reduce;
 import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
 import uk.ac.manchester.tornado.collections.types.Float2;
@@ -84,7 +85,6 @@ public class IterativeClosestPoint {
 	
 	public static void mapInitData(final float[] output, final ImageFloat8 input) {
         final int numThreads = output.length / 32;
-
         for (@Parallel int i = 0; i < numThreads; i++) {
             final int startIndex = i * 32;
             for (int j = 0; j < 32; j++) {
@@ -94,11 +94,14 @@ public class IterativeClosestPoint {
     }
 	
 	public static void reduceData(final float[] output, final ImageFloat8 input) {
-        final int numThreads = output.length / 32;
+		
+		int offset = 32;
+		
+        final int numThreads = output.length / offset;
         final int numElements = input.X() * input.Y();
 
         for (@Parallel int i = 0; i < numThreads; i++) {
-            final int startIndex = i * 32;
+            final int startIndex = i * offset;
             for (int j = i; j < numElements; j += numThreads) {
             	reduceArrayValues(output, startIndex, input, j);
             	//reduceValues(output, startIndex, input, j);
@@ -117,9 +120,7 @@ public class IterativeClosestPoint {
             }
 
             for (int j = i; j < numElements; j += numThreads) {
-                //reduceValues(output, startIndex, input, j);
-            	reduceArrayValues(output, startIndex, input, j);
-
+                reduceValues(output, startIndex, input, j);
             }
         }
     }
@@ -205,6 +206,23 @@ public class IterativeClosestPoint {
         value[7] = input.getS7();
         return value;
     }
+	
+	private static void reduceSumWithError(@Reduce final float[] sums, float error, int startIndex, int N, float[] value) {
+    	sums[startIndex] += (error * error);
+    	for (@Parallel int i = 0; i < N; i++) {   
+    		sums[startIndex + i + 1] += (error * value[i]);
+    	}
+	}
+	
+	private static void reduceAllValues(@Reduce final float[] sums, int N, float[] value, int base) {
+		for (@Parallel int i = 0; i < N; i++) {
+    		int counter = 0;
+    		for (int j = i; j < N; j++) {
+    			sums[base + counter] += (value[i] * value[j]);
+    			counter++;
+    		}
+    	}
+	}
     
     public static void reduceArrayValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
 
@@ -229,22 +247,28 @@ public class IterativeClosestPoint {
             sums[info + 3] += (result > -4) ? 1 : 0;
             return;
         }
+        
+        
+        reduceSumWithError(sums, error, startIndex, N, value);
+        //reduceAllValues(sums, N, value, base);
+        
 
-    	// float base[0] += error^2
-    	sums[startIndex] += (error * error);
-
+//    	// float base[0] += error^2
+//    	sums[startIndex] += (error * error);
+//
 //    	// Float6 base(+1) += row.scale(error)
-    	for (int i = 0; i < N; i++) {   
-    		sums[startIndex + i + 1] += (error * value[i]);
-    	}
-
-    	for (int i = 0; i < N; i++) {
-    		int counter = 0;
-    		for (int j = i; j < N; j++) {
-    			sums[base + counter] += (value[i] * value[j]);
-    			counter++;
-    		}
-    	}
+//    	for (int i = 0; i < N; i++) {   
+//    		sums[startIndex + i + 1] += (error * value[i]);
+//    	}
+//        
+        
+//    	for (int i = 0; i < N; i++) {
+//    		int counter = 0;
+//    		for (int j = i; j < N; j++) {
+//    			sums[base + counter] += (value[i] * value[j]);
+//    			counter++;
+//    		}
+//    	}
     	
 //    	 sums[startIndex + 0 + 1] += (error * value[0]);
 //         sums[startIndex + 1 + 1] += (error * value[1]);
@@ -252,34 +276,34 @@ public class IterativeClosestPoint {
 //         sums[startIndex + 3 + 1] += (error * value[3]);
 //         sums[startIndex + 4 + 1] += (error * value[4]);
 //         sums[startIndex + 5 + 1] += (error * value[5]);
-//         
-//         // is this jacobian transpose jacobian?
-//         sums[base + 0] += (value[0] * value[0]);
-//         sums[base + 1] += (value[0] * value[1]);
-//         sums[base + 2] += (value[0] * value[2]);
-//         sums[base + 3] += (value[0] * value[3]);
-//         sums[base + 4] += (value[0] * value[4]);
-//         sums[base + 5] += (value[0] * value[5]);
-//
-//         sums[base + 6] += (value[1] * value[1]);
-//         sums[base + 7] += (value[1] * value[2]);
-//         sums[base + 8] += (value[1] * value[3]);
-//         sums[base + 9] += (value[1] * value[4]);
-//         sums[base + 10] += (value[1] * value[5]);
-//
-//         sums[base + 11] += (value[2] * value[2]);
-//         sums[base + 12] += (value[2] * value[3]);
-//         sums[base + 13] += (value[2] * value[4]);
-//         sums[base + 14] += (value[2] * value[5]);
-//
-//         sums[base + 15] += (value[3] * value[3]);
-//         sums[base + 16] += (value[3] * value[4]);
-//         sums[base + 17] += (value[3] * value[5]);
-//
-//         sums[base + 18] += (value[4] * value[4]);
-//         sums[base + 19] += (value[4] * value[5]);
-//
-//         sums[base + 20] += (value[5] * value[5]);
+         
+         // is this jacobian transpose jacobian?
+         sums[base + 0] += (value[0] * value[0]);
+         sums[base + 1] += (value[0] * value[1]);
+         sums[base + 2] += (value[0] * value[2]);
+         sums[base + 3] += (value[0] * value[3]);
+         sums[base + 4] += (value[0] * value[4]);
+         sums[base + 5] += (value[0] * value[5]);
+
+         sums[base + 6] += (value[1] * value[1]);
+         sums[base + 7] += (value[1] * value[2]);
+         sums[base + 8] += (value[1] * value[3]);
+         sums[base + 9] += (value[1] * value[4]);
+         sums[base + 10] += (value[1] * value[5]);
+
+         sums[base + 11] += (value[2] * value[2]);
+         sums[base + 12] += (value[2] * value[3]);
+         sums[base + 13] += (value[2] * value[4]);
+         sums[base + 14] += (value[2] * value[5]);
+
+         sums[base + 15] += (value[3] * value[3]);
+         sums[base + 16] += (value[3] * value[4]);
+         sums[base + 17] += (value[3] * value[5]);
+
+         sums[base + 18] += (value[4] * value[4]);
+         sums[base + 19] += (value[4] * value[5]);
+
+         sums[base + 20] += (value[5] * value[5]);
 
     	sums[info]++;
     }

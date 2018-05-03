@@ -265,10 +265,12 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 meta.setGlobalWork(new long[]{maxwgs});
                 meta.setLocalWork(new long[]{maxBinsPerCU});
             } else if (config.useSimpleReduce()) {
+            	
+            	
 //                trackingPyramid[i]
 //                       .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
 //                       .streamOut(icpResultIntermediate1);
-//                
+            	
             	System.out.println("Using simple reduction");
                 trackingPyramid[i]
                         .task("mapInitData" + i, IterativeClosestPoint::mapInitData, icpResultIntermediate1, pyramidTrackingResults[i])
