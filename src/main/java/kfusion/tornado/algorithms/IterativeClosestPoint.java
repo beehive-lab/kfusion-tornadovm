@@ -248,11 +248,9 @@ public class IterativeClosestPoint {
             return;
         }
         
-        
         reduceSumWithError(sums, error, startIndex, N, value);
         reduceAllValues(sums, N, value, base);
         
-
 //    	// float base[0] += error^2
 //    	sums[startIndex] += (error * error);
 //
@@ -307,7 +305,6 @@ public class IterativeClosestPoint {
 
     	sums[info]++;
     }
-
 
     public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
 

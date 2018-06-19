@@ -16,7 +16,7 @@
         <tornado.version>0.0.2-${TORNADO_REVISION}</tornado.version>
         <graal.root>/home/juan/manchester/graal/graal-core/mxbuild/dists</graal.root>
         <graal.version>${GRAAL_VERSION}</graal.version>
-        <jvmci.version>${JVMCI_VERSION}</jvmci.version>
+        <jvmci.version>${}JVMCI_VERSION</jvmci.version>
         <jvmci.root>/home/juan/manchester/graal/jdk1.8.0_131</jvmci.root>
         <netbeans.hint.license>LICENSE</netbeans.hint.license>
     </properties>
@@ -115,29 +115,32 @@
 			<systemPath>/home/juan/bin/slambench-java-0.0.2.jar</systemPath>
         </dependency>
 
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-collections</artifactId>
-             <version>0.0.2-SNAPSHOT-c3c0a8c</version>
-            <systemPath>/home/juan/manchester/tornado/tornado/collections/target/tornado-collections-0.0.2-SNAPSHOT-c3c0a8c.jar</systemPath>
-			<scope>system</scope>
-        </dependency>
 
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-runtime</artifactId>
-             <version>0.0.2-c3c0a8c</version>
-            <systemPath>/home/juan/manchester/tornado/tornado/runtime/target/tornado-runtime-0.0.2-SNAPSHOT-c3c0a8c.jar</systemPath>
-			<scope>system</scope>
+     <dependency>
+         <groupId>tornado-runtime</groupId>
+         <artifactId>tornado-runtime</artifactId>
+         <version>0.0.2-SNAPSHOT</version>
+     </dependency>
+   
+     <dependency>
+         <groupId>tornado-collections</groupId>
+         <artifactId>tornado-collections</artifactId>
+         <version>0.0.2-SNAPSHOT</version>
+     </dependency>
+   
+     <dependency>
+         <groupId>tornado-drivers-opencl</groupId>
+         <artifactId>tornado-drivers-opencl</artifactId>
+         <version>0.0.2-SNAPSHOT</version>
+     </dependency>
+ 
+     <dependency>
+         <groupId>tornado-drivers-opencl-jni</groupId>
+         <artifactId>tornado-drivers-opencl-jni</artifactId>
+         <version>0.0.2-SNAPSHOT</version>
+     </dependency>
+ 
 
-        </dependency>
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-drivers-opencl</artifactId>
-             <version>0.0.2-c3c0a8c</version>
-            <systemPath>/home/juan/manchester/tornado/tornado/drivers/opencl/target/tornado-drivers-opencl-0.0.2-SNAPSHOT-c3c0a8c.jar</systemPath>
-			<scope>system</scope>
-        </dependency>
         <dependency>
             <groupId>freenect</groupId>
             <artifactId>freenect</artifactId>
