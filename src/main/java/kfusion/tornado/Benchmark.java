@@ -24,9 +24,6 @@
  */
 package kfusion.tornado;
 
-import static java.lang.System.getProperty;
-import static uk.ac.manchester.tornado.common.Tornado.loadSettings;
-
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 
@@ -34,55 +31,59 @@ import kfusion.TornadoModel;
 import kfusion.devices.Device;
 import kfusion.pipeline.TornadoBenchmarkPipeline;
 import uk.ac.manchester.tornado.collections.types.Float4;
+import uk.ac.manchester.tornado.common.Tornado;
 
 public class Benchmark {
 
-    public static void main(String[] args) {
-    	
-    	System.out.println("Running KFUSION");
+	public static final String KFUSION_TORNADO_INFO = "KFussion Accelerated with Tornado";
 
-        final TornadoModel config = new TornadoModel();
-        config.loadSettingsFile(args[0]);
+	public static void printKFusionInfo() {
+		System.out.println(KFUSION_TORNADO_INFO);
+	}
 
-        if (getProperty("tornado.config") != null) {
-            loadSettings(getProperty("tornado.config"));
-            config.loadSettingsFile(getProperty("tornado.config"));
-            // config.reset();
-        }
+	public static void main(String[] args) {
 
-        PrintStream out = System.out;
-        if (args.length == 2) {
+		printKFusionInfo();
 
-            try {
-                out = new PrintStream(args[1]);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                System.err.println("unable to write to file: " + args[1]);
-                System.exit(-1);
-            }
-        }
+		final TornadoModel config = new TornadoModel();
+		config.loadSettingsFile(args[0]);
 
-        final TornadoBenchmarkPipeline pipeline = new TornadoBenchmarkPipeline(config, out);
+		if (System.getProperty("tornado.config") != null) {
+			Tornado.loadSettings(System.getProperty("tornado.config"));
+			config.loadSettingsFile(System.getProperty("tornado.config"));
+		}
 
-        final Device device = config.discoverDevices()[0];
-        device.init();
+		PrintStream out = System.out;
+		if (args.length == 2) {
+			try {
+				out = new PrintStream(args[1]);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				System.err.println("unable to write to file: " + args[1]);
+				System.exit(-1);
+			}
+		}
 
-        device.updateModel(config);
+		final TornadoBenchmarkPipeline pipeline = new TornadoBenchmarkPipeline(config, out);
 
-        // update model config here
-        config.setDevice(device);
-        config.setCamera(new Float4(481.2f, 480f, 320f, 240f));
+		final Device device = config.discoverDevices()[0];
+		device.init();
 
-        pipeline.reset();
+		device.updateModel(config);
 
-        // execute benchmark
-        final long start = System.nanoTime();
-        pipeline.execute();
-        final long stop = System.nanoTime();
-        final double elapsed = (stop - start) * 1e-9;
+		// update model config here
+		config.setDevice(device);
+		config.setCamera(new Float4(481.2f, 480f, 320f, 240f));
 
-        // finish
-        System.out.printf("Summary: time=%.2f, frames=%d\n", elapsed, pipeline.getProcessedFrames());
-    }
+		pipeline.reset();
 
+		// execute benchmark
+		final long start = System.nanoTime();
+		pipeline.execute();
+		final long stop = System.nanoTime();
+		final double elapsed = (stop - start) * 1e-9;
+
+		// finish
+		System.out.printf("Summary: time=%.2f, frames=%d\n", elapsed, pipeline.getProcessedFrames());
+	}
 }
