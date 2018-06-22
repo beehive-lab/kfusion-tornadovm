@@ -29,62 +29,62 @@ import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class TornadoModel extends KfusionConfig {
 
-    private boolean useTornado;
-    private OCLTornadoDevice tornadoDevice;
+	private boolean useTornado;
+	private OCLTornadoDevice tornadoDevice;
 
-    public TornadoModel() {
-        super();
-    }
+	public TornadoModel() {
+		super();
+	}
 
-    public boolean useTornado() {
-        return useTornado;
-    }
+	public boolean useTornado() {
+		return useTornado;
+	}
 
-    public int getPlatformIndex() {
-        return Integer.parseInt(settings.getProperty("kfusion.tornado.platform", "0"));
-    }
+	public int getPlatformIndex() {
+		return Integer.parseInt(settings.getProperty("kfusion.tornado.platform", "0"));
+	}
 
-    public int getDeviceIndex() {
-        return Integer.parseInt(settings.getProperty("kfusion.tornado.device", "0"));
-    }
+	public int getDeviceIndex() {
+		return Integer.parseInt(settings.getProperty("kfusion.tornado.device", "0"));
+	}
 
-    @Override
-    public void reset() {
-        super.reset();
-        useTornado = Boolean.parseBoolean(settings.getProperty("kfusion.tornado.enable", "False"));
-        tornadoDevice = new OCLTornadoDevice(getPlatformIndex(), getDeviceIndex());
-    }
+	public void setTornadoDevice(OCLTornadoDevice value) {
+		tornadoDevice = value;
+	}
 
-    public void setTornadoDevice(OCLTornadoDevice value) {
-        tornadoDevice = value;
-    }
+	public TornadoDevice getTornadoDevice() {
+		return tornadoDevice;
+	}
 
-    public TornadoDevice getTornadoDevice() {
-        return tornadoDevice;
-    }
+	public void setUseTornado(boolean value) {
+		useTornado = value;
 
-    public void setUseTornado(boolean value) {
-        useTornado = value;
+	}
 
-    }
+	public float getMaxULP() {
+		return Float.parseFloat(settings.getProperty("kfusion.maxulp", "5.0"));
+	}
 
-    public float getMaxULP() {
-        return Float.parseFloat(settings.getProperty("kfusion.maxulp", "5.0"));
-    }
+	public boolean printKernels() {
+		return Boolean.parseBoolean(settings.getProperty("kfusion.kernels.print", "False"));
+	}
 
-    public boolean printKernels() {
-        return Boolean.parseBoolean(settings.getProperty("kfusion.kernels.print", "False"));
-    }
+	public int getReductionSize() {
+		return Integer.parseInt(settings.getProperty("kfusion.model.reduce", "1024"));
+	}
 
-    public int getReductionSize() {
-        return Integer.parseInt(settings.getProperty("kfusion.model.reduce", "1024"));
-    }
+	public boolean useCustomReduce() {
+		return Boolean.parseBoolean(settings.getProperty("kfusion.reduce.custom", "False"));
+	}
 
-    public boolean useCustomReduce() {
-        return Boolean.parseBoolean(settings.getProperty("kfusion.reduce.custom", "False"));
-    }
+	public boolean useSimpleReduce() {
+		return Boolean.parseBoolean(settings.getProperty("kfusion.reduce.simple", "False"));
+	}
 
-    public boolean useSimpleReduce() {
-        return Boolean.parseBoolean(settings.getProperty("kfusion.reduce.simple", "False"));
-    }
+	@Override
+	public void reset() {
+		super.reset();
+		useTornado = Boolean.parseBoolean(settings.getProperty("kfusion.tornado.enable", "False"));
+		tornadoDevice = new OCLTornadoDevice(getPlatformIndex(), getDeviceIndex());
+	}
 }

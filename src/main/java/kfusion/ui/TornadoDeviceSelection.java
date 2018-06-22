@@ -29,15 +29,15 @@ import uk.ac.manchester.tornado.common.TornadoDevice;
 
 public class TornadoDeviceSelection extends DefaultComboBoxModel<TornadoDevice> {
 
-    private static final long serialVersionUID = -5945515922073691978L;
+	private static final long serialVersionUID = -5945515922073691978L;
 
-    public TornadoDeviceSelection(final TornadoDevice[] devices) {
-        super(devices);
-    }
+	public TornadoDeviceSelection(final TornadoDevice[] devices) {
+		super(devices);
+	}
 
-    @Override
-    public TornadoDevice getSelectedItem() {
-        return (TornadoDevice) super.getSelectedItem();
-    }
+	@Override
+	public TornadoDevice getSelectedItem() {
+		return (TornadoDevice) super.getSelectedItem();
+	}
 
 }

@@ -34,23 +34,21 @@ import kfusion.TornadoModel;
 import kfusion.pipeline.ProxyOpenGLPipeline;
 
 public class KfusionTornadoCanvas extends GLCanvas {
-	
-	private static final long	serialVersionUID	= 2058056651997252912L;
-	
-	@SuppressWarnings("unused")
-    private final ProxyOpenGLPipeline<TornadoModel> pipeline;
-	
-	public KfusionTornadoCanvas(TornadoModel config, int width, int height, final TornadoConfigPanel tornadoPanel){
-		GLProfile glp =  GLProfile.getDefault();
+
+	private static final long serialVersionUID = 2058056651997252912L;
+
+	@SuppressWarnings("unused") private final ProxyOpenGLPipeline<TornadoModel> pipeline;
+
+	public KfusionTornadoCanvas(TornadoModel config, int width, int height, final TornadoConfigPanel tornadoPanel) {
+		GLProfile glp = GLProfile.getDefault();
 		GLCapabilities caps = new GLCapabilities(glp);
 		caps.setDoubleBuffered(true);
 		caps.setHardwareAccelerated(true);
-		
-		
-		setPreferredSize(new Dimension(width,height));
-		setSize(width,height);
-		pipeline = new ProxyOpenGLPipeline<TornadoModel>(config, this, tornadoPanel);	
-		
+
+		setPreferredSize(new Dimension(width, height));
+		setSize(width, height);
+		pipeline = new ProxyOpenGLPipeline<TornadoModel>(config, this, tornadoPanel);
+
 	}
-	
+
 }

@@ -25,31 +25,29 @@
 package kfusion.tornado;
 
 import java.awt.EventQueue;
+
 import kfusion.TornadoModel;
 import kfusion.ui.KfusionTornadoCanvas;
 import kfusion.ui.TornadoConfigPanel;
 import kfusion.ui.TornadoWorkbenchFrame;
-
-import static java.lang.System.getProperty;
-import static uk.ac.manchester.tornado.common.Tornado.loadSettings;
+import uk.ac.manchester.tornado.common.Tornado;
 
 public class GUI {
 
-    public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				final TornadoModel config = new TornadoModel();
+				if (System.getProperty("tornado.config") != null) {
+					Tornado.loadSettings(System.getProperty("tornado.config"));
+				}
 
-            @Override
-            public void run() {
-                final TornadoModel config = new TornadoModel();
-                if (getProperty("tornado.config") != null) {
-                    loadSettings(getProperty("tornado.config"));
-                }
-
-                final TornadoConfigPanel tornadoConfig = new TornadoConfigPanel(config);
-                final KfusionTornadoCanvas canvas = new KfusionTornadoCanvas(config, 660 * 2, 500, tornadoConfig);
-                TornadoWorkbenchFrame frame = new TornadoWorkbenchFrame(config, canvas, tornadoConfig);
-                frame.setVisible(true);
-            }
-        });
-    }
+				final TornadoConfigPanel tornadoConfig = new TornadoConfigPanel(config);
+				final KfusionTornadoCanvas canvas = new KfusionTornadoCanvas(config, 660 * 2, 500, tornadoConfig);
+				TornadoWorkbenchFrame frame = new TornadoWorkbenchFrame(config, canvas, tornadoConfig);
+				frame.setVisible(true);
+			}
+		});
+	}
 }
