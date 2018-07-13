@@ -61,6 +61,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 	private TaskSchedule trackingPyramid[];
 	private TaskSchedule integrateSchedule;
 	private TaskSchedule raycastSchedule;
+	private TaskSchedule renderTrack;
 	private TaskSchedule renderSchedule;
 
 	private Matrix4x4Float[] scaledInvKs;
@@ -89,6 +90,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 	@Override
 	public void execute() {
 		if (config.getDevice() != null) {
+
 			out.println(
 					"frame\tacquisition\tpreprocessing\ttracking\tintegration\traycasting\trendering\tcomputation\ttotal    \tX          \tY          \tZ         \ttracked   \tintegrated");
 
@@ -127,6 +129,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				timings[5] = System.nanoTime();
 
 				if (frames % renderingRate == 0) {
+					renderTrack.execute();
 					renderSchedule.execute();
 				}
 
@@ -140,13 +143,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 						elapsedTimeInSeconds(timings[4], timings[5]), elapsedTimeInSeconds(timings[5], timings[6]),
 						elapsedTimeInSeconds(timings[1], timings[5]), elapsedTimeInSeconds(timings[0], timings[6]),
 						pos.getX(), pos.getY(), pos.getZ(), (hasTracked) ? 1 : 0, (doIntegrate) ? 1 : 0);
-
 				frames++;
-
 				timings[0] = System.nanoTime();
 				haveDepthImage = depthCamera.pollDepth(depthImageInput);
 				videoCamera.skipVideoFrame();
-				// haveVideoImage = videoCamera.pollVideo(videoImageInput);
 			}
 
 			if (config.printKernels()) {
@@ -157,9 +157,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				}
 				integrateSchedule.dumpProfiles();
 				raycastSchedule.dumpProfiles();
+				renderTrack.dumpProfiles();
 				renderSchedule.dumpProfiles();
 			}
-
 		}
 	}
 
@@ -272,16 +272,14 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 meta.setLocalWork(new long[]{maxBinsPerCU});
             } else if (config.useSimpleReduce()) {
             	
+                trackingPyramid[i]
+                       .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
+                       .streamOut(icpResultIntermediate1);
             	
 //                trackingPyramid[i]
-//                       .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
-//                       .streamOut(icpResultIntermediate1);
-            	
-            	System.out.println("Using simple reduction");
-                trackingPyramid[i]
-                        .task("mapInitData" + i, IterativeClosestPoint::mapInitData, icpResultIntermediate1, pyramidTrackingResults[i])
-                        .task("reduceData" + i, IterativeClosestPoint::reduceData, icpResultIntermediate1, pyramidTrackingResults[i])
-                        .streamOut(icpResultIntermediate1);
+//                        .task("mapInitData" + i, IterativeClosestPoint::mapInitData, icpResultIntermediate1, pyramidTrackingResults[i])
+//                        .task("reduceData" + i, IterativeClosestPoint::reduceData, icpResultIntermediate1, pyramidTrackingResults[i])
+//                        .streamOut(icpResultIntermediate1);
                 
                 // XXX: perform final reduction from partial reduction after copy out on CPU.
                 
@@ -312,16 +310,25 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         //@formatter:on
 
 		//@formatter:off
-        renderSchedule = new TaskSchedule("render")
-                .streamIn(scenePose)
-                .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
-                //BUG need to investigate crashes in render depth
-                //                .task("renderDepth", Renderer::renderDepth, renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
-                .task("renderVolume", Renderer::renderVolume,
-                        renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep,
-                        largeStep, light, ambient)
-                .mapAllTo(oclDevice);
+//        renderSchedule = new TaskSchedule("render")
+//                .streamIn(scenePose)
+//                .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
+//                //BUG need to investigate crashes in render depth
+//                //                .task("renderDepth", Renderer::renderDepth, renderedDepthImage, filteredDepthImage, nearPlane, farPlane)
+//                .task("renderVolume", Renderer::renderVolume,
+//                        renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep,
+//                        largeStep, light, ambient)
+//                .mapAllTo(oclDevice);
         //@formatter:on
+
+		renderTrack = new TaskSchedule("renderTrack").streamIn(scenePose)
+				.task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
+				.mapAllTo(oclDevice);
+
+		renderSchedule = new TaskSchedule("render").streamIn(scenePose)
+				.task("renderVolume", Renderer::renderVolume, renderedScene, volume, volumeDims, scenePose, nearPlane,
+						farPlane * 2f, smallStep, largeStep, light, ambient)
+				.mapAllTo(oclDevice);
 
 		preprocessingSchedule.warmup();
 		estimatePoseSchedule.warmup();
@@ -330,6 +337,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		}
 		integrateSchedule.warmup();
 		raycastSchedule.warmup();
+		renderTrack.warmup();
 		renderSchedule.warmup();
 	}
 
@@ -412,5 +420,4 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		MatrixMath.sgemm(currentView.getPose(), scaledInvK, referencePose);
 		raycastSchedule.execute();
 	}
-
 }
