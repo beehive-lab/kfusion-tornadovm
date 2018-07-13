@@ -29,4 +29,3 @@ kfusion.reduce.simple=False
 kfusion.raw.enable = true
 kfusion.raw.file = /home/juan/bin/SLAM/slambench-ICL-NUIM/living_room_traj2_loop.raw
 
-

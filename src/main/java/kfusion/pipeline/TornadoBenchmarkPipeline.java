@@ -321,7 +321,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 //                .mapAllTo(oclDevice);
         //@formatter:on
 
-		renderTrack = new TaskSchedule("renderTrack").streamIn(scenePose)
+		renderTrack = new TaskSchedule("renderTrack")
 				.task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
 				.mapAllTo(oclDevice);
 
