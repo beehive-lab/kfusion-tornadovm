@@ -29,14 +29,14 @@ then
 
 kfusion \
 -Dtornado.opencl.timer.kernel=False \                                                                                                                                                                          
--Dpp.mm2metersKernel.device=0:1 \                                                                                                                                                                              
+-Dtornado.precompiled.binary=fpgaKernels/mm2meters/lookupBufferAddress,pp.mm2meters.device=0:1,fpgaKernels/mm2meters/lookupBufferAddress,pp.bilateralFilter.device=0:1 \                                 
+-Dpp.mm2meters.device=0:1 \                                                                                                                                                                              
 -Dpp.bilateralFilter.device=0:1 \                                                                                                                                                                              
 -Dtornado.opencl.codecache.loadbin=True \                                                                                                                                                                      
--Dtornado.precompiled.binary=fpgaKernels/mm2meters/lookupBufferAddress,pp.mm2metersKernel.device=0:1,fpgaKernels/mm2meters/lookupBufferAddress,pp.bilateralFilter.device=0:1 \                                 
 -Dpp.bilateralFilter.global.dims=320,240 \                                                                                                                                                                     
 -Dpp.bilateralFilter.local.dims=64,16 \                                                                                                                                                                        
--Dpp.mm2metersKernel.global.dims=320,240 \                                                                                                                                                                     
--Dpp.mm2metersKernel.local.dims=64,16 \                                                                                                                                                                        
+-Dpp.mm2meters.global.dims=320,240 \                                                                                                                                                                     
+-Dpp.mm2meters.local.dims=64,16 \                                                                                                                                                                        
 kfusion.tornado.Benchmark conf/bm-traj2.settings  
 
 else 
