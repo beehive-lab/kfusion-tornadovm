@@ -8,7 +8,7 @@ kfusion \
 -Dintegrate.integrate.device=0:1 \
 -Dtornado.opencl.codecache.loadbin=True \
 -Dtornado.precompiled.binary=fpgaKernels/fpgaIntegrate/lookupBufferAddress,integrate.integrate.device=0:1 \
--Dintegrate.integrate.global.dims=512,512 \
+-Dintegrate.integrate.global.dims=256,256 \
 -Dintegrate.integrate.local.dims=4,4 \
 kfusion.tornado.Benchmark conf/bm-traj2.settings 
 
