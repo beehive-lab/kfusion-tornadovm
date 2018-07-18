@@ -51,7 +51,19 @@ kfusion \
 -Draycast.raycast.local.dims=4,4 \
 kfusion.tornado.Benchmark conf/bm-traj2.settings 
 
+elif [[ $1 == "renderVolume" ]] 
+then
+
+kfusion \
+-Dtornado.opencl.timer.kernel=False \
+-Drender.renderVolume.device=0:1 \
+-Dtornado.opencl.codecache.loadbin=True \
+-Dtornado.precompiled.binary=fpgaKernels/renderVolume/lookupBufferAddress,render.renderVolume.device=0:1 \
+-Drender.renderVolume.global.dims=320,240 \
+-Drender.renderVolume.local.dims=4,4 \
+kfusion.tornado.Benchmark conf/bm-traj2.settings 
+
 else 
-        echo "Provide kernel to run on the FGPA: $ runFPGA.sh integrate|renderTrack|mm2meters|raycast " 
+        echo "Provide kernel to run on the FGPA: $ runFPGA.sh integrate|renderTrack|mm2meters|raycast|renderVolume " 
 fi
 
