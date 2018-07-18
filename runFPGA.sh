@@ -46,12 +46,12 @@ kfusion \
 -Dtornado.opencl.timer.kernel=False \
 -Draycast.raycast.device=0:1 \
 -Dtornado.opencl.codecache.loadbin=True \
--Dtornado.precompiled.binary=fpgaKernels/lookupBufferAddress,raycast.raycast.device=0:1 \
+-Dtornado.precompiled.binary=fpgaKernels/raycast/lookupBufferAddress,raycast.raycast.device=0:1 \
 -Draycast.raycast.global.dims=320,240 \
 -Draycast.raycast.local.dims=4,4 \
 kfusion.tornado.Benchmark conf/bm-traj2.settings 
 
 else 
-        echo "Provide kernel to run on the FGPA: $ runFPGA.sh integrate|renderTrack|mm2meters " 
+        echo "Provide kernel to run on the FGPA: $ runFPGA.sh integrate|renderTrack|mm2meters|raycast " 
 fi
 
