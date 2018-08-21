@@ -31,9 +31,17 @@ import static uk.ac.manchester.tornado.collections.math.TornadoMath.sqrt;
 import static uk.ac.manchester.tornado.collections.types.Float2.mult;
 import static uk.ac.manchester.tornado.collections.types.Float3.add;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.collections.types.*;
+import uk.ac.manchester.tornado.collections.types.Float2;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.FloatOps;
+import uk.ac.manchester.tornado.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.collections.types.Int2;
+import uk.ac.manchester.tornado.collections.types.Int3;
+import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.collections.types.Short2;
+import uk.ac.manchester.tornado.collections.types.VolumeShort2;
 
 public class Integration {
 
