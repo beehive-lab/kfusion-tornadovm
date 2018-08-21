@@ -29,11 +29,11 @@ import kfusion.Utils;
 import kfusion.devices.Device;
 import kfusion.devices.TestingDevice;
 import kfusion.pipeline.AbstractPipeline;
-import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
-import uk.ac.manchester.tornado.collections.types.FloatingPointError;
-import uk.ac.manchester.tornado.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 
 public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
 

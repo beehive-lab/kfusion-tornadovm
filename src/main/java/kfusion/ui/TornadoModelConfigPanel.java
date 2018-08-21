@@ -24,11 +24,14 @@
  */
 package kfusion.ui;
 
-import com.jogamp.opengl.util.Animator;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
 import javax.swing.JButton;
 import javax.swing.JPanel;
+
+import com.jogamp.opengl.util.Animator;
+
 import kfusion.TornadoModel;
 import kfusion.devices.Device;
 

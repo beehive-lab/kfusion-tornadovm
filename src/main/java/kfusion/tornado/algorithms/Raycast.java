@@ -24,17 +24,17 @@
  */
 package kfusion.tornado.algorithms;
 
-import static uk.ac.manchester.tornado.collections.types.Float3.length;
-import static uk.ac.manchester.tornado.collections.types.Float3.normalise;
+import static uk.ac.manchester.tornado.api.collections.types.Float3.length;
+import static uk.ac.manchester.tornado.api.collections.types.Float3.normalise;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
-import uk.ac.manchester.tornado.collections.types.Float3;
-import uk.ac.manchester.tornado.collections.types.Float4;
-import uk.ac.manchester.tornado.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.collections.types.VolumeOps;
-import uk.ac.manchester.tornado.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.VolumeOps;
+import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
 
 public class Raycast {
 

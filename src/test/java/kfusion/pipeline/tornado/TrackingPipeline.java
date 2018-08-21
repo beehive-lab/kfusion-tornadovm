@@ -24,7 +24,7 @@
  */
 package kfusion.pipeline.tornado;
 
-import static uk.ac.manchester.tornado.collections.types.Float4.mult;
+import static uk.ac.manchester.tornado.api.collections.types.Float4.mult;
 
 import kfusion.TornadoModel;
 import kfusion.Utils;
@@ -32,13 +32,18 @@ import kfusion.devices.Device;
 import kfusion.devices.TestingDevice;
 import kfusion.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
-import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
-import uk.ac.manchester.tornado.collections.graphics.ImagingOps;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.collections.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.collections.types.*;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
 

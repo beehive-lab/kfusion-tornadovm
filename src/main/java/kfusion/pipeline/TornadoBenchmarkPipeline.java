@@ -24,8 +24,7 @@
  */
 package kfusion.pipeline;
 
-import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
-import static uk.ac.manchester.tornado.collections.types.Float4.mult;
+import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.getInverseCameraMatrix;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 
@@ -36,21 +35,22 @@ import kfusion.devices.Device;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
+import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.TaskDataInterface;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
-import uk.ac.manchester.tornado.collections.graphics.ImagingOps;
-import uk.ac.manchester.tornado.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.collections.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
-import uk.ac.manchester.tornado.collections.types.Float3;
-import uk.ac.manchester.tornado.collections.types.Float4;
-import uk.ac.manchester.tornado.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.collections.types.ImageFloat8;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.common.Tornado;
-import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
@@ -209,7 +209,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		final int iterations = pyramidIterations.length;
 		scaledInvKs = new Matrix4x4Float[iterations];
 		for (int i = 0; i < iterations; i++) {
-			final Float4 cameraDup = mult(scaledCamera, 1f / (1 << i));
+			final Float4 cameraDup = Float4.mult(scaledCamera, 1f / (1 << i));
 			scaledInvKs[i] = new Matrix4x4Float();
 			getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
 		}
@@ -265,7 +265,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                                 new int[]{numWgs})
                         .streamOut(icpResultIntermediate1);
 
-                TaskMetaData meta = trackingPyramid[i].getTask("icp" + i + "." + "customReduce" + i).meta();
+                TaskMetaData meta = (TaskMetaData)trackingPyramid[i].getTask("icp" + i + "." + "customReduce" + i).meta();
                 String compilerFlags = meta.getOpenclCompilerFlags();
                 meta.setOpenclCompilerFlags(compilerFlags + " -DWGS=" + maxBinsPerCU);
                 meta.setGlobalWork(new long[]{maxwgs});

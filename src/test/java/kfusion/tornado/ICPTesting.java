@@ -39,8 +39,13 @@ import kfusion.TornadoModel;
 import kfusion.Utils;
 import kfusion.algorithms.IterativeClosestPoint;
 import kfusion.algorithms.TrackingResult;
-import uk.ac.manchester.tornado.collections.types.*;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.types.Float8;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
 
 public class ICPTesting {
 

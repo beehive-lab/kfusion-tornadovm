@@ -24,7 +24,7 @@
  */
 package kfusion;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import java.nio.FloatBuffer;
 
@@ -33,12 +33,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import kfusion.algorithms.IterativeClosestPoint;
-import uk.ac.manchester.tornado.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.Float6;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.FloatSE3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
-import uk.ac.manchester.tornado.collections.types.Float6;
-import uk.ac.manchester.tornado.collections.types.FloatOps;
-import uk.ac.manchester.tornado.collections.types.FloatSE3;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
 
 public class PoseEstimationTest {
 

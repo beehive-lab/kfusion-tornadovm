@@ -28,11 +28,11 @@ import kfusion.TornadoModel;
 import kfusion.Utils;
 import kfusion.devices.TestingDevice;
 import kfusion.pipeline.AbstractPipeline;
-import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
-import uk.ac.manchester.tornado.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.collections.types.Short2;
-import uk.ac.manchester.tornado.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.Short2;
+import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
 
 public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
     public IntegrationPipeline(TornadoModel config) {

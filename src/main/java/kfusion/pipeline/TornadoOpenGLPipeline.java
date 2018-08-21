@@ -24,27 +24,24 @@
  */
 package kfusion.pipeline;
 
+import static uk.ac.manchester.tornado.collections.matrix.MatrixMath.sgemm;
+
 import kfusion.TornadoModel;
 import kfusion.devices.Device;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
-import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
-import uk.ac.manchester.tornado.collections.graphics.ImagingOps;
-import uk.ac.manchester.tornado.collections.graphics.Renderer;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
+import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.collections.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
-import uk.ac.manchester.tornado.collections.types.Float4;
-import uk.ac.manchester.tornado.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.getInverseCameraMatrix;
-import static uk.ac.manchester.tornado.collections.matrix.MatrixMath.sgemm;
-import static uk.ac.manchester.tornado.collections.types.Float4.mult;
-import static uk.ac.manchester.tornado.collections.matrix.MatrixMath.sgemm;
-import static uk.ac.manchester.tornado.collections.types.Float4.mult;
 
 public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenGLPipeline<T> {
 
@@ -94,9 +91,9 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 		icpResult = new float[32];
 
 		final Matrix4x4Float scenePose = sceneView.getPose();
-
+		
 		//@formatter:off
-        preprocessingSchedule = new TaskSchedule("pp")
+        preprocessingSchedule = new TaskSchedule("pp") 
                 .streamIn(depthImageInput)
                 .task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
                 .task("bilateralFilter", ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian, eDelta, radius)
@@ -106,9 +103,9 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 		final int iterations = pyramidIterations.length;
 		scaledInvKs = new Matrix4x4Float[iterations];
 		for (int i = 0; i < iterations; i++) {
-			final Float4 cameraDup = mult(scaledCamera, 1f / (1 << i));
+			final Float4 cameraDup = Float4.mult(scaledCamera, 1f / (1 << i));
 			scaledInvKs[i] = new Matrix4x4Float();
-			getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
+			GraphicsMath.getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
 		}
 
 		estimatePoseSchedule = new TaskSchedule("estimatePose");

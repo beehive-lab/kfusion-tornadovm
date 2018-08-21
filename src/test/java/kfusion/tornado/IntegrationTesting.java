@@ -33,8 +33,13 @@ import org.junit.Test;
 import kfusion.TornadoModel;
 import kfusion.Utils;
 import kfusion.algorithms.Integration;
-import uk.ac.manchester.tornado.collections.types.*;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.types.Float2;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.Short2;
+import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
 
 public class IntegrationTesting {
 

@@ -112,8 +112,14 @@
             <version>0.0.2</version>
             <type>jar</type>
 			<scope>system</scope>
-			<systemPath>/home/juan/bin/slambench-java-0.0.2.jar</systemPath>
+			<systemPath>/home/juan/manchester/slambench-tornado/lib/slambench-java-0.0.2.jar</systemPath>
         </dependency>
+
+     <dependency>
+         <groupId>tornado-api</groupId>
+         <artifactId>tornado-api</artifactId>
+         <version>0.0.2-SNAPSHOT</version>
+     </dependency>
 
 
      <dependency>

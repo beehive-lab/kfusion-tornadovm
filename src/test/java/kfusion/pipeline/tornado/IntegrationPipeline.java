@@ -30,13 +30,13 @@ import kfusion.devices.Device;
 import kfusion.devices.TestingDevice;
 import kfusion.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.Integration;
-import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
-import uk.ac.manchester.tornado.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.Short2;
+import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
 import uk.ac.manchester.tornado.collections.matrix.MatrixFloatOps;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.collections.types.Short2;
-import uk.ac.manchester.tornado.collections.types.VolumeShort2;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
 

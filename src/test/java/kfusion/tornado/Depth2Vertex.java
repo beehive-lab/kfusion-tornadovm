@@ -30,13 +30,13 @@ import org.junit.Test;
 
 import kfusion.TornadoModel;
 import kfusion.Utils;
-import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
-import uk.ac.manchester.tornado.collections.types.Float3;
-import uk.ac.manchester.tornado.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class Depth2Vertex {
 

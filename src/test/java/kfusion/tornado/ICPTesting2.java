@@ -38,11 +38,11 @@ import org.junit.Test;
 
 import kfusion.TornadoModel;
 import kfusion.algorithms.IterativeClosestPoint;
-import uk.ac.manchester.tornado.collections.types.Float8;
-import uk.ac.manchester.tornado.collections.types.FloatOps;
-import uk.ac.manchester.tornado.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.types.Float8;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
 import uk.ac.manchester.tornado.common.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class ICPTesting2 {
 

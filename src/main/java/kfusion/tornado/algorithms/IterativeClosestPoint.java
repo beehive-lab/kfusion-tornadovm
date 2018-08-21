@@ -30,20 +30,20 @@ import kfusion.numerics.Constants;
 import kfusion.numerics.EjmlSVD2;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.types.Float2;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.Float6;
+import uk.ac.manchester.tornado.api.collections.types.Float8;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.FloatSE3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.api.collections.types.Int2;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
-import uk.ac.manchester.tornado.collections.types.Float2;
-import uk.ac.manchester.tornado.collections.types.Float3;
-import uk.ac.manchester.tornado.collections.types.Float6;
-import uk.ac.manchester.tornado.collections.types.Float8;
-import uk.ac.manchester.tornado.collections.types.FloatOps;
-import uk.ac.manchester.tornado.collections.types.FloatSE3;
-import uk.ac.manchester.tornado.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.collections.types.ImageFloat8;
-import uk.ac.manchester.tornado.collections.types.Int2;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.collections.types.MatrixFloat;
-import uk.ac.manchester.tornado.collections.types.VectorFloat;
 
 public class IterativeClosestPoint {
 

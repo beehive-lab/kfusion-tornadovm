@@ -26,12 +26,11 @@ package kfusion;
 
 import java.nio.FloatBuffer;
 
-
-import uk.ac.manchester.tornado.collections.types.Float4;
-import uk.ac.manchester.tornado.collections.types.FloatOps;
-import uk.ac.manchester.tornado.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 
 public class UtilsTest {
 

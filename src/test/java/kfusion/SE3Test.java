@@ -24,10 +24,10 @@
  */
 package kfusion;
 
-import uk.ac.manchester.tornado.collections.types.Float6;
-import uk.ac.manchester.tornado.collections.types.FloatOps;
-import uk.ac.manchester.tornado.collections.types.FloatSE3;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.Float6;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.FloatSE3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 
 public class SE3Test {
 

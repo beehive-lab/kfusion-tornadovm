@@ -33,10 +33,14 @@ import org.junit.Test;
 import kfusion.TornadoModel;
 import kfusion.Utils;
 import kfusion.algorithms.Raycast;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.meta.domain.IntDomain;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
-import uk.ac.manchester.tornado.collections.types.*;
 
 public class RaycastTesting {
 
