@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
-import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
+import uk.ac.manchester.tornado.matrix.MatrixMath;
 
 public class IterativeClosestPoint {
 

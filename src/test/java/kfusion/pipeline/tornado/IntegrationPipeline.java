@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.Short2;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
-import uk.ac.manchester.tornado.collections.matrix.MatrixFloatOps;
+import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 
 public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
 

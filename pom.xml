@@ -129,8 +129,8 @@
      </dependency>
    
      <dependency>
-         <groupId>tornado-collections</groupId>
-         <artifactId>tornado-collections</artifactId>
+         <groupId>tornado-matrices</groupId>
+         <artifactId>tornado-matrices</artifactId>
          <version>0.0.2-SNAPSHOT</version>
      </dependency>
    

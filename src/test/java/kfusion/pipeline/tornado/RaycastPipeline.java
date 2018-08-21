@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
+import uk.ac.manchester.tornado.matrix.MatrixMath;
 
 public class RaycastPipeline extends AbstractPipeline<TornadoModel> {
 

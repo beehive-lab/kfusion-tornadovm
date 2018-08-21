@@ -47,8 +47,8 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TaskDataInterface;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.collections.matrix.MatrixFloatOps;
-import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
+import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
+import uk.ac.manchester.tornado.matrix.MatrixMath;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 

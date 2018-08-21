@@ -24,7 +24,7 @@
  */
 package kfusion.pipeline;
 
-import static uk.ac.manchester.tornado.collections.matrix.MatrixMath.sgemm;
+import static uk.ac.manchester.tornado.matrix.MatrixMath.sgemm;
 
 import kfusion.TornadoModel;
 import kfusion.devices.Device;
@@ -38,8 +38,8 @@ import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.collections.matrix.MatrixFloatOps;
-import uk.ac.manchester.tornado.collections.matrix.MatrixMath;
+import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
+import uk.ac.manchester.tornado.matrix.MatrixMath;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 
