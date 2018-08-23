@@ -53,31 +53,7 @@ public class RaycastPipeline extends AbstractPipeline<TornadoModel> {
 
         final ImageFloat3 verticies = referenceView.getVerticies();
         final ImageFloat3 normals = referenceView.getNormals();
-
-        // final DomainTree domain = new DomainTree(2);
-        // domain.set(0, new IntDomain(verticies.X()));
-        // domain.set(1, new IntDomain(verticies.Y()));
-        // System.out.printf("farPlane: %f\n", farPlane);
-        // final TornadoExecuteTask raycast = Raycast.raycastCode.invoke(
-        // verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane,
-        // largeStep,
-        // smallStep);
-        //
-        // raycast.disableJIT();
-        // raycast.meta().addProvider(
-        // DomainTree.class, domain);
-        // raycast.mapTo(EXTERNAL_GPU);
-        // raycast.loadFromFile("opencl/raycast.cl");
-        // final PrebuiltTask raycast = TaskUtils.createTask("customRaycast",
-        // "raycast",
-        // "./opencl/raycast.cl",
-        // new Object[]{verticies, normals, volume, volumeDims, referencePose,
-        // nearPlane, farPlane, largeStep,
-        // smallStep},
-        // new Access[]{Access.READ_WRITE, Access.READ_WRITE, Access.READ, Access.READ,
-        // Access.READ, Access.READ, Access.READ, Access.READ, Access.READ},
-        // config.getTornadoDevice(),
-        // new int[]{verticies.X(), verticies.Y()});
+        
         //@formatter:off
         graph = new TaskSchedule("s0")
                 .streamIn(referencePose, volume, volumeDims)
@@ -110,9 +86,6 @@ public class RaycastPipeline extends AbstractPipeline<TornadoModel> {
             Utils.loadData(makeFilename(path, index, "raycasting", "vertex", false), refVerticies.asBuffer());
             Utils.loadData(makeFilename(path, index, "raycasting", "normal", false), refNormals.asBuffer());
 
-            // System.out.printf("ref inv
-            // pose:\n%s\n",refInversePose.toString(FloatOps.fmt4em));
-            // System.out.printf("ref K :\n%s\n",refK.toString(FloatOps.fmt4em));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -130,37 +103,9 @@ public class RaycastPipeline extends AbstractPipeline<TornadoModel> {
 
     }
 
-    // @Override
-    // public void updateReferenceView() {
-    // if (KfusionModel.DEBUG) {
-    // info("============== updating reference view ==============");
-    // }
-    //
-    // referenceView.getPose().set(
-    // currentView.getPose());
-    //
-    // // convert the tracked pose into correct co-ordinate system for
-    // // raycasting
-    // // which system (homogeneous co-ordinates? or virtual image?)
-    // MatrixMath.sgemm(
-    // currentView.getPose(), scaledInvK, referencePose);
-    // if (KfusionModel.DEBUG) {
-    // info(
-    // "current pose: %s", currentView.getPose().toString());
-    // info(
-    // "reference pose: %s", referencePose.toString());
-    // }
-    //
-    // graph.schedule().waitOn();
-    // }
     @Override
     public void execute() {
-
-        // updateReferenceView();
-        // if (config.debug()) {
-        // info("============== updating reference view ==============");
-        // }
-        //
+    	
         final ImageFloat3 verticies = referenceView.getVerticies().duplicate();
         final ImageFloat3 normals = referenceView.getNormals().duplicate();
 
@@ -183,30 +128,11 @@ public class RaycastPipeline extends AbstractPipeline<TornadoModel> {
         System.out.printf("verticies [T]: %s\n", referenceView.getVerticies().summerise());
         System.out.printf("verticies [R]: %s\n", refVerticies.summerise());
 
-        // FloatingPointError vertexError = verticies.calculateULP(
-        // refVerticies);
-        // System.out.printf(
-        // "\tvertex errors: %s\n", vertexError.toString());
-        //
-        // vertexError = referenceView.getVerticies().calculateULP(
-        // refVerticies);
-        // System.out.printf(
-        // "\tvertex errors: %s\n", vertexError.toString());
         System.out.printf("normals   [J]: %s\n", normals.summerise());
         System.out.printf("normals   [T]: %s\n", referenceView.getNormals().summerise());
         System.out.printf("normals   [R]: %s\n", refNormals.summerise());
 
-        // vertexError = normals.calculateULP(
-        // refNormals);
-        // System.out.printf(
-        // "\tnormals errors: %s\n", vertexError.toString());
-        //
-        // vertexError = referenceView.getNormals().calculateULP(
-        // refNormals);
-        // System.out.printf(
-        // "\tnormals errors: %s\n", vertexError.toString());
         graph.dumpTimes();
-
     }
 
     public static void main(String[] args) {

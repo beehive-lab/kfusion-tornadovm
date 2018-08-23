@@ -30,7 +30,7 @@ import kfusion.TornadoModel;
 import kfusion.ui.KfusionTornadoCanvas;
 import kfusion.ui.TornadoConfigPanel;
 import kfusion.ui.TornadoWorkbenchFrame;
-import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class GUI {
 

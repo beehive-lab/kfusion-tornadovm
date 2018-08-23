@@ -24,8 +24,6 @@
  */
 package kfusion.ui;
 
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -39,9 +37,10 @@ import javax.swing.JPanel;
 import javax.swing.border.EtchedBorder;
 
 import kfusion.TornadoModel;
-import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 
 public class TornadoConfigPanel extends JPanel implements ActionListener {
 
@@ -55,7 +54,7 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 		this.config = config;
 		final List<TornadoDevice> tmpDevices = new ArrayList<>();
 
-		OCLDriver driver = getTornadoRuntime().getDriver(OCLDriver.class);
+		OCLDriver driver = (OCLDriver)TornadoRuntime.getTornadoRuntime().getDriver(0);
 
 		final TornadoDevice[] devices;
 		if (driver != null) {
@@ -63,8 +62,6 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 			for (int platformIndex = 0; platformIndex < driver.getNumPlatforms(); platformIndex++) {
 				for (int deviceIndex = 0; deviceIndex < driver.getNumDevices(platformIndex); deviceIndex++) {
 					final OCLTornadoDevice device = new OCLTornadoDevice(platformIndex, deviceIndex);
-					// if(device.getDevice().getDeviceType() ==
-					// OCLDeviceType.CL_DEVICE_TYPE_GPU)
 					tmpDevices.add(device);
 				}
 			}

@@ -143,7 +143,5 @@ public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
 
         double pctValid = (((double) validFrames) / ((double) numFrames)) * 100.0;
         System.out.printf("Found %d valid frames (%.2f %%)\n", validFrames, pctValid);
-
     }
-
 }

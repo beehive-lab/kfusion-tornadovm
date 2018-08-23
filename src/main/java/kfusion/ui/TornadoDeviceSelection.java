@@ -26,7 +26,7 @@ package kfusion.ui;
 
 import javax.swing.DefaultComboBoxModel;
 
-import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
 public class TornadoDeviceSelection extends DefaultComboBoxModel<TornadoDevice> {
 

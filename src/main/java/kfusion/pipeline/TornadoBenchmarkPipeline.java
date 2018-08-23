@@ -25,8 +25,8 @@
 package kfusion.pipeline;
 
 import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.getInverseCameraMatrix;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.elapsedTimeInSeconds;
+import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableByteCount;
 
 import java.io.PrintStream;
 
@@ -45,12 +45,11 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.TaskDataInterface;
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
-import uk.ac.manchester.tornado.common.Tornado;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
 
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
@@ -179,7 +178,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		info("mapping onto %s\n", oclDevice.toString());
 
 		final long localMemSize = oclDevice.getDevice().getLocalMemorySize();
-		final float fraction = Float.parseFloat(Tornado.getProperty("kfusion.reduce.fraction", "1.0"));
+		final float fraction = Float.parseFloat(TornadoRuntime.getProperty("kfusion.reduce.fraction", "1.0"));
 		cus = (int) (oclDevice.getDevice().getMaxComputeUnits() * fraction);
 		final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
 		final int maxBinsPerCU = roundToWgs(maxBinsPerResource, 128);
@@ -266,7 +265,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                         .streamOut(icpResultIntermediate1);
 
                 TaskMetaData meta = (TaskMetaData)trackingPyramid[i].getTask("icp" + i + "." + "customReduce" + i).meta();
-                String compilerFlags = meta.getOpenclCompilerFlags();
+                String compilerFlags = meta.getCompilerFlags();
                 meta.setOpenclCompilerFlags(compilerFlags + " -DWGS=" + maxBinsPerCU);
                 meta.setGlobalWork(new long[]{maxwgs});
                 meta.setLocalWork(new long[]{maxBinsPerCU});
@@ -282,7 +281,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 //                        .streamOut(icpResultIntermediate1);
                 
                 // XXX: perform final reduction from partial reduction after copy out on CPU.
-                
                 
             } else {
                 trackingPyramid[i].streamOut(pyramidTrackingResults[i]);

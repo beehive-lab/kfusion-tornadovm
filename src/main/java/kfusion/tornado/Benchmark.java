@@ -31,7 +31,7 @@ import kfusion.TornadoModel;
 import kfusion.devices.Device;
 import kfusion.pipeline.TornadoBenchmarkPipeline;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class Benchmark {
 

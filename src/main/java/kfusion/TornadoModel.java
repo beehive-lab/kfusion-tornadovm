@@ -24,13 +24,13 @@
  */
 package kfusion;
 
-import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class TornadoModel extends KfusionConfig {
 
 	private boolean useTornado;
-	private OCLTornadoDevice tornadoDevice;
+	private TornadoDevice tornadoDevice;
 
 	public TornadoModel() {
 		super();
@@ -48,7 +48,7 @@ public class TornadoModel extends KfusionConfig {
 		return Integer.parseInt(settings.getProperty("kfusion.tornado.device", "0"));
 	}
 
-	public void setTornadoDevice(OCLTornadoDevice value) {
+	public void setTornadoDevice(TornadoDevice value) {
 		tornadoDevice = value;
 	}
 
@@ -58,7 +58,6 @@ public class TornadoModel extends KfusionConfig {
 
 	public void setUseTornado(boolean value) {
 		useTornado = value;
-
 	}
 
 	public float getMaxULP() {

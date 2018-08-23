@@ -39,11 +39,11 @@ import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
-import uk.ac.manchester.tornado.meta.domain.DomainTree;
-import uk.ac.manchester.tornado.meta.domain.IntDomain;
+import uk.ac.manchester.tornado.runtime.meta.domain.DomainTree;
+import uk.ac.manchester.tornado.runtime.meta.domain.IntDomain;
 
 public class RaycastTesting {
-
+	
     final private TornadoModel config = new TornadoModel();
     final private String FILE_PATH = "/Users/jamesclarkson/Downloads/kfusion_ut_data";
 

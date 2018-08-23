@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class Depth2Vertex {
 

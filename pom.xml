@@ -134,7 +134,7 @@
          <version>0.0.2-SNAPSHOT</version>
      </dependency>
    
-     <dependency>
+      <dependency>
          <groupId>tornado-drivers-opencl</groupId>
          <artifactId>tornado-drivers-opencl</artifactId>
          <version>0.0.2-SNAPSHOT</version>
@@ -145,7 +145,6 @@
          <artifactId>tornado-drivers-opencl-jni</artifactId>
          <version>0.0.2-SNAPSHOT</version>
      </dependency>
- 
 
         <dependency>
             <groupId>freenect</groupId>
