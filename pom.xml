@@ -4,7 +4,7 @@
 
     <groupId>slambench</groupId>
     <artifactId>slambench-tornado</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>slambench-tornado</name>
@@ -13,7 +13,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <tornado.version>0.0.2-SNAPSHOT</tornado.version>
+        <tornado.version>0.1.0-SNAPSHOT</tornado.version>
         <graal.root>${GRAAL_ROOT}</graal.root>
         <graal.version>${GRAAL_VERSION}</graal.version>
         <jvmci.version>${JVMCI_VERSION}</jvmci.version>
@@ -116,15 +116,15 @@
         </dependency>
 
      <dependency>
-         <groupId>tornado-api</groupId>
+         <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.0.2-SNAPSHOT</version>
+         <version>0.1.0-SNAPSHOT</version>
      </dependency>
    
      <dependency>
-         <groupId>tornado-matrices</groupId>
+         <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.0.2-SNAPSHOT</version>
+         <version>0.1.0-SNAPSHOT</version>
      </dependency>
 
         <dependency>
