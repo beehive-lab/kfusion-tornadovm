@@ -84,7 +84,6 @@ public class TornadoModel extends KfusionConfig {
 	public void reset() {
 		super.reset();
 		useTornado = Boolean.parseBoolean(settings.getProperty("kfusion.tornado.enable", "False"));
-		//tornadoDevice = new OCLTornadoDevice(getPlatformIndex(), getDeviceIndex());
-		tornadoDevice =TornadoRuntime.createDevice(getPlatformIndex(), getDeviceIndex());
+		tornadoDevice = TornadoRuntime.createDevice(getPlatformIndex(), getDeviceIndex());
 	}
 }

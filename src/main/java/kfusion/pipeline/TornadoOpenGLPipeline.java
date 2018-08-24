@@ -42,7 +42,6 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
 
-
 public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenGLPipeline<T> {
 
 	public TornadoOpenGLPipeline(T config) {
