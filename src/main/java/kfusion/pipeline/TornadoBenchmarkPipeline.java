@@ -266,7 +266,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
                 TaskMetaDataInterface meta = trackingPyramid[i].getTask("icp" + i + "." + "customReduce" + i).meta();
                 String compilerFlags = meta.getCompilerFlags();
-                meta.setOpenclCompilerFlags(compilerFlags + " -DWGS=" + maxBinsPerCU);
+                meta.setCompilerFlags(compilerFlags + " -DWGS=" + maxBinsPerCU);
                 meta.setGlobalWork(new long[]{maxwgs});
                 meta.setLocalWork(new long[]{maxBinsPerCU});
             } else if (config.useSimpleReduce()) {
