@@ -52,7 +52,7 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 	public TornadoConfigPanel(final TornadoModel config) {
 		this.config = config;
 		final List<TornadoDevice> tmpDevices = new ArrayList<>();
-
+		
 		TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
 
 		final TornadoDevice[] devices;
@@ -62,14 +62,7 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 				final TornadoDevice device = driver.getDevice(devIndex);
 				tmpDevices.add(device);
 			}
-
-//			for (int platformIndex = 0; platformIndex < driver.getNumPlatforms(); platformIndex++) {
-//				for (int deviceIndex = 0; deviceIndex < driver.getNumDevices(platformIndex); deviceIndex++) {
-//					final OCLTornadoDevice device = new OCLTornadoDevice(platformIndex, deviceIndex);
-//					tmpDevices.add(device);
-//				}
-//			}
-
+			
 			devices = new TornadoDevice[tmpDevices.size()];
 			tmpDevices.toArray(devices);
 
