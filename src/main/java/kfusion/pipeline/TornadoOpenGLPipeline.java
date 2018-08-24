@@ -38,9 +38,9 @@ import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 
 public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenGLPipeline<T> {
@@ -49,7 +49,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 		super(config);
 	}
 
-	private OCLTornadoDevice oclDevice;
+	private TornadoDevice oclDevice;
 
 	/**
 	 * Tornado
@@ -74,13 +74,13 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 		/**
 		 * Tornado tasks
 		 */
-		oclDevice = (OCLTornadoDevice) config.getTornadoDevice();
+		oclDevice = config.getTornadoDevice();
 		info("mapping onto %s\n", oclDevice.toString());
 
 		/*
 		 * Cleanup after previous configurations
 		 */
-		oclDevice.getBackend().reset();
+		oclDevice.reset();
 
 		pyramidPose = new Matrix4x4Float();
 		pyramidDepths[0] = filteredDepthImage;

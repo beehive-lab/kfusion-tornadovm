@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.api.utils.TornadoUtilities;
 
 public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
 
@@ -170,7 +170,7 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
         long end = System.nanoTime();
         // graph1.dumpTimes();
         // graph2.dumpTimes();
-        System.out.printf("elapsed time=%s\n", RuntimeUtilities.elapsedTimeInSeconds(start, end));
+        System.out.printf("elapsed time=%s\n", TornadoUtilities.elapsedTimeInSeconds(start, end));
 
         final Matrix4x4Float invReferencePose = referenceView.getPose().duplicate();
         MatrixFloatOps.inverse(invReferencePose);

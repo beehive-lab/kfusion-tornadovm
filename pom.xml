@@ -120,29 +120,10 @@
          <artifactId>tornado-api</artifactId>
          <version>0.0.2-SNAPSHOT</version>
      </dependency>
-
-
-     <dependency>
-         <groupId>tornado-runtime</groupId>
-         <artifactId>tornado-runtime</artifactId>
-         <version>0.0.2-SNAPSHOT</version>
-     </dependency>
    
      <dependency>
          <groupId>tornado-matrices</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.0.2-SNAPSHOT</version>
-     </dependency>
-   
-      <dependency>
-         <groupId>tornado-drivers-opencl</groupId>
-         <artifactId>tornado-drivers-opencl</artifactId>
-         <version>0.0.2-SNAPSHOT</version>
-     </dependency>
- 
-     <dependency>
-         <groupId>tornado-drivers-opencl-jni</groupId>
-         <artifactId>tornado-drivers-opencl-jni</artifactId>
          <version>0.0.2-SNAPSHOT</version>
      </dependency>
 

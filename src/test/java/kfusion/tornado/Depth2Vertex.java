@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.api.utils.TornadoUtilities;
 
 public class Depth2Vertex {
 
@@ -158,7 +158,7 @@ public class Depth2Vertex {
                 long start = System.nanoTime();
                 GraphicsMath.depth2vertex(vertex[refIndex], depth[refIndex], invK);
                 long end = System.nanoTime();
-                System.out.printf("depth2vertex: executime time=%f\n", RuntimeUtilities.elapsedTimeInSeconds(start, end));
+                System.out.printf("depth2vertex: executime time=%f\n", TornadoUtilities.elapsedTimeInSeconds(start, end));
             }
 
             float maxULP = calculateULP(vertex[refIndex], vertexTruth[refIndex]);
@@ -236,7 +236,7 @@ public class Depth2Vertex {
                 long start = System.nanoTime();
                 GraphicsMath.vertex2normal(normal[refIndex], vertex[refIndex]);
                 long end = System.nanoTime();
-                System.out.printf("vertexToNormal: executime time=%f\n", RuntimeUtilities.elapsedTimeInSeconds(start, end));
+                System.out.printf("vertexToNormal: executime time=%f\n", TornadoUtilities.elapsedTimeInSeconds(start, end));
 
             }
 

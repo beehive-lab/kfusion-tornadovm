@@ -30,7 +30,7 @@ import kfusion.TornadoModel;
 import kfusion.ui.KfusionTornadoCanvas;
 import kfusion.ui.TornadoConfigPanel;
 import kfusion.ui.TornadoWorkbenchFrame;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class GUI {
 
@@ -40,7 +40,7 @@ public class GUI {
 			public void run() {
 				final TornadoModel config = new TornadoModel();
 				if (System.getProperty("tornado.config") != null) {
-					Tornado.loadSettings(System.getProperty("tornado.config"));
+					TornadoRuntime.loadSettings(System.getProperty("tornado.config"));
 				}
 
 				final TornadoConfigPanel tornadoConfig = new TornadoConfigPanel(config);

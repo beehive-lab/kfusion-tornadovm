@@ -44,13 +44,12 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.utils.TornadoUtilities;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
-import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 
 public class ReducePipeline extends AbstractPipeline<TornadoModel> {
@@ -83,19 +82,19 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
     public void configure(Device device) {
         super.configure(device);
 
-        final OCLTornadoDevice oclDevice = OpenCL.defaultDevice();
+        final TornadoDevice oclDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         final long localMemSize = oclDevice.getDevice().getLocalMemorySize();
         cus = oclDevice.getDevice().getMaxComputeUnits();
 
-        final float cuLF = Float.parseFloat(Tornado.getProperty("culf", "1.0"));
-        final float wgLF = Float.parseFloat(Tornado.getProperty("wglf", "1.0"));
+        final float cuLF = Float.parseFloat(TornadoRuntime.getProperty("culf", "1.0"));
+        final float wgLF = Float.parseFloat(TornadoRuntime.getProperty("wglf", "1.0"));
 
         final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
         final int maxBinsPerCU = roundToWgs(maxBinsPerResource, 128);
 
         final int wgs = maxBinsPerCU * cus;
 
-        System.out.printf("local mem size   : %s\n", RuntimeUtilities.humanReadableByteCount(localMemSize, false));
+        System.out.printf("local mem size   : %s\n", TornadoUtilities.humanReadableByteCount(localMemSize, false));
         System.out.printf("num compute units: %d\n", cus);
         System.out.printf("max bins per cu  : %d\n", maxBinsPerCU);
         System.out.printf("reduce ratio 1   : %d\n", wgs);
@@ -130,31 +129,12 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
 
         trackingPyramid = new TaskSchedule[iterations];
         for (int i = 0; i < iterations; i++) {
-
-            // final PrebuiltTask customMapReduce = TaskUtils.createTask("optMapReduce" + i,
-            // "optMapReduce",
-            // "./opencl/optMapReduce.cl",
-            // new Object[]{icpResultIntermediate1, pyramidTrackingResults[i],
-            // pyramidTrackingResults[i].X(), pyramidTrackingResults[i].Y()},
-            // new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
-            // oclDevice,
-            // new int[]{wgs});
-            //
-            // final OCLKernelConfig kernelConfig =
-            // OCLKernelConfig.create(customMapReduce.meta());
-            // kernelConfig.getGlobalWork()[0] = wgs;
-            // kernelConfig.getLocalWork()[0] = maxBinsPerCU;
-            //@formatter:off
             trackingPyramid[i] = new TaskSchedule("s0")
                     .streamIn(pyramidPose)
                     .task("track" + i, IterativeClosestPoint::trackPose,
                             pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
                             referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
                             projectReference, distanceThreshold, normalThreshold)
-                    // .add(IterativeClosestPoint::zero,icpResultIntermediate1)
-                    // .add(IterativeClosestPoint::mapReduce,icpResultIntermediate1,pyramidTrackingResults[i])
-                    // .add(IterativeClosestPoint::reduceIntermediate,icpResultIntermediate2, icpResultIntermediate1)
-                    // .add(IterativeClosestPoint::reduce1,icpResult,pyramidTrackingResults[i])
                     .prebuiltTask("optMapReduce" + i,
                             "optMapReduce",
                             "./opencl/optMapReduce.cl",
@@ -165,7 +145,7 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
                     .streamOut(icpResultIntermediate1, pyramidTrackingResults[i])
                     .mapAllTo(oclDevice);
 
-            TaskMetaData meta = (TaskMetaData)trackingPyramid[i].getTask("s0.optMapReduce" + i).meta();
+            TaskMetaDataInterface meta = trackingPyramid[i].getTask("s0.optMapReduce" + i).meta();
             meta.getGlobalWork()[0] = wgs;
             meta.getLocalWork()[0] = maxBinsPerCU;
             //@formatter:on
@@ -267,7 +247,7 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
         long end = System.nanoTime();
         graph1.dumpTimes();
         // graph2.dumpTimes();
-        System.out.printf("elapsed time=%s\n", RuntimeUtilities.elapsedTimeInSeconds(start, end));
+        System.out.printf("elapsed time=%s\n", TornadoUtilities.elapsedTimeInSeconds(start, end));
 
         // perform ICP
         pyramidPose.set(currentView.getPose());

@@ -31,7 +31,7 @@ import kfusion.TornadoModel;
 import kfusion.devices.Device;
 import kfusion.pipeline.TornadoBenchmarkPipeline;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class Benchmark {
 
@@ -49,7 +49,7 @@ public class Benchmark {
 		config.loadSettingsFile(args[0]);
 
 		if (System.getProperty("tornado.config") != null) {
-			Tornado.loadSettings(System.getProperty("tornado.config"));
+			TornadoRuntime.loadSettings(System.getProperty("tornado.config"));
 			config.loadSettingsFile(System.getProperty("tornado.config"));
 		}
 
