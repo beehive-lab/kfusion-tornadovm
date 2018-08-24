@@ -39,9 +39,6 @@ import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
-import uk.ac.manchester.tornado.api.domain.DomainTree;
-import uk.ac.manchester.tornado.api.domain.IntDomain;
-
 
 public class RaycastTesting {
 	
@@ -89,19 +86,8 @@ public class RaycastTesting {
         Utils.loadData(String.format("%s/%slargestep.in.%04d", FILE_PATH, raycast_prefix, 0), tmp);
         largeStep = tmp[0];
 
-        DomainTree domain = new DomainTree(2);
-        domain.set(0, new IntDomain(vOut.X()));
-        domain.set(1, new IntDomain(vOut.Y()));
-
         System.out.printf("      step: %f\n", step);
         System.out.printf("large step: %f\n", largeStep);
-        // TornadoExecuteTask raycast =
-        // Raycast.raycastCode.invoke(vOut,nOut,volume,volumeDims,view,nearPlane,farPlane,largeStep/0.75f,step);
-        // raycast.disableJIT();
-        // raycast.meta().addProvider(DomainTree.class, domain);
-        // raycast.mapTo(EXTERNAL_GPU);
-        // raycast.loadFromFile("opencl/raycast-golden.cl");
-        //
 
         graph = new TaskSchedule("s0").streamIn(volume, view).task("raycast", Raycast::raycast, vOut, nOut, volume, volumeDims, view, nearPlane, farPlane, largeStep / 0.75f, step)
                 .streamOut(vOut, nOut).mapAllTo(config.getTornadoDevice());
