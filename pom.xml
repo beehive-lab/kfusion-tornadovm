@@ -106,7 +106,7 @@
             <version>0.0.2</version>
             <type>jar</type>
 			<scope>system</scope>
-			<systemPath>/home/juan/manchester/slambench-tornado/lib/slambench-java-0.0.2.jar</systemPath>
+			<systemPath>${project.basedir}/lib/slambench-java-0.0.2.jar</systemPath>
         </dependency>
 
      <dependency>

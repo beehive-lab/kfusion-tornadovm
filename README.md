@@ -30,4 +30,4 @@ $ kfusion kfusion.tornado.Benchmark <config file>
 ```
 
 Note: 
-* sample configuration files from SLAMBench are under conf/
+* sample configuration files from SLAMBench are under the `conf/` directory.
