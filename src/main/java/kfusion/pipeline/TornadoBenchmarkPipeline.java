@@ -357,7 +357,12 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 	protected void integrate() {
 		invTrack.set(currentView.getPose());
 		MatrixFloatOps.inverse(invTrack);
-		integrateSchedule.execute();
+
+		if (EXECUTE_WITH_PROFILER) {
+			integrateSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
+		} else {
+			integrateSchedule.execute();
+		}
 	}
 
 	@Override
@@ -420,6 +425,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		// convert the tracked pose into correct co-ordinate system for
 		// raycasting which system (homogeneous co-ordinates? or virtual image?)
 		MatrixMath.sgemm(currentView.getPose(), scaledInvK, referencePose);
-		raycastSchedule.execute();
+		if (EXECUTE_WITH_PROFILER) {
+			raycastSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
+		} else {
+			raycastSchedule.execute();
+		}
 	}
 }
