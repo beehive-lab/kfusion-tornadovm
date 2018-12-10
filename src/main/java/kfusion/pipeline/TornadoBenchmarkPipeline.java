@@ -210,8 +210,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		preprocessingSchedule = new TaskSchedule("pp")
 				.streamIn(depthImageInput)
 				.task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
-				.task("bilateralFilter", ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian, eDelta, radius);
-				//.mapAllTo(tornadoDevice);
+				.task("bilateralFilter", ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian, eDelta, radius)
+				.mapAllTo(tornadoDevice);
 		//@formatter:on
 
 		final int iterations = pyramidIterations.length;
@@ -292,14 +292,14 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 			}
 			//@formatter:on
 
-			//trackingPyramid[i].mapAllTo(tornadoDevice);
+			trackingPyramid[i].mapAllTo(tornadoDevice);
 		}
 
 		//@formatter:off
 		integrateSchedule = new TaskSchedule("integrate")
 				.streamIn(invTrack)
-				.task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight);
-				//.mapAllTo(tornadoDevice);
+				.task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight)
+				.mapAllTo(tornadoDevice);
 		//@formatter:on
 
 		final ImageFloat3 verticies = referenceView.getVerticies();
@@ -308,8 +308,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		//@formatter:off
 		raycastSchedule = new TaskSchedule("raycast")
 				.streamIn(referencePose)
-				.task("raycast", Raycast::raycast, verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep);
-				//.mapAllTo(tornadoDevice);
+				.task("raycast", Raycast::raycast, verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep)
+				.mapAllTo(tornadoDevice);
 		//@formatter:on
 
 		//@formatter:off
@@ -325,13 +325,13 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		//@formatter:on
 
 		renderTrack = new TaskSchedule("renderTrack")
-				.task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0]);
-				//.mapAllTo(tornadoDevice);
+				.task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
+				.mapAllTo(tornadoDevice);
 
 		renderSchedule = new TaskSchedule("render").streamIn(scenePose)
 				.task("renderVolume", Renderer::renderVolume, renderedScene, volume, volumeDims, scenePose, nearPlane,
-						farPlane * 2f, smallStep, largeStep, light, ambient);
-				//.mapAllTo(tornadoDevice);
+						farPlane * 2f, smallStep, largeStep, light, ambient)
+				.mapAllTo(tornadoDevice);
 
 		preprocessingSchedule.warmup();
 		estimatePoseSchedule.warmup();
