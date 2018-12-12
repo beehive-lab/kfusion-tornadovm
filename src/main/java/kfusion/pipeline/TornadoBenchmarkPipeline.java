@@ -425,10 +425,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		// convert the tracked pose into correct co-ordinate system for
 		// raycasting which system (homogeneous co-ordinates? or virtual image?)
 		MatrixMath.sgemm(currentView.getPose(), scaledInvK, referencePose);
-		if (EXECUTE_WITH_PROFILER) {
-			raycastSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
-		} else {
-			raycastSchedule.execute();
-		}
+		raycastSchedule.execute();
 	}
 }
