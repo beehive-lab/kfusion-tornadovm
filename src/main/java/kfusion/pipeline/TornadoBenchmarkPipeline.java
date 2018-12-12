@@ -135,10 +135,11 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				if (frames % renderingRate == 0) {
 					if (EXECUTE_WITH_PROFILER) {
 						renderTrack.executeWithProfilerSequential(Policy.PERFORMANCE);
+						renderSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
 					} else {
 						renderTrack.execute();
+						renderSchedule.execute();
 					}
-					renderSchedule.execute();
 				}
 
 				timings[6] = System.nanoTime();
@@ -425,6 +426,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		// convert the tracked pose into correct co-ordinate system for
 		// raycasting which system (homogeneous co-ordinates? or virtual image?)
 		MatrixMath.sgemm(currentView.getPose(), scaledInvK, referencePose);
-		raycastSchedule.execute();
+		if (EXECUTE_WITH_PROFILER) {
+			raycastSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
+		} else {
+			raycastSchedule.execute();
+		}
 	}
 }
