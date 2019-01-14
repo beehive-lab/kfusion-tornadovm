@@ -78,7 +78,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
 	public static boolean EXECUTE_WITH_PROFILER = false;
 	
-	private static final String HEAD_BENCHMARK = "frame\tacquisition\tpreprocessing\ttracking\tintegration\traycasting\trendering\tcomputation\ttotal    \tX          \tY          \tZ         \ttracked   \tintegrated"; 
+	private static final String HEAD_BENCHMARK = "frame\tacquisition\tpreprocessing\ttracking\tintegration\traycasting\trendering\tcomputation\ttotal    \tX          \tY          \tZ         \ttracked   \tintegrated";
+	
+	private static final Policy policy = Policy.PERFORMANCE;
 
 	public TornadoBenchmarkPipeline(TornadoModel config, PrintStream out) {
 		super(config);
@@ -134,11 +136,12 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
 				if (frames % renderingRate == 0) {
 					if (EXECUTE_WITH_PROFILER) {
-						renderTrack.executeWithProfilerSequential(Policy.PERFORMANCE);
+						renderTrack.executeWithProfilerSequential(policy);
+						renderSchedule.executeWithProfilerSequential(policy);
 					} else {
 						renderTrack.execute();
+						renderSchedule.execute();
 					}
-					renderSchedule.execute();
 				}
 
 				timings[6] = System.nanoTime();
@@ -347,7 +350,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 	@Override
 	protected void preprocessing() {
 		if (EXECUTE_WITH_PROFILER) {
-			preprocessingSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
+			preprocessingSchedule.executeWithProfilerSequential(policy);
 		} else {
 			preprocessingSchedule.execute();
 		}
@@ -359,7 +362,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		MatrixFloatOps.inverse(invTrack);
 
 		if (EXECUTE_WITH_PROFILER) {
-			integrateSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
+			integrateSchedule.executeWithProfilerSequential(policy);
 		} else {
 			integrateSchedule.execute();
 		}
@@ -426,7 +429,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		// raycasting which system (homogeneous co-ordinates? or virtual image?)
 		MatrixMath.sgemm(currentView.getPose(), scaledInvK, referencePose);
 		if (EXECUTE_WITH_PROFILER) {
-			raycastSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
+			raycastSchedule.executeWithProfilerSequential(policy);
 		} else {
 			raycastSchedule.execute();
 		}
