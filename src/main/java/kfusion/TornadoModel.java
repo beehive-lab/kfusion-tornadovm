@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
@@ -24,68 +24,66 @@
  */
 package kfusion;
 
-import tornado.common.TornadoDevice;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class TornadoModel extends KfusionConfig {
 
-    private boolean useTornado;
-    private TornadoDevice tornadoDevice;
+	private boolean useTornado;
+	private TornadoDevice tornadoDevice;
 
-    public TornadoModel() {
-        super();
-    }
+	public TornadoModel() {
+		super();
+	}
 
-    public boolean useTornado() {
-        return useTornado;
-    }
+	public boolean useTornado() {
+		return useTornado;
+	}
 
-    public int getPlatformIndex() {
-        return Integer.parseInt(settings.getProperty("kfusion.tornado.platform", "0"));
-    }
+	public int getPlatformIndex() {
+		return Integer.parseInt(settings.getProperty("kfusion.tornado.platform", "0"));
+	}
 
-    public int getDeviceIndex() {
-        return Integer.parseInt(settings.getProperty("kfusion.tornado.device", "0"));
-    }
+	public int getDeviceIndex() {
+		return Integer.parseInt(settings.getProperty("kfusion.tornado.device", "0"));
+	}
 
-    @Override
-    public void reset() {
-        super.reset();
-        useTornado = Boolean.parseBoolean(settings.getProperty("kfusion.tornado.enable",
-                "False"));
-        tornadoDevice = new OCLTornadoDevice(getPlatformIndex(), getDeviceIndex());
-    }
+	public void setTornadoDevice(TornadoDevice device) {
+		tornadoDevice = device;
+	}
 
-    public void setTornadoDevice(TornadoDevice value) {
-        tornadoDevice = value;
-    }
+	public TornadoDevice getTornadoDevice() {
+		return tornadoDevice;
+	}
 
-    public TornadoDevice getTornadoDevice() {
-        return tornadoDevice;
-    }
+	public void setUseTornado(boolean value) {
+		useTornado = value;
+	}
 
-    public void setUseTornado(boolean value) {
-        useTornado = value;
+	public float getMaxULP() {
+		return Float.parseFloat(settings.getProperty("kfusion.maxulp", "5.0"));
+	}
 
-    }
+	public boolean printKernels() {
+		return Boolean.parseBoolean(settings.getProperty("kfusion.kernels.print", "False"));
+	}
 
-    public float getMaxULP() {
-        return Float.parseFloat(settings.getProperty("kfusion.maxulp", "5.0"));
-    }
+	public int getReductionSize() {
+		return Integer.parseInt(settings.getProperty("kfusion.model.reduce", "1024"));
+	}
 
-    public boolean printKernels() {
-        return Boolean.parseBoolean(settings.getProperty("kfusion.kernels.print", "False"));
-    }
+	public boolean useCustomReduce() {
+		return Boolean.parseBoolean(settings.getProperty("kfusion.reduce.custom", "False"));
+	}
 
-    public int getReductionSize() {
-        return Integer.parseInt(settings.getProperty("kfusion.model.reduce", "1024"));
-    }
+	public boolean useSimpleReduce() {
+		return Boolean.parseBoolean(settings.getProperty("kfusion.reduce.simple", "False"));
+	}
 
-    public boolean useCustomReduce() {
-        return Boolean.parseBoolean(settings.getProperty("kfusion.reduce.custom", "False"));
-    }
-
-    public boolean useSimpleReduce() {
-        return Boolean.parseBoolean(settings.getProperty("kfusion.reduce.simple", "False"));
-    }
+	@Override
+	public void reset() {
+		super.reset();
+		useTornado = Boolean.parseBoolean(settings.getProperty("kfusion.tornado.enable", "False"));
+		tornadoDevice = TornadoRuntime.createDevice(getPlatformIndex(), getDeviceIndex());
+	}
 }

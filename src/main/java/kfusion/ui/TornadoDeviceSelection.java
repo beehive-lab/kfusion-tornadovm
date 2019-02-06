@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
@@ -25,19 +25,20 @@
 package kfusion.ui;
 
 import javax.swing.DefaultComboBoxModel;
-import tornado.common.TornadoDevice;
+
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
 public class TornadoDeviceSelection extends DefaultComboBoxModel<TornadoDevice> {
 
-    private static final long serialVersionUID = -5945515922073691978L;
+	private static final long serialVersionUID = -5945515922073691978L;
 
-    public TornadoDeviceSelection(final TornadoDevice[] devices) {
-        super(devices);
-    }
+	public TornadoDeviceSelection(final TornadoDevice[] devices) {
+		super(devices);
+	}
 
-    @Override
-    public TornadoDevice getSelectedItem() {
-        return (TornadoDevice) super.getSelectedItem();
-    }
+	@Override
+	public TornadoDevice getSelectedItem() {
+		return (TornadoDevice) super.getSelectedItem();
+	}
 
 }

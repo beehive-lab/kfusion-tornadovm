@@ -17,10 +17,10 @@ package kfusion.pipeline;
 
 import kfusion.TornadoModel;
 import kfusion.devices.Device;
-import tornado.collections.graphics.ImagingOps;
-import tornado.collections.graphics.Renderer;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
+import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
 public class TornadoBilateralFilterPipeline<T extends TornadoModel> extends AbstractOpenGLPipeline<T> {
 
@@ -35,20 +35,20 @@ public class TornadoBilateralFilterPipeline<T extends TornadoModel> extends Abst
         preprocessingSchedule.execute();
     }
 
-    private OCLTornadoDevice oclDevice;
+    private TornadoDevice oclDevice;
     private TaskSchedule preprocessingSchedule;
 
     @Override
     public void configure(Device device) {
         super.configure(device);
 
-        oclDevice = (OCLTornadoDevice) config.getTornadoDevice();
+        oclDevice = config.getTornadoDevice();
         info("mapping onto %s\n", oclDevice.toString());
 
         /*
          * Cleanup after previous configurations
          */
-        oclDevice.getBackend().reset();
+        oclDevice.reset();
 
         //@formatter:off
         preprocessingSchedule = new TaskSchedule("pp")

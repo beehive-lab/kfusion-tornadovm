@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
@@ -24,113 +24,120 @@
  */
 package kfusion.ui;
 
-import com.jogamp.opengl.util.Animator;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
 import javax.swing.JButton;
 import javax.swing.JPanel;
+
+import com.jogamp.opengl.util.Animator;
+
 import kfusion.TornadoModel;
 import kfusion.devices.Device;
 
 public class TornadoModelConfigPanel extends JPanel implements ActionListener {
 
-    private static final long serialVersionUID = 4887971237978617495L;
+	private static final long serialVersionUID = 4887971237978617495L;
 
-    final InputDeviceConfigPanel<TornadoModel> inputDeviceConfig;
-    final VolumeConfigPanel<TornadoModel> volumeConfig;
-    final IntrinsicCameraPanel<TornadoModel> cameraConfig;
-    final TornadoConfigPanel tornadoConfig;
+	final InputDeviceConfigPanel<TornadoModel> inputDeviceConfig;
+	final VolumeConfigPanel<TornadoModel> volumeConfig;
+	final IntrinsicCameraPanel<TornadoModel> cameraConfig;
+	final TornadoConfigPanel tornadoConfig;
 
-    public TornadoModelConfigPanel(final TornadoModel config, final Animator animator, TornadoConfigPanel tornadoPanel) {
-        tornadoConfig = tornadoPanel;
-        final JButton resetButton = new JButton("Reset");
-        final JButton startButton = new JButton("Start");
+	public TornadoModelConfigPanel(final TornadoModel config, final Animator animator,
+			TornadoConfigPanel tornadoPanel) {
+		tornadoConfig = tornadoPanel;
+		final JButton resetButton = new JButton("Reset");
+		final JButton startButton = new JButton("Start");
 
-        inputDeviceConfig = new InputDeviceConfigPanel<>(config, startButton, resetButton, this);
+		inputDeviceConfig = new InputDeviceConfigPanel<TornadoModel>(config, startButton, resetButton, this);
 
-        volumeConfig = new VolumeConfigPanel<>(config);
-        cameraConfig = new IntrinsicCameraPanel<>(config, inputDeviceConfig.getComboBox());
+		volumeConfig = new VolumeConfigPanel<TornadoModel>(config);
+		cameraConfig = new IntrinsicCameraPanel<TornadoModel>(config, inputDeviceConfig.getComboBox());
 
-        resetButton.addActionListener(new ActionListener() {
+		resetButton.addActionListener(new ActionListener() {
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                animator.stop();
-                config.reset();
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				animator.stop();
+				config.reset();
 
-                //	if(config.getDevice() == null){
-                if (config.getDevice() != null) {
-                    config.getDevice().stop();
-                    config.getDevice().shutdown();
-                }
+				// if(config.getDevice() == null){
 
-                //final Device device = (Device) inputDeviceConfig.getComboBox().getSelectedItem();
-                config.setDevice(null);
+				if (config.getDevice() != null) {
+					config.getDevice().stop();
+					config.getDevice().shutdown();
+				}
 
-                //	}
-                config.setReset();
-            }
+				// final Device device = (Device)
+				// inputDeviceConfig.getComboBox().getSelectedItem();
+				config.setDevice(null);
 
-        });
+				// }
 
-        startButton.addActionListener(new ActionListener() {
+				config.setReset();
+			}
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (startButton.getText().equals("Stop")) {
-//					if(animator.isStarted())
-//						animator.stop();
+		});
 
-                    final Device currentDevice = config.getDevice();
-                    if (currentDevice.isRunning()) {
-                        currentDevice.stop();
-//						currentDevice.shutdown();
-                    }
+		startButton.addActionListener(new ActionListener() {
 
-//					KfusionModel.config.setDevice(null);
-//					KfusionModel.config.reset();
-                    startButton.setText("Start");
-                } else {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (startButton.getText().equals("Stop")) {
+					// if(animator.isStarted())
+					// animator.stop();
 
-                    if (config.getDevice() == null) {
-                        final Device device = (Device) inputDeviceConfig.getComboBox().getSelectedItem();
-                        if (device.isRunning()) {
-                            device.stop();
-                            device.shutdown();
-                        }
+					final Device currentDevice = config.getDevice();
+					if (currentDevice.isRunning()) {
+						currentDevice.stop();
+						// currentDevice.shutdown();
+					}
 
-                        config.setDevice(device);
+					// KfusionModel.config.setDevice(null);
+					// KfusionModel.config.reset();
 
-                        device.init();
-                        device.updateModel(config);
-                        volumeConfig.updateModel();
-                        cameraConfig.updateModel();
-                        tornadoConfig.updateModel();
-                        config.setReset();
-                    }
+					startButton.setText("Start");
+				} else {
 
-                    if (!animator.isStarted()) {
-                        animator.start();
-                    }
+					if (config.getDevice() == null) {
+						final Device device = (Device) inputDeviceConfig.getComboBox().getSelectedItem();
+						if (device.isRunning()) {
+							device.stop();
+							device.shutdown();
+						}
 
-                    config.getDevice().start();
+						config.setDevice(device);
 
-                    startButton.setText("Stop");
-                }
-            }
+						device.init();
+						device.updateModel(config);
+						volumeConfig.updateModel();
+						cameraConfig.updateModel();
+						tornadoConfig.updateModel();
+						config.setReset();
+					}
 
-        });
+					if (!animator.isStarted())
+						animator.start();
 
-        add(inputDeviceConfig);
-        add(tornadoConfig);
-        add(cameraConfig);
-        add(volumeConfig);
-    }
+					config.getDevice().start();
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        volumeConfig.resetConfig();
-        cameraConfig.resetConfig();
-    }
+					startButton.setText("Stop");
+				}
+			}
+
+		});
+
+		add(inputDeviceConfig);
+		add(tornadoConfig);
+		add(cameraConfig);
+		add(volumeConfig);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		volumeConfig.resetConfig();
+		cameraConfig.resetConfig();
+	}
 
 }

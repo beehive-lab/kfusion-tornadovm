@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
@@ -28,76 +28,72 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.*;
-import javax.swing.border.EtchedBorder;
-import kfusion.TornadoModel;
-import tornado.common.TornadoDevice;
-import tornado.drivers.opencl.OCLDriver;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.border.EtchedBorder;
+
+import kfusion.TornadoModel;
+import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class TornadoConfigPanel extends JPanel implements ActionListener {
 
-    private static final long serialVersionUID = 4887971237978617495L;
-    public final JComboBox<TornadoDevice> deviceComboBox;
-    public final JCheckBox enableTornadoCheckBox;
+	private static final long serialVersionUID = 4887971237978617495L;
+	final JComboBox<TornadoDevice> deviceComboBox;
+	public final JCheckBox enableTornadoCheckBox;
 
-    private final TornadoModel config;
+	private final TornadoModel config;
 
-    public TornadoConfigPanel(final TornadoModel config) {
-        this.config = config;
-        final List<TornadoDevice> tmpDevices = new ArrayList<>();
+	public TornadoConfigPanel(final TornadoModel config) {
+		this.config = config;
+		final List<TornadoDevice> tmpDevices = new ArrayList<>();
+		
+		TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
 
-        OCLDriver driver = getTornadoRuntime().getDriver(OCLDriver.class);
+		final TornadoDevice[] devices;
+		if (driver != null) {
+			
+			for (int devIndex = 0; devIndex < driver.getDeviceCount(); devIndex++) {
+				final TornadoDevice device = driver.getDevice(devIndex);
+				tmpDevices.add(device);
+			}
+			
+			devices = new TornadoDevice[tmpDevices.size()];
+			tmpDevices.toArray(devices);
 
-        final TornadoDevice[] devices;
-        if (driver != null) {
+		} else {
+			devices = new TornadoDevice[0];
+		}
 
-            for (int platformIndex = 0; platformIndex < driver.getNumPlatforms(); platformIndex++) {
-                for (int deviceIndex = 0; deviceIndex < driver.getNumDevices(platformIndex); deviceIndex++) {
-                    final OCLTornadoDevice device = new OCLTornadoDevice(platformIndex, deviceIndex);
-                    //if(device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_GPU)
-                    tmpDevices.add(device);
-                }
-            }
+		final TornadoDeviceSelection deviceSelectModel = new TornadoDeviceSelection(devices);
+		deviceComboBox = new JComboBox<>();
+		deviceComboBox.setModel(deviceSelectModel);
+		deviceComboBox.setEnabled(false);
+		deviceComboBox.addActionListener(this);
 
-            devices = new TornadoDevice[tmpDevices.size()];
-            tmpDevices.toArray(devices);
+		enableTornadoCheckBox = new JCheckBox("Use Tornado");
+		enableTornadoCheckBox.setSelected(false);
+		enableTornadoCheckBox.addActionListener(this);
 
-        } else {
-            devices = new TornadoDevice[0];
-        }
+		setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Tornado Configuration"));
+		add(enableTornadoCheckBox);
+		add(new JLabel("Tornado Device:"));
+		add(deviceComboBox);
+	}
 
-        final TornadoDeviceSelection deviceSelectModel = new TornadoDeviceSelection(devices);
-        deviceComboBox = new JComboBox<>();
-        deviceComboBox.setModel(deviceSelectModel);
-        deviceComboBox.setEnabled(false);
-//        deviceComboBox.addActionListener(this);
+	public void updateModel() {
+		config.setTornadoDevice((TornadoDevice)deviceComboBox.getSelectedItem());
+		config.setUseTornado(enableTornadoCheckBox.isSelected());
+	}
 
-        enableTornadoCheckBox = new JCheckBox("Use Tornado");
-        enableTornadoCheckBox.setSelected(false);
-        enableTornadoCheckBox.addActionListener(this);
-
-        setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
-                "Tornado Configuration"));
-
-        add(enableTornadoCheckBox);
-
-        add(new JLabel("Tornado Device:"));
-        add(deviceComboBox);
-
-    }
-
-    public void updateModel() {
-//        config.setTornadoDevice((TornadoDevice) deviceComboBox.getSelectedItem());
-        config.setUseTornado(enableTornadoCheckBox.isSelected());
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        deviceComboBox.setEnabled(enableTornadoCheckBox.isSelected());
-//        updateModel();
-    }
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		deviceComboBox.setEnabled(enableTornadoCheckBox.isSelected());
+		updateModel();
+	}
 }

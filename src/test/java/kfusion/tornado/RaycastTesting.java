@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
@@ -24,21 +24,24 @@
  */
 package kfusion.tornado;
 
-import kfusion.TornadoModel;
-import kfusion.Utils;
-import kfusion.algorithms.Raycast;
+import static org.junit.Assert.fail;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import tornado.collections.types.*;
-import tornado.meta.domain.DomainTree;
-import tornado.meta.domain.IntDomain;
-import tornado.runtime.api.TaskSchedule;
 
-import static org.junit.Assert.fail;
+import kfusion.TornadoModel;
+import kfusion.Utils;
+import kfusion.algorithms.Raycast;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
 
 public class RaycastTesting {
-
+	
     final private TornadoModel config = new TornadoModel();
     final private String FILE_PATH = "/Users/jamesclarkson/Downloads/kfusion_ut_data";
 
@@ -83,26 +86,13 @@ public class RaycastTesting {
         Utils.loadData(String.format("%s/%slargestep.in.%04d", FILE_PATH, raycast_prefix, 0), tmp);
         largeStep = tmp[0];
 
-        DomainTree domain = new DomainTree(2);
-        domain.set(0, new IntDomain(vOut.X()));
-        domain.set(1, new IntDomain(vOut.Y()));
-
         System.out.printf("      step: %f\n", step);
         System.out.printf("large step: %f\n", largeStep);
-//		TornadoExecuteTask raycast = Raycast.raycastCode.invoke(vOut,nOut,volume,volumeDims,view,nearPlane,farPlane,largeStep/0.75f,step);
-//		raycast.disableJIT();
-//		raycast.meta().addProvider(DomainTree.class, domain);
-//		raycast.mapTo(EXTERNAL_GPU);
-//		raycast.loadFromFile("opencl/raycast-golden.cl");
-//
 
-        graph = new TaskSchedule("s0")
-                .streamIn(volume, view)
-                .task("raycast", Raycast::raycast, vOut, nOut, volume, volumeDims, view, nearPlane, farPlane, largeStep / 0.75f, step)
-                .streamOut(vOut, nOut)
-                .mapAllTo(config.getTornadoDevice());
+        graph = new TaskSchedule("s0").streamIn(volume, view).task("raycast", Raycast::raycast, vOut, nOut, volume, volumeDims, view, nearPlane, farPlane, largeStep / 0.75f, step)
+                .streamOut(vOut, nOut).mapAllTo(config.getTornadoDevice());
 
-        //makeVolatile(volume,view);
+        // makeVolatile(volume,view);
     }
 
     @After
@@ -112,7 +102,7 @@ public class RaycastTesting {
     @Test
     public void testRaycast() {
 
-        final int[] frames = {0};
+        final int[] frames = { 0 };
 
         int errors = 0;
         for (int frame = 0; frame < frames.length; frame++) {

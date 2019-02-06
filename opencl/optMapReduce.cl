@@ -23,7 +23,8 @@
  *    Authors: James Clarkson
  */
 
-__inline__ void mapValues(float8 tr, __local float * sums){
+__inline__ void mapValues(float8 tr, __local float * sums) {
+
     __local float * jtj = sums + 7;
     __local float * info = sums + 28;
     
@@ -92,7 +93,6 @@ __inline__ void mapValues(float8 tr, __local float * sums){
     
     // extra info here
     info[0] += 1;
-    
     
 }
 

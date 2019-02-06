@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
@@ -24,23 +24,25 @@
  */
 package kfusion.tornado;
 
+import static kfusion.algorithms.IterativeClosestPoint.reduce;
+import static org.junit.Assert.fail;
+
 import java.io.FileInputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import kfusion.TornadoModel;
-import kfusion.algorithms.IterativeClosestPoint;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import tornado.collections.types.Float8;
-import tornado.collections.types.FloatOps;
-import tornado.collections.types.ImageFloat8;
-import tornado.common.exceptions.TornadoRuntimeException;
-import tornado.runtime.api.TaskSchedule;
 
-import static kfusion.algorithms.IterativeClosestPoint.reduce;
-import static org.junit.Assert.fail;
+import kfusion.TornadoModel;
+import kfusion.algorithms.IterativeClosestPoint;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.types.Float8;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class ICPTesting2 {
 
@@ -156,8 +158,7 @@ public class ICPTesting2 {
     @Test
     public void testTrack() throws TornadoRuntimeException {
 
-        final int[] frames = {2, 13, 12, 14, 16, 15, 27, 26, 28, 30, 29, 40, 42, 41, 43, 54, 53,
-            55, 57, 56, 58, 60, 59, 62, 61};
+        final int[] frames = { 2, 13, 12, 14, 16, 15, 27, 26, 28, 30, 29, 40, 42, 41, 43, 54, 53, 55, 57, 56, 58, 60, 59, 62, 61 };
         // final int[] frames = {0,3,4,5,6,17,18,19,20,31,32,33,34,44,45,46,47};
 
         int badFrames = 0;
@@ -166,8 +167,7 @@ public class ICPTesting2 {
 
             final int i = frames[j];
             try {
-                loadTrackData(String.format("%s/%soutput.out.%04d", FILE_PATH, track_prefix, i),
-                        input);
+                loadTrackData(String.format("%s/%soutput.out.%04d", FILE_PATH, track_prefix, i), input);
 
             } catch (final Exception e) {
                 fail("Unable to load data: " + e.getMessage());

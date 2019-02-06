@@ -3,3 +3,4 @@ conf/kfusion.env
 .classpath
 .project
 .settings
+lib/slambench-java-0.0.2.jar

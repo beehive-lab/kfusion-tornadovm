@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
@@ -24,21 +24,28 @@
  */
 package kfusion.tornado;
 
+import static org.junit.Assert.fail;
+
 import java.io.FileInputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import kfusion.TornadoModel;
 import kfusion.Utils;
 import kfusion.algorithms.IterativeClosestPoint;
 import kfusion.algorithms.TrackingResult;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import tornado.collections.types.*;
-import tornado.runtime.api.TaskSchedule;
-
-import static org.junit.Assert.fail;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.types.Float8;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
 
 public class ICPTesting {
 
@@ -154,26 +161,22 @@ public class ICPTesting {
         outputTruth = new ImageFloat8(width, height);
 
         final float[] tmp = new float[1];
-        Utils.loadData(String.format("%s/%sdist_threshold.in.%04d", FILE_PATH, track_prefix, 2),
-                tmp);
+        Utils.loadData(String.format("%s/%sdist_threshold.in.%04d", FILE_PATH, track_prefix, 2), tmp);
         dist_threshold = tmp[0];
 
-        Utils.loadData(String.format("%s/%snormal_threshold.in.%04d", FILE_PATH, track_prefix, 2),
-                tmp);
+        Utils.loadData(String.format("%s/%snormal_threshold.in.%04d", FILE_PATH, track_prefix, 2), tmp);
         normal_threshold = tmp[0];
 
         // trackingData,errorData,results,inVertex,inNormal,refVertex,refNormal,Ttrack,view,dist_threshold,normal_threshold
-//		final TornadoExecuteTask trackPose = IterativeClosestPoint.trackCode.invoke(results, inVertex, inNormal,
-//				refVertex, refNormal, Ttrack, view, dist_threshold, normal_threshold);
-//		trackPose.disableJIT();
-//		trackPose.meta().addProvider(DomainTree.class, domain);
-//		trackPose.mapTo(EXTERNAL_GPU);
-//		trackPose.loadFromFile("trackPose-bad.cl");
-        graph = new TaskSchedule("s0")
-                .streamIn(inVertex, inNormal, refVertex, refNormal, Ttrack, view)
-                .task("track", IterativeClosestPoint::trackPose, results, inVertex, inNormal,
-                        refVertex, refNormal, Ttrack, view, dist_threshold, normal_threshold)
-                .streamOut(results)
+        // final TornadoExecuteTask trackPose =
+        // IterativeClosestPoint.trackCode.invoke(results, inVertex, inNormal,
+        // refVertex, refNormal, Ttrack, view, dist_threshold, normal_threshold);
+        // trackPose.disableJIT();
+        // trackPose.meta().addProvider(DomainTree.class, domain);
+        // trackPose.mapTo(EXTERNAL_GPU);
+        // trackPose.loadFromFile("trackPose-bad.cl");
+        graph = new TaskSchedule("s0").streamIn(inVertex, inNormal, refVertex, refNormal, Ttrack, view)
+                .task("track", IterativeClosestPoint::trackPose, results, inVertex, inNormal, refVertex, refNormal, Ttrack, view, dist_threshold, normal_threshold).streamOut(results)
                 .mapAllTo(config.getTornadoDevice());
         // ((TornadoTaskInvocation) trackInv).disableJIT();
         // trackInv.meta().addProvider(DomainTree.class, domain);
@@ -181,7 +184,7 @@ public class ICPTesting {
         // ((TornadoTaskInvocation) trackInv).loadFromFile("trackPose2.cl");
         // trackInv.getStack().getEvent().waitOn();
 
-//		makeVolatile(inVertex,inNormal,refVertex,refNormal,Ttrack,view);
+        // makeVolatile(inVertex,inNormal,refVertex,refNormal,Ttrack,view);
     }
 
     @After
@@ -192,8 +195,7 @@ public class ICPTesting {
     @Test
     public void testTrack() {
 
-        final int[] frames = {2, 13, 12, 14, 16, 15, 27, 26, 28, 30, 29, 40, 42, 41, 43, 54, 53,
-            55, 57, 56, 58, 60, 59, 62, 61};
+        final int[] frames = { 2, 13, 12, 14, 16, 15, 27, 26, 28, 30, 29, 40, 42, 41, 43, 54, 53, 55, 57, 56, 58, 60, 59, 62, 61 };
         // final int[] frames = {0,3,4,5,6,17,18,19,20,31,32,33,34,44,45,46,47};
 
         int badFrames = 0;
@@ -202,26 +204,19 @@ public class ICPTesting {
 
             final int i = frames[j];
             try {
-                Utils.loadData(String.format("%s/%sinVertex.in.%04d", FILE_PATH, track_prefix, i),
-                        inVertex.asBuffer());
+                Utils.loadData(String.format("%s/%sinVertex.in.%04d", FILE_PATH, track_prefix, i), inVertex.asBuffer());
 
-                Utils.loadData(String.format("%s/%sinNormal.in.%04d", FILE_PATH, track_prefix, i),
-                        inNormal.asBuffer());
+                Utils.loadData(String.format("%s/%sinNormal.in.%04d", FILE_PATH, track_prefix, i), inNormal.asBuffer());
 
-                Utils.loadData(String.format("%s/%srefVertex.in.%04d", FILE_PATH, track_prefix, i),
-                        refVertex.asBuffer());
+                Utils.loadData(String.format("%s/%srefVertex.in.%04d", FILE_PATH, track_prefix, i), refVertex.asBuffer());
 
-                Utils.loadData(String.format("%s/%srefNormal.in.%04d", FILE_PATH, track_prefix, i),
-                        refNormal.asBuffer());
+                Utils.loadData(String.format("%s/%srefNormal.in.%04d", FILE_PATH, track_prefix, i), refNormal.asBuffer());
 
-                Utils.loadData(String.format("%s/%sttrack.in.%04d", FILE_PATH, track_prefix, i),
-                        Ttrack.asBuffer());
+                Utils.loadData(String.format("%s/%sttrack.in.%04d", FILE_PATH, track_prefix, i), Ttrack.asBuffer());
 
-                Utils.loadData(String.format("%s/%sview.in.%04d", FILE_PATH, track_prefix, i),
-                        view.asBuffer());
+                Utils.loadData(String.format("%s/%sview.in.%04d", FILE_PATH, track_prefix, i), view.asBuffer());
 
-                loadTrackData(String.format("%s/%soutput.out.%04d", FILE_PATH, track_prefix, i),
-                        outputTruth);
+                loadTrackData(String.format("%s/%soutput.out.%04d", FILE_PATH, track_prefix, i), outputTruth);
 
             } catch (final Exception e) {
                 fail("Unable to load data: " + e.getMessage());
@@ -234,8 +229,7 @@ public class ICPTesting {
                 graph.dumpTimes();
             } else {
                 final long start = System.nanoTime();
-                IterativeClosestPoint.trackPose(results, inVertex, inNormal, refVertex,
-                        refNormal, Ttrack, view, dist_threshold, normal_threshold);
+                IterativeClosestPoint.trackPose(results, inVertex, inNormal, refVertex, refNormal, Ttrack, view, dist_threshold, normal_threshold);
                 final long end = System.nanoTime();
                 System.out.printf("track: %f s\n", (end - start) * 1e-9f);
             }
@@ -248,9 +242,9 @@ public class ICPTesting {
                     final Float8 trackRef = outputTruth.get(x, y);
                     if (!compareTrackData(track, trackRef)) {
                         errors++;
-                        //} else {
-                        //	System.out.printf("track: TrackData[%d,%d]\n\t(cal) %s\n\t(ref) %s\n", x,
-                        //			y, track.toString(), trackRef.toString());
+                        // } else {
+                        // System.out.printf("track: TrackData[%d,%d]\n\t(cal) %s\n\t(ref) %s\n", x,
+                        // y, track.toString(), trackRef.toString());
                     }
 
                     if (((int) track.getS7()) == 1) {

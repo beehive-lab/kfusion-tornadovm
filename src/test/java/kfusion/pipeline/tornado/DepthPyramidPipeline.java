@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
@@ -29,11 +29,11 @@ import kfusion.Utils;
 import kfusion.devices.Device;
 import kfusion.devices.TestingDevice;
 import kfusion.pipeline.AbstractPipeline;
-import tornado.collections.graphics.GraphicsMath;
-import tornado.collections.types.FloatingPointError;
-import tornado.collections.types.ImageFloat3;
-import tornado.collections.types.Matrix4x4Float;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 
 public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
 
@@ -47,10 +47,8 @@ public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
 
     private TaskSchedule vertexGraph;
 
-    private static String makeFilename(String path, int frame, String kernel, String variable,
-            boolean isInput) {
-        return String.format("%s/%04d_%s_%s_%s", path, frame, kernel, variable, (isInput) ? "in"
-                : "out");
+    private static String makeFilename(String path, int frame, String kernel, String variable, boolean isInput) {
+        return String.format("%s/%04d_%s_%s_%s", path, frame, kernel, variable, (isInput) ? "in" : "out");
     }
 
     @Override
@@ -68,16 +66,13 @@ public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
         pyramidNormals[0] = currentView.getNormals();
 
         for (int i = 0; i < pyramidIterations.length; i++) {
-//        int i = 0;
+            // int i = 0;
             invK[i] = new Matrix4x4Float();
             refVerticies[i] = pyramidVerticies[i].duplicate();
             refNormals[i] = pyramidNormals[i].duplicate();
 
-            vertexGraph
-                    .streamIn(pyramidDepths[i], invK[i])
-                    .task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], invK[i])
-                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i])
-                    .streamOut(pyramidVerticies[i], pyramidNormals[i]);
+            vertexGraph.streamIn(pyramidDepths[i], invK[i]).task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], invK[i])
+                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]).streamOut(pyramidVerticies[i], pyramidNormals[i]);
         }
 
         vertexGraph.mapAllTo(config.getTornadoDevice());
@@ -88,15 +83,11 @@ public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
         try {
 
             for (int i = 0; i < 3; i++) {
-                Utils.loadData(makeFilename(path, index, "depth2vertex_" + i, "depths", true),
-                        pyramidDepths[i].asBuffer());
-                Utils.loadData(makeFilename(path, index, "depth2vertex_" + i, "invK", true),
-                        invK[i].asBuffer());
+                Utils.loadData(makeFilename(path, index, "depth2vertex_" + i, "depths", true), pyramidDepths[i].asBuffer());
+                Utils.loadData(makeFilename(path, index, "depth2vertex_" + i, "invK", true), invK[i].asBuffer());
 
-                Utils.loadData(makeFilename(path, index, "depth2vertex_" + i, "verticies", false),
-                        refVerticies[i].asBuffer());
-                Utils.loadData(makeFilename(path, index, "vertex2normal_" + i, "normals", false),
-                        refNormals[i].asBuffer());
+                Utils.loadData(makeFilename(path, index, "depth2vertex_" + i, "verticies", false), refVerticies[i].asBuffer());
+                Utils.loadData(makeFilename(path, index, "vertex2normal_" + i, "normals", false), refNormals[i].asBuffer());
 
             }
 
@@ -109,7 +100,7 @@ public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
         System.out.println("Validation:");
         boolean valid = true;
         for (int i = 0; i < pyramidIterations.length; i++) {
-//        int i = 0;
+            // int i = 0;
             final FloatingPointError verticiesError = pyramidVerticies[i].calculateULP(refVerticies[i]);
             System.out.printf("\tlevel %d: vertex  - %s\n", i, pyramidVerticies[i].summerise());
             System.out.printf("\tlevel %d: vertex  error - %s\n", i, verticiesError.toString());
@@ -154,7 +145,5 @@ public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
 
         double pctValid = (((double) validFrames) / ((double) numFrames)) * 100.0;
         System.out.printf("Found %d valid frames (%.2f %%)\n", validFrames, pctValid);
-
     }
-
 }

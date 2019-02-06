@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
@@ -24,21 +24,26 @@
  */
 package kfusion.pipeline.tornado;
 
+import static uk.ac.manchester.tornado.api.collections.types.Float4.mult;
+
 import kfusion.TornadoModel;
 import kfusion.Utils;
 import kfusion.devices.Device;
 import kfusion.devices.TestingDevice;
 import kfusion.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
-import tornado.collections.graphics.GraphicsMath;
-import tornado.collections.graphics.ImagingOps;
-import tornado.collections.matrix.MatrixFloatOps;
-import tornado.collections.matrix.MatrixMath;
-import tornado.collections.types.*;
-import tornado.common.RuntimeUtilities;
-import tornado.runtime.api.TaskSchedule;
-
-import static tornado.collections.types.Float4.mult;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
+import uk.ac.manchester.tornado.matrix.MatrixMath;
+import uk.ac.manchester.tornado.api.utils.TornadoUtilities;
 
 public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
 
@@ -46,19 +51,13 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
         super(config);
     }
 
-    private static String makeFilename(String path, int frame, String kernel, String variable,
-            boolean isInput) {
-        return String.format("%s/%04d_%s_%s_%s", path, frame, kernel, variable, (isInput) ? "in"
-                : "out");
+    private static String makeFilename(String path, int frame, String kernel, String variable, boolean isInput) {
+        return String.format("%s/%04d_%s_%s_%s", path, frame, kernel, variable, (isInput) ? "in" : "out");
     }
 
-    private TaskSchedule estimatePoseSchedule;
-    private TaskSchedule trackingPyramid[];
-    private Matrix4x4Float pyramidPose;
+    private TaskSchedule graph1;
+    private TaskSchedule graph2;
     private Matrix4x4Float[] scaledInvKs;
-
-    private float[] icpResultIntermediate1;
-    private float[] icpResult;
 
     @Override
     public void configure(Device device) {
@@ -66,78 +65,46 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
 
         scaledInvKs = new Matrix4x4Float[pyramidIterations.length];
 
-        pyramidPose = new Matrix4x4Float();
         pyramidDepths[0] = filteredDepthImage;
         pyramidVerticies[0] = currentView.getVerticies();
         pyramidNormals[0] = currentView.getNormals();
-
-        icpResultIntermediate1 = new float[config.getReductionSize() * 32];
-        icpResult = new float[32];
 
         final int iterations = pyramidIterations.length;
         for (int i = 0; i < iterations; i++) {
             scaledInvKs[i] = new Matrix4x4Float();
         }
 
-        estimatePoseSchedule = new TaskSchedule("s0")
-                .streamIn(pyramidDepths[0]);
+        graph1 = new TaskSchedule("s0").streamIn(pyramidDepths[0]);
 
         for (int i = 1; i < iterations; i++) {
-            estimatePoseSchedule
-                    .task("resize" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2)
-                    .streamOut(pyramidDepths[i]);
+            graph1.task("resize" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2).streamOut(pyramidDepths[i]);
         }
 
+        graph2 = new TaskSchedule("s1");
         for (int i = 0; i < iterations; i++) {
-            estimatePoseSchedule
-                    .streamIn(scaledInvKs[i])
-                    .task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
-                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i])
-                    .streamOut(pyramidVerticies[i], pyramidNormals[i]);
+            graph2.streamIn(scaledInvKs[i]).task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
+                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]).streamOut(pyramidVerticies[i], pyramidNormals[i]);
         }
 
-        estimatePoseSchedule.streamIn(projectReference);
-
-        trackingPyramid = new TaskSchedule[iterations];
-        for (int i = 0; i < iterations; i++) {
-
-            //@formatter:off
-            trackingPyramid[i] = new TaskSchedule("icp" + i)
-                    .streamIn(pyramidPose)
-                    .task("track" + i, IterativeClosestPoint::trackPose,
-                            pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
-                            referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
-                            projectReference, distanceThreshold, normalThreshold)
-                    .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
-                    .streamOut(icpResultIntermediate1)
-                    .mapAllTo(config.getTornadoDevice());
-            //@formatter:on
-        }
-
-        estimatePoseSchedule.mapAllTo(config.getTornadoDevice());
+        graph1.mapAllTo(config.getTornadoDevice());
+        graph2.mapAllTo(config.getTornadoDevice());
     }
 
     private void loadFrame(String path, int index) {
         try {
 
-            Utils.loadData(makeFilename(path, index, "tracking", "ScaledDepth", true),
-                    pyramidDepths[0].asBuffer());
+            Utils.loadData(makeFilename(path, index, "tracking", "ScaledDepth", true), filteredDepthImage.asBuffer());
 
-            Utils.loadData(makeFilename(path, index, "tracking", "k", true),
-                    scaledCamera.asBuffer());
+            Utils.loadData(makeFilename(path, index, "tracking", "k", true), scaledCamera.asBuffer());
 
             GraphicsMath.getInverseCameraMatrix(scaledCamera, scaledInvK);
             GraphicsMath.getCameraMatrix(scaledCamera, K);
 
-            Utils.loadData(makeFilename(path, index, "tracking", "pose", true), currentView
-                    .getPose().asBuffer());
-            Utils.loadData(makeFilename(path, index, "tracking", "raycastPose", true),
-                    referenceView.getPose().asBuffer());
+            Utils.loadData(makeFilename(path, index, "tracking", "pose", true), currentView.getPose().asBuffer());
+            Utils.loadData(makeFilename(path, index, "tracking", "raycastPose", true), referenceView.getPose().asBuffer());
 
-            Utils.loadData(makeFilename(path, index, "tracking", "vertex", true), referenceView
-                    .getVerticies().asBuffer());
-            Utils.loadData(makeFilename(path, index, "tracking", "normal", true), referenceView
-                    .getNormals().asBuffer());
+            Utils.loadData(makeFilename(path, index, "tracking", "vertex", true), referenceView.getVerticies().asBuffer());
+            Utils.loadData(makeFilename(path, index, "tracking", "normal", true), referenceView.getNormals().asBuffer());
 
             for (int i = 0; i < pyramidIterations.length; i++) {
                 if (config.debug()) {
@@ -150,8 +117,7 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
                 if (config.debug()) {
                     info("scaled camera: %s", cameraDup.toString());
                     info("scaled InvK:\n%s", scaledInvKs[i].toString());
-                    info(String.format("size: {%d,%d}", pyramidVerticies[i].X(),
-                            pyramidVerticies[i].Y()));
+                    info(String.format("size: {%d,%d}", pyramidVerticies[i].X(), pyramidVerticies[i].Y()));
                 }
             }
 
@@ -194,16 +160,17 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
         }
 
         long start = System.nanoTime();
-
-        estimatePoseSchedule.execute();
+        graph1.execute();
 
         for (ImageFloat depths : pyramidDepths) {
             System.out.println("depths: " + depths.summerise());
         }
+
+        graph2.execute();
         long end = System.nanoTime();
-//        graph1.dumpTimes();
-//        estimatePoseSchedule.dumpTimes();
-        System.out.printf("elapsed time=%s\n", RuntimeUtilities.elapsedTimeInSeconds(start, end));
+        // graph1.dumpTimes();
+        // graph2.dumpTimes();
+        System.out.printf("elapsed time=%s\n", TornadoUtilities.elapsedTimeInSeconds(start, end));
 
         final Matrix4x4Float invReferencePose = referenceView.getPose().duplicate();
         MatrixFloatOps.inverse(invReferencePose);
@@ -217,31 +184,31 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
         }
 
         // perform ICP
-        pyramidPose.set(currentView.getPose());
+        final Matrix4x4Float pose = currentView.getPose().duplicate();
         for (int level = pyramidIterations.length - 1; level >= 0; level--) {
             for (int i = 0; i < pyramidIterations[level]; i++) {
                 if (config.debug()) {
                     info("-------------start iteration----------------");
                     info(String.format("level: %d", level));
                     info(String.format("iteration: %d", i));
-                    info(String.format("size: {%d,%d}", pyramidVerticies[level].X(),
-                            pyramidVerticies[level].Y()));
+                    info(String.format("size: {%d,%d}", pyramidVerticies[level].X(), pyramidVerticies[level].Y()));
                     info(String.format("verticies: " + pyramidVerticies[level].summerise()));
                     info(String.format("normals: " + pyramidNormals[level].summerise()));
-                    info(String
-                            .format("ref verticies: " + referenceView.getVerticies().summerise()));
+                    info(String.format("ref verticies: " + referenceView.getVerticies().summerise()));
                     info(String.format("ref normals: " + referenceView.getNormals().summerise()));
-                    info(String.format("pose: \n%s\n", pyramidPose.toString(FloatOps.fmt4em)));
+                    info(String.format("pose: \n%s\n", pose.toString(FloatOps.fmt4em)));
                 }
 
-                trackingPyramid[level].execute();
+                IterativeClosestPoint.trackPose(pyramidTrackingResults[level], pyramidVerticies[level], pyramidNormals[level], referenceView.getVerticies(), referenceView.getNormals(), pose,
+                        projectReference, distanceThreshold, normalThreshold);
 
-                IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
+                boolean updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, pyramidTrackingResults[level], pose, 1e-5f);
 
-                trackingResult.resultImage = pyramidTrackingResults[level];
-                final boolean updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, 1e-5f);
+                if (config.debug()) {
+                    info("solve: %s", trackingResult.toString());
+                }
 
-                pyramidPose.set(trackingResult.getPose());
+                pose.set(trackingResult.getPose());
 
                 if (config.debug()) {
                     info("estimated pose:\n%s", trackingResult.toString());
@@ -254,17 +221,17 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
             }
         }
 
-        // if the tracking result meets our constraints, update the current view with the estimated
+        // if the tracking result meets our constraints, update the current view with
+        // the estimated
         // pose
-        boolean hasTracked = trackingResult.getRSME() < RSMEThreshold
-                && trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold;
+        boolean hasTracked = trackingResult.getRSME() < RSMEThreshold && trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold;
         if (hasTracked) {
             currentView.getPose().set(trackingResult.getPose());
         }
 
-        //info("at integrate: hasTracked=%s || firstPass=%s", hasTracked, firstPass);
+        // info("at integrate: hasTracked=%s || firstPass=%s", hasTracked, firstPass);
         return hasTracked;
-//		return false;
+        // return false;
     }
 
     @Override
@@ -280,8 +247,7 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
         final Matrix4x4Float refPose = new Matrix4x4Float();
 
         try {
-            Utils.loadData(makeFilename(path, index, "tracking", "reductionoutput", false),
-                    values.asBuffer());
+            Utils.loadData(makeFilename(path, index, "tracking", "reductionoutput", false), values.asBuffer());
             Utils.loadData(makeFilename(path, index, "tracking", "pose", false), refPose.asBuffer());
 
         } catch (Exception e) {
@@ -295,37 +261,32 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
         if (errorUlp > 5f) {
             match = false;
         }
-        System.out.printf("\terror       : %x <-> %x (ref) error ulp = %f\n", Float.floatToIntBits(trackingResult.getError()),
-                Float.floatToRawIntBits(values.get(0)), errorUlp);
+        System.out.printf("\terror       : %x <-> %x (ref) error ulp = %f\n", Float.floatToIntBits(trackingResult.getError()), Float.floatToRawIntBits(values.get(0)), errorUlp);
 
         final float trackedUlp = FloatOps.findMaxULP(trackingResult.getTracked(), values.get(28));
         if (trackedUlp > 5f) {
             match = false;
         }
-        System.out.printf("\ttracked     : %.4e <-> %.4e (ref) error ulp = %f\n", trackingResult.getTracked(),
-                values.get(28), trackedUlp);
+        System.out.printf("\ttracked     : %.4e <-> %.4e (ref) error ulp = %f\n", trackingResult.getTracked(), values.get(28), trackedUlp);
 
         final float tooFarUlp = FloatOps.findMaxULP(trackingResult.getTooFar(), values.get(29));
         if (tooFarUlp > 5f) {
             match = false;
         }
-        System.out.printf("\ttoo far     : %.4e <-> %.4e (ref) error ulp = %f\n", trackingResult.getTooFar(),
-                values.get(29), tooFarUlp);
+        System.out.printf("\ttoo far     : %.4e <-> %.4e (ref) error ulp = %f\n", trackingResult.getTooFar(), values.get(29), tooFarUlp);
 
         final float wrongNormalUlp = FloatOps.findMaxULP(trackingResult.getWrongNormal(), values.get(30));
         if (wrongNormalUlp > 5f) {
             match = false;
         }
 
-        System.out.printf("\twrong normal: %.4e <-> %.4e (ref) error ulp = %f\n",
-                trackingResult.getWrongNormal(), values.get(30), wrongNormalUlp);
+        System.out.printf("\twrong normal: %.4e <-> %.4e (ref) error ulp = %f\n", trackingResult.getWrongNormal(), values.get(30), wrongNormalUlp);
 
         final float otherUlp = FloatOps.findMaxULP(trackingResult.getOther(), values.get(31));
         if (otherUlp > 5f) {
             match = false;
         }
-        System.out.printf("\tother       : %.4e <-> %.4e (ref) error ulp = %f\n", trackingResult.getOther(),
-                values.get(31), otherUlp);
+        System.out.printf("\tother       : %.4e <-> %.4e (ref) error ulp = %f\n", trackingResult.getOther(), values.get(31), otherUlp);
 
         final FloatingPointError poseError = trackingResult.getPose().calculateULP(refPose);
 

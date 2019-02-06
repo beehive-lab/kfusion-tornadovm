@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
@@ -28,14 +28,13 @@ import kfusion.TornadoModel;
 import kfusion.Utils;
 import kfusion.devices.TestingDevice;
 import kfusion.pipeline.AbstractPipeline;
-import tornado.collections.graphics.GraphicsMath;
-import tornado.collections.math.TornadoMath;
-import tornado.collections.types.Matrix4x4Float;
-import tornado.collections.types.Short2;
-import tornado.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.Short2;
+import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
 
 public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
-
     public IntegrationPipeline(TornadoModel config) {
         super(config);
     }
@@ -65,8 +64,10 @@ public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
             Matrix4x4Float refK = new Matrix4x4Float();
             Utils.loadData(makeFilename(path, index, "integration", "cameraMatrix", true), refK.asBuffer());
 
-            //System.out.printf("ref inv pose:\n%s\n",refInversePose.toString(FloatOps.fmt4em));
-            //System.out.printf("ref K       :\n%s\n",refK.toString(FloatOps.fmt4em));
+            // System.out.printf("ref inv
+            // pose:\n%s\n",refInversePose.toString(FloatOps.fmt4em));
+            // System.out.printf("ref K :\n%s\n",refK.toString(FloatOps.fmt4em));
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -82,19 +83,18 @@ public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
     public boolean validate(String path, int index) {
 
         int errors = 0;
-        for (int y = 0; y < volume.Y(); y++) {
-            for (int x = 0; x < volume.X(); x++) {
+        for (int y = 0; y < volume.Y(); y++)
+            for (int x = 0; x < volume.X(); x++)
                 for (int z = 0; z < volume.Z(); z++) {
                     if (!TornadoMath.isEqual(volume.get(x, y, z).asBuffer().array(), refVolume.get(x, y, z).asBuffer().array())) {
                         final Short2 calc = volume.get(x, y, z);
                         final Short2 ref = refVolume.get(x, y, z);
-                        //if(x==83 && y==68 && z== 203)
-                        //	System.out.printf("[%d, %d, %d] error: %s != %s\n",x,y,z,calc.toString(),ref.toString());
+                        // if(x==83 && y==68 && z== 203)
+                        // System.out.printf("[%d, %d, %d] error: %s !=
+                        // %s\n",x,y,z,calc.toString(),ref.toString());
                         errors++;
                     }
                 }
-            }
-        }
         double pctBad = (((double) errors) / ((double) volume.X() * volume.Y() * volume.Z())) * 100.0;
         System.out.printf("\tfound %d bad values ( %.2f %%) \n", errors, pctBad);
 
@@ -113,15 +113,14 @@ public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
 
         int validFrames = 0;
         for (int i = 0; i < numFrames; i++) {
-//        int i = 46;
+            // int i = 46;
             System.out.printf("frame %d:\n", i);
             kernel.loadFrame(path, i);
             kernel.execute();
             boolean valid = kernel.validate(path, i);
             System.out.printf("\tframe %s valid\n", (valid) ? "is" : "is not");
-            if (valid) {
+            if (valid)
                 validFrames++;
-            }
         }
 
         double pctValid = (((double) validFrames) / ((double) numFrames)) * 100.0;
