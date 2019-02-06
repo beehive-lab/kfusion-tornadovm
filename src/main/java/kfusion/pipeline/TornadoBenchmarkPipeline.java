@@ -76,7 +76,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
 	public static final float ICP_THRESHOLD = 1e-5f;
 
-	public static boolean EXECUTE_WITH_PROFILER = false;
+	public static boolean EXECUTE_WITH_PROFILER = Boolean.parseBoolean(System.getProperty("slambench.profiler", "False"));
 	
 	private static final String HEAD_BENCHMARK = "frame\tacquisition\tpreprocessing\ttracking\tintegration\traycasting\trendering\tcomputation\ttotal    \tX          \tY          \tZ         \ttracked   \tintegrated";
 	
