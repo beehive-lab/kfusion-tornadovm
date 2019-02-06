@@ -14,7 +14,7 @@ GROUND_TRUTH="${DATA_ROOT}/livingRoom${TRAJ_NUM}.gt.freiburg"
 KFUSION_PROFILING_FLAGS="-Dtornado.profiling.enable=True -Dtornado.profiles.print=True -Dkfusion.kernels.print=True"
 
 if [ -z "${KFUSION_FLAGS}" ];then
-    KFUSION_FLAGS="-Xms8G -Dtornado.ooo-execution.enable=False -Dtornado.opencl.eventwindow=81920"
+    KFUSION_FLAGS="-Xms8G"
 fi
 
 OUTPUT_PREFIX="bm-traj${TRAJ_NUM}"
@@ -49,10 +49,10 @@ do
         cp ${TORNADO_CONFIG} ${RESULTS_ROOT}/
 
         printf "executing timing run %s\n" ${TORNADO_CONFIG}
-        ${KFUSION_ROOT}/bin/kfusion ${KFUSION_FLAGS} -Dtornado.profiling.enable=False -Dtornado.config=${TORNADO_CONFIG} kfusion.tornado.Benchmark ${TRAJ_FLAGS} > ${RESULTS_ROOT}/${ACTUAL_LOG_FILE}
+        ${KFUSION_ROOT}/bin/kfusion ${KFUSION_FLAGS} -Dtornado.config=${TORNADO_CONFIG} kfusion.tornado.Benchmark ${TRAJ_FLAGS} ${RESULTS_ROOT}/${ACTUAL_LOG_FILE}
 
         printf "executing profiling run %s\n" ${TORNADO_CONFIG}
-        ${KFUSION_ROOT}/bin/kfusion ${KFUSION_FLAGS} ${KFUSION_PROFILING_FLAGS} -Dtornado.config=${TORNADO_CONFIG} kfusion.tornado.Benchmark ${TRAJ_FLAGS} > ${RESULTS_ROOT}/${TMP_FILE}
+        ${KFUSION_ROOT}/bin/kfusion ${KFUSION_FLAGS} ${KFUSION_PROFILING_FLAGS}  -Dtornado.opencl.eventwindow=81920 -Dtornado.config=${TORNADO_CONFIG} kfusion.tornado.Benchmark ${TRAJ_FLAGS} > ${RESULTS_ROOT}/${TMP_FILE}
         grep -v task "${RESULTS_ROOT}/${TMP_FILE}" > "${RESULTS_ROOT}/${PROFILING_LOG_FILE}"
         echo "device,task,time,submitted,start,end" > "${RESULTS_ROOT}/${KERNELS_FILE}"
         grep task "${RESULTS_ROOT}/${TMP_FILE}" >> "${RESULTS_ROOT}/${KERNELS_FILE}"
