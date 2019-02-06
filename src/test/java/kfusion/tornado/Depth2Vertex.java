@@ -2,7 +2,7 @@
  *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
  *    https://github.com/beehive-lab/slambench-tornado
  *
- *    Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *    The University of Manchester
  *
  *    This work is partially supported by EPSRC grants:
