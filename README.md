@@ -4,6 +4,19 @@ Tornado implementation of Kfusion.
 
 ## Quickstart ##
 
+First, install [Tornado](https://github.com/beehive-lab/Tornado). 
+Instructions in [Tornado-INSTALL](https://github.com/beehive-lab/Tornado/blob/master/INSTALL.md)
+
+When it is installed, then install, from Tornado workspace, all Tornado JAR files locally by running:
+
+```bash
+$ cd path/to/tornado
+$ tornadoLocalInstallMaven
+```
+
+Now you can install KFusion-Tornado:
+
+
 ```bash
 # Setup:
 export KFUSION_ROOT="${PWD}"
