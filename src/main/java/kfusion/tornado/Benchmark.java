@@ -82,8 +82,8 @@ public class Benchmark {
 		pipeline.execute();
 		final long stop = System.nanoTime();
 		final double elapsed = (stop - start) * 1e-9;
-
-		// finish
-		System.out.printf("Summary: time=%.2f, frames=%d\n", elapsed, pipeline.getProcessedFrames());
+		final double framesPerSecond = pipeline.getProcessedFrames() / elapsed;
+		
+		System.out.printf("Summary: time=%.2f, frames=%d, FPS=%.2f\n", elapsed, pipeline.getProcessedFrames(), framesPerSecond);
 	}
 }

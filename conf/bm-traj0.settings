@@ -12,6 +12,6 @@ kfusion.model.offset.y = 0.5
 kfusion.model.offset.z = 0.24
 
 kfusion.raw.enable = true
-kfusion.raw.file =/home/michalis/Tornado/Slam/Data/living_room_traj0.raw
+kfusion.raw.file http://www.doc.ic.ac.uk/~ahanda/living_room_traj0_loop.tgz,living_room_traj0.raw
 
 
