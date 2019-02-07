@@ -31,8 +31,9 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import javax.media.opengl.awt.GLCanvas;
 import javax.swing.*;
-import kfusion.KfusionConfig;
-import kfusion.devices.Device;
+
+import kfusion.java.common.KfusionConfig;
+import kfusion.java.devices.Device;
 
 public class WorkbenchFrame<T extends KfusionConfig> extends JFrame implements WindowListener {
 

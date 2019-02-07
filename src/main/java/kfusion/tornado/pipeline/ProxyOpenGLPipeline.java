@@ -29,8 +29,8 @@ import java.awt.event.ActionListener;
 
 import javax.media.opengl.awt.GLCanvas;
 
-import kfusion.pipeline.AbstractOpenGLPipeline;
-import kfusion.pipeline.JavaOpenGLPipeline;
+import kfusion.java.pipeline.AbstractOpenGLPipeline;
+import kfusion.java.pipeline.JavaOpenGLPipeline;
 import kfusion.tornado.common.TornadoModel;
 import kfusion.tornado.ui.TornadoConfigPanel;
 

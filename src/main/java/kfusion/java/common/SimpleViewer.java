@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion;
+package kfusion.java.common;
 
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;

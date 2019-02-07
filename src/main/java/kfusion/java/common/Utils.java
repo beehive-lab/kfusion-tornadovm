@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion;
+package kfusion.java.common;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

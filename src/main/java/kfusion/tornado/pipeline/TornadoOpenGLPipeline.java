@@ -26,8 +26,8 @@ package kfusion.tornado.pipeline;
 
 import static uk.ac.manchester.tornado.matrix.MatrixMath.sgemm;
 
-import kfusion.devices.Device;
-import kfusion.pipeline.AbstractOpenGLPipeline;
+import kfusion.java.devices.Device;
+import kfusion.java.pipeline.AbstractOpenGLPipeline;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;

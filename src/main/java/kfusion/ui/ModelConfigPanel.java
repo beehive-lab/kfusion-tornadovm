@@ -31,8 +31,8 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import com.jogamp.opengl.util.Animator;
 
-import kfusion.KfusionConfig;
-import kfusion.devices.Device;
+import kfusion.java.common.KfusionConfig;
+import kfusion.java.devices.Device;
 
 public class ModelConfigPanel<T extends KfusionConfig> extends JPanel implements ActionListener{
 	

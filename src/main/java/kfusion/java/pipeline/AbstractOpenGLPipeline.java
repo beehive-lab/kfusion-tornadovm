@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.pipeline;
+package kfusion.java.pipeline;
 
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
@@ -33,7 +33,7 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
 
-import kfusion.KfusionConfig;
+import kfusion.java.common.KfusionConfig;
 import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte4;

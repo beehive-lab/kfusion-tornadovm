@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion;
+package kfusion.java.common;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

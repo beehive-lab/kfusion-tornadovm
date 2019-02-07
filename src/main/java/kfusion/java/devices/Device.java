@@ -22,31 +22,29 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.pipeline;
+package kfusion.java.devices;
 
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import kfusion.java.common.KfusionConfig;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
 
-public class View {
-    private final ImageFloat3 normals;
-    private final ImageFloat3 verticies;
-    private final Matrix4x4Float pose;
+public interface Device extends VideoCamera, DepthCamera {
 
-    public View(final ImageFloat3 verticies, final ImageFloat3 normals, final Matrix4x4Float pose) {
-        this.normals = normals;
-        this.verticies = verticies;
-        this.pose = pose;
-    }
+    public void start();
 
-    public ImageFloat3 getNormals() {
-        return normals;
-    }
+    public void stop();
 
-    public ImageFloat3 getVerticies() {
-        return verticies;
-    }
+    public void init();
 
-    public Matrix4x4Float getPose() {
-        return pose;
-    }
+    public void shutdown();
+
+    public boolean isRunning();
+
+    public <T extends KfusionConfig> void updateModel(T config);
+
+    public boolean hasReferencePose();
+
+    public Float3 getTranslation();
+
+    public Float4 getRotation();
 }

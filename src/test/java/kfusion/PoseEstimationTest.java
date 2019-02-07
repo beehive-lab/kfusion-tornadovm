@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import kfusion.algorithms.IterativeClosestPoint;
+import kfusion.java.common.Utils;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;

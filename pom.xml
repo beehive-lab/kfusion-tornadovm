@@ -100,15 +100,6 @@
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
-        <!--<dependency>
-            <groupId>slambench</groupId>
-            <artifactId>slambench-java</artifactId>
-            <version>0.0.2</version>
-            <type>jar</type>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/slambench-java-0.0.2.jar</systemPath>
-        </dependency>
-	-->
 
      <dependency>
          <groupId>tornado</groupId>

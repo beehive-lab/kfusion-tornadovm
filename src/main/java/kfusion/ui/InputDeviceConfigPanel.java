@@ -33,8 +33,8 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.border.EtchedBorder;
 
-import kfusion.KfusionConfig;
-import kfusion.devices.Device;
+import kfusion.java.common.KfusionConfig;
+import kfusion.java.devices.Device;
 
 public class InputDeviceConfigPanel<T extends KfusionConfig> extends JPanel implements ActionListener {
 

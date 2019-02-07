@@ -27,7 +27,7 @@ package kfusion.tornado;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 
-import kfusion.devices.Device;
+import kfusion.java.devices.Device;
 import kfusion.tornado.common.TornadoModel;
 import kfusion.tornado.pipeline.TornadoBenchmarkPipeline;
 import uk.ac.manchester.tornado.api.collections.types.Float4;

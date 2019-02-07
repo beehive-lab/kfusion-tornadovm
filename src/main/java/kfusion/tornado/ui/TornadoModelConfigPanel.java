@@ -32,7 +32,7 @@ import javax.swing.JPanel;
 
 import com.jogamp.opengl.util.Animator;
 
-import kfusion.devices.Device;
+import kfusion.java.devices.Device;
 import kfusion.tornado.common.TornadoModel;
 import kfusion.ui.InputDeviceConfigPanel;
 import kfusion.ui.IntrinsicCameraPanel;

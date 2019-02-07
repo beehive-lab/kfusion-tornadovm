@@ -30,8 +30,8 @@ import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLProfile;
 import javax.media.opengl.awt.GLCanvas;
 
-import kfusion.KfusionConfig;
-import kfusion.pipeline.JavaOpenGLPipeline;
+import kfusion.java.common.KfusionConfig;
+import kfusion.java.pipeline.JavaOpenGLPipeline;
 
 public class KfusionJavaCanvas<T extends KfusionConfig> extends GLCanvas {
 	

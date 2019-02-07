@@ -15,8 +15,8 @@
  */
 package kfusion.tornado.pipeline;
 
-import kfusion.devices.Device;
-import kfusion.pipeline.AbstractOpenGLPipeline;
+import kfusion.java.devices.Device;
+import kfusion.java.pipeline.AbstractOpenGLPipeline;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;

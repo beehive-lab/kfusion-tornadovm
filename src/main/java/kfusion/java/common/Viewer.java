@@ -22,10 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion;
-
-import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
-import static javax.media.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
+package kfusion.java.common;
 
 import java.awt.Dimension;
 import java.awt.event.KeyAdapter;
@@ -40,12 +37,13 @@ import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLProfile;
 import javax.media.opengl.awt.GLCanvas;
+import javax.media.opengl.fixedfunc.GLMatrixFunc;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import com.jogamp.opengl.util.Animator;
 
-import kfusion.devices.Device;
+import kfusion.java.devices.Device;
 import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte4;
@@ -75,11 +73,11 @@ public class Viewer extends GLCanvas implements GLEventListener {
     public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
         GL2 gl = drawable.getGL().getGL2();
 
-        gl.glMatrixMode(GL_MODELVIEW);
+        gl.glMatrixMode(GLMatrixFunc.GL_MODELVIEW);
         gl.glLoadIdentity();
 
         gl.glViewport(0, 0, height, width);
-        gl.glMatrixMode(GL_PROJECTION);
+        gl.glMatrixMode(GLMatrixFunc.GL_PROJECTION);
         gl.glLoadIdentity();
 
         gl.glColor3f(1.0f, 1.0f, 1.0f);

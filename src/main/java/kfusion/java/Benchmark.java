@@ -27,9 +27,9 @@ package kfusion.java;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 
-import kfusion.KfusionConfig;
-import kfusion.devices.Device;
-import kfusion.pipeline.BenchmarkPipeline;
+import kfusion.java.common.KfusionConfig;
+import kfusion.java.devices.Device;
+import kfusion.java.pipeline.BenchmarkPipeline;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 
 public class Benchmark {

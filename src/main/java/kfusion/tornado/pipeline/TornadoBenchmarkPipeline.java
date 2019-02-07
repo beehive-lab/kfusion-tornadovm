@@ -30,8 +30,8 @@ import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableB
 
 import java.io.PrintStream;
 
-import kfusion.devices.Device;
-import kfusion.pipeline.AbstractPipeline;
+import kfusion.java.devices.Device;
+import kfusion.java.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;

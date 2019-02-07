@@ -39,7 +39,7 @@ import javax.swing.WindowConstants;
 
 import com.jogamp.opengl.util.Animator;
 
-import kfusion.devices.Device;
+import kfusion.java.devices.Device;
 import kfusion.tornado.common.TornadoModel;
 
 public class TornadoWorkbenchFrame extends JFrame implements WindowListener {

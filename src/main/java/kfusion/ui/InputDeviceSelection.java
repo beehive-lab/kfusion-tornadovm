@@ -26,7 +26,7 @@ package kfusion.ui;
 
 import javax.swing.DefaultComboBoxModel;
 
-import kfusion.devices.Device;
+import kfusion.java.devices.Device;
 
 public class InputDeviceSelection extends DefaultComboBoxModel<Device> {
 

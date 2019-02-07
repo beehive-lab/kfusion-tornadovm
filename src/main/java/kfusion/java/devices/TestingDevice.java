@@ -22,9 +22,9 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.devices;
+package kfusion.java.devices;
 
-import kfusion.KfusionConfig;
+import kfusion.java.common.KfusionConfig;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;

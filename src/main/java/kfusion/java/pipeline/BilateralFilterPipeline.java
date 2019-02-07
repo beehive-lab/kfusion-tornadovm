@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package kfusion.pipeline;
+package kfusion.java.pipeline;
 
-import kfusion.KfusionConfig;
+import kfusion.java.common.KfusionConfig;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
 import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
 

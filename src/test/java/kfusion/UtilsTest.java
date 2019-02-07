@@ -26,6 +26,7 @@ package kfusion;
 
 import java.nio.FloatBuffer;
 
+import kfusion.java.common.Utils;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;

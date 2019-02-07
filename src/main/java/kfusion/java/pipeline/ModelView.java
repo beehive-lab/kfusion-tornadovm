@@ -22,15 +22,38 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.devices;
+package kfusion.java.pipeline;
 
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 
-public interface DepthCamera {
-	
-    public boolean pollDepth(ImageFloat buffer);
+public class ModelView {
+    private final ImageFloat3 normals;
+    private final ImageFloat3 verticies;
+    private final Matrix4x4Float pose;
+    private final ImageFloat depths;
 
-    public int getHeight();
+    public ModelView(final ImageFloat3 verticies, final ImageFloat3 normals, final ImageFloat depths, final Matrix4x4Float pose) {
+        this.normals = normals;
+        this.verticies = verticies;
+        this.depths = depths;
+        this.pose = pose;
+    }
 
-    public int getWidth();
+    public ImageFloat3 getNormals() {
+        return normals;
+    }
+
+    public ImageFloat3 getVerticies() {
+        return verticies;
+    }
+
+    public Matrix4x4Float getPose() {
+        return pose;
+    }
+
+    public ImageFloat getDepths() {
+        return depths;
+    }
 }

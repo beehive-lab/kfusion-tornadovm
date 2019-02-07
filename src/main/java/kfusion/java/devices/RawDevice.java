@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.devices;
+package kfusion.java.devices;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -41,8 +41,8 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.util.Scanner;
 
-import kfusion.AbstractLogger;
-import kfusion.KfusionConfig;
+import kfusion.java.common.AbstractLogger;
+import kfusion.java.common.KfusionConfig;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;

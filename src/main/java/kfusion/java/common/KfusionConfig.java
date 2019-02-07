@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion;
+package kfusion.java.common;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,13 +31,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import kfusion.devices.DepthCamera;
-import kfusion.devices.Device;
-import kfusion.devices.DummyKinect;
-import kfusion.devices.Kinect;
-import kfusion.devices.RawDevice;
-import kfusion.devices.TUMRGBDevice;
-import kfusion.devices.VideoCamera;
+import kfusion.java.devices.DepthCamera;
+import kfusion.java.devices.Device;
+import kfusion.java.devices.DummyKinect;
+import kfusion.java.devices.Kinect;
+import kfusion.java.devices.RawDevice;
+import kfusion.java.devices.TUMRGBDevice;
+import kfusion.java.devices.VideoCamera;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.Float6;

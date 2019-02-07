@@ -24,8 +24,8 @@
  */
 package kfusion.tornado.algorithms;
 
-import kfusion.KfusionConfig;
 import kfusion.algorithms.TrackingResult;
+import kfusion.java.common.KfusionConfig;
 import kfusion.numerics.Constants;
 import kfusion.numerics.EjmlSVD2;
 import uk.ac.manchester.tornado.api.annotations.Parallel;

@@ -22,22 +22,19 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.pipeline;
+package kfusion.java.pipeline;
 
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 
-public class ModelView {
+public class View {
     private final ImageFloat3 normals;
     private final ImageFloat3 verticies;
     private final Matrix4x4Float pose;
-    private final ImageFloat depths;
 
-    public ModelView(final ImageFloat3 verticies, final ImageFloat3 normals, final ImageFloat depths, final Matrix4x4Float pose) {
+    public View(final ImageFloat3 verticies, final ImageFloat3 normals, final Matrix4x4Float pose) {
         this.normals = normals;
         this.verticies = verticies;
-        this.depths = depths;
         this.pose = pose;
     }
 
@@ -51,9 +48,5 @@ public class ModelView {
 
     public Matrix4x4Float getPose() {
         return pose;
-    }
-
-    public ImageFloat getDepths() {
-        return depths;
     }
 }

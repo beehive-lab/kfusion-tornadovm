@@ -26,10 +26,10 @@ package kfusion.pipeline.tornado;
 
 import static uk.ac.manchester.tornado.api.collections.types.Float4.mult;
 
-import kfusion.Utils;
-import kfusion.devices.Device;
-import kfusion.devices.TestingDevice;
-import kfusion.pipeline.AbstractPipeline;
+import kfusion.java.common.Utils;
+import kfusion.java.devices.Device;
+import kfusion.java.devices.TestingDevice;
+import kfusion.java.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskSchedule;

@@ -33,7 +33,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 
-import kfusion.KfusionConfig;
+import kfusion.java.common.KfusionConfig;
 import kfusion.numerics.Helper;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float6;

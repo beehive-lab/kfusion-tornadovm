@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.pipeline;
+package kfusion.java.pipeline;
 
 import static uk.ac.manchester.tornado.api.collections.graphics.Renderer.renderDepth;
 import static uk.ac.manchester.tornado.api.collections.graphics.Renderer.renderTrack;
@@ -30,8 +30,8 @@ import static uk.ac.manchester.tornado.api.collections.graphics.Renderer.renderV
 import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.elapsedTimeInSeconds;
 import java.io.PrintStream;
 
-import kfusion.KfusionConfig;
-import kfusion.devices.Device;
+import kfusion.java.common.KfusionConfig;
+import kfusion.java.devices.Device;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 

@@ -22,29 +22,15 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.devices;
+package kfusion.java.devices;
 
-import kfusion.KfusionConfig;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 
-public interface Device extends VideoCamera, DepthCamera {
+public interface DepthCamera {
+	
+    public boolean pollDepth(ImageFloat buffer);
 
-    public void start();
+    public int getHeight();
 
-    public void stop();
-
-    public void init();
-
-    public void shutdown();
-
-    public boolean isRunning();
-
-    public <T extends KfusionConfig> void updateModel(T config);
-
-    public boolean hasReferencePose();
-
-    public Float3 getTranslation();
-
-    public Float4 getRotation();
+    public int getWidth();
 }

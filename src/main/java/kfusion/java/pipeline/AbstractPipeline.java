@@ -22,16 +22,16 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.pipeline;
+package kfusion.java.pipeline;
 
-import kfusion.AbstractLogger;
-import kfusion.KfusionConfig;
 import kfusion.algorithms.IterativeClosestPoint;
 import kfusion.algorithms.Raycast;
 import kfusion.algorithms.TrackingResult;
-import kfusion.devices.DepthCamera;
-import kfusion.devices.Device;
-import kfusion.devices.VideoCamera;
+import kfusion.java.common.AbstractLogger;
+import kfusion.java.common.KfusionConfig;
+import kfusion.java.devices.DepthCamera;
+import kfusion.java.devices.Device;
+import kfusion.java.devices.VideoCamera;
 import kfusion.numerics.Helper;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;

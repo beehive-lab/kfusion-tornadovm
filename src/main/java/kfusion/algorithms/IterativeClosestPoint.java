@@ -26,7 +26,7 @@ package kfusion.algorithms;
 
 import static uk.ac.manchester.tornado.api.collections.types.MatrixFloat.transpose;
 
-import kfusion.KfusionConfig;
+import kfusion.java.common.KfusionConfig;
 import kfusion.numerics.Constants;
 import kfusion.numerics.EjmlSVD2;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;

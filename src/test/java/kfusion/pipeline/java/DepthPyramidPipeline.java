@@ -24,10 +24,10 @@
  */
 package kfusion.pipeline.java;
 
-import kfusion.KfusionConfig;
-import kfusion.Utils;
-import kfusion.devices.TestingDevice;
-import kfusion.pipeline.AbstractPipeline;
+import kfusion.java.common.KfusionConfig;
+import kfusion.java.common.Utils;
+import kfusion.java.devices.TestingDevice;
+import kfusion.java.pipeline.AbstractPipeline;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;

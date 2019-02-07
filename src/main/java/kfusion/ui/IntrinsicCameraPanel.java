@@ -34,8 +34,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 
-import kfusion.KfusionConfig;
-import kfusion.devices.Device;
+import kfusion.java.common.KfusionConfig;
+import kfusion.java.devices.Device;
 import kfusion.numerics.Helper;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 

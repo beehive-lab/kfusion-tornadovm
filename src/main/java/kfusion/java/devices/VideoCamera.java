@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.devices;
+package kfusion.java.devices;
 
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 
