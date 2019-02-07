@@ -23,5 +23,11 @@ $ kfusion kfusion.tornado.GUI
 $ kfusion kfusion.tornado.Benchmark <config file>
 ```
 
+Example:
+```bash
+$ kfusion kfusion.java.Benchmark conf/bm-traj2.settings 
+```
+
+
 Note: 
 * sample configuration files from SLAMBench are under the `conf/` directory.

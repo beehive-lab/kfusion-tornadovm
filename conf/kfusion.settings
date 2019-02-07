@@ -19,8 +19,7 @@ kfusion.nuim.root=/home/michalis/Tornado/Slam/Data/
 kfusion.nuim.traj=livingRoom2.gt.freiburg
 
 kfusion.raw.enable = true
-#kfusion.raw.file = /home/juan/bin/SLAM/slambench-ICL-NUIM/living_room_traj2/living_room_traj2.raw
-kfusion.raw.file = /home/juan/bin/SLAM/slambench-ICL-NUIM/living_room_traj2_loop.raw
+kfusion.raw.file = http://www.doc.ic.ac.uk/~ahanda/living_room_traj2_loop.tgz,living_room_traj2_loop.raw
 
 tornado.opencl.cflags = -cl-std=1.2 -Werror
 
