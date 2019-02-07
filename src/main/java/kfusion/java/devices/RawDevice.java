@@ -114,7 +114,7 @@ public class RawDevice extends AbstractLogger implements Device {
 			channel = file.getChannel();
 			
 		} else {
-			System.out.println("Data Set file does not exist. Do you want to download it automatically?");
+			System.out.println("Data Set file does not exist. Do you want to download it automatically? (~2GB) ");
 			System.out.print("Press [yes/no] (default: yes) : ");
 			
 			Scanner scanner = new Scanner(System.in);
