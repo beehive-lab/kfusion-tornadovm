@@ -5,7 +5,7 @@
     <version>0.1.0</version>
     <packaging>jar</packaging>
 
-    <name>kfusion-tornado</name>
+    <name>kfusion-tornadovm</name>
     <url>http://maven.apache.org</url>
 
     <properties>
@@ -155,10 +155,10 @@
 
 
     </dependencies>
-    <groupId>kfusion-tornado</groupId>
-    <artifactId>kfusion-tornado</artifactId>
+    <artifactId>kfusion-tornadovm</artifactId>
     <organization>
     	<name>The University of Manchester</name>
     	<url>https://github.com/beehive-lab</url>
     </organization>
+    <groupId>kfusion-tornadovm</groupId>
 </project>
