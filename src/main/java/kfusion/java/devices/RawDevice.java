@@ -39,6 +39,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 import kfusion.java.common.AbstractLogger;
@@ -101,6 +102,11 @@ public class RawDevice extends AbstractLogger implements Device {
         return buffer == null;
     }
     
+    private void printHelpMessageForDataset() {
+		System.out.println("Please, download with the ./downloadDataSets.sh script");
+		System.exit(-1);
+    }
+    
     @SuppressWarnings("resource")
 	private void checkDataSet() throws IOException, InterruptedException {
     	String home = System.getenv("HOME");
@@ -118,7 +124,14 @@ public class RawDevice extends AbstractLogger implements Device {
 			System.out.print("Press [yes/no] (default: yes) : ");
 			
 			Scanner scanner = new Scanner(System.in);
-			String nextLine = scanner.nextLine();
+			String nextLine = null; 
+			try {
+				nextLine = scanner.nextLine();
+			} catch (NoSuchElementException e){
+				printHelpMessageForDataset();
+			} finally {
+				scanner.close();
+			}
 			if (nextLine.toLowerCase().startsWith("yes")) {
 				System.out.println("Downloading. This might take a while ... ");
 				String cmd = "./downloadDataSets.sh " + path.split(",")[0] + " " + path.split(",")[1];
@@ -135,10 +148,8 @@ public class RawDevice extends AbstractLogger implements Device {
 					writer.write(line);
 				}
 				writer.close();
-				
 			} else {
-				System.out.println("Please, download with the ./downloadDataSets.sh script");
-				System.exit(-1);
+				printHelpMessageForDataset();
 			}
 		}
     }
