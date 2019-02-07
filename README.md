@@ -13,13 +13,13 @@ export TORNADO_ROOT=/path/to/tornado
 export PATH="${PATH}:${TORNADO_ROOT}/bin/bin/"
 export TORNADO_SDK=${TORNADO_ROOT}/bin/sdk
 
-## Get the slambench-java
-./getDependencies.sh 
+## Compile and run kfusion-tornado
+$ mvn clean install -DskipTests
 
-
-## Compile and run slambench-tornado
-$ mvn clean install -DskipTestsi
+## Run KFusion-Tornado GUI 
 $ kfusion kfusion.tornado.GUI
+
+## Run Benchmarking mode
 $ kfusion kfusion.tornado.Benchmark <config file>
 ```
 
