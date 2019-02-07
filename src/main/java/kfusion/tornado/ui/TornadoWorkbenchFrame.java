@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.ui;
+package kfusion.tornado.ui;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -39,8 +39,8 @@ import javax.swing.WindowConstants;
 
 import com.jogamp.opengl.util.Animator;
 
-import kfusion.TornadoModel;
 import kfusion.devices.Device;
+import kfusion.tornado.common.TornadoModel;
 
 public class TornadoWorkbenchFrame extends JFrame implements WindowListener {
 

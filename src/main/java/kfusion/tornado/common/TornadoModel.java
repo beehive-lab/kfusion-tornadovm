@@ -22,8 +22,9 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion;
+package kfusion.tornado.common;
 
+import kfusion.KfusionConfig;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 

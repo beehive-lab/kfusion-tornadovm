@@ -26,10 +26,10 @@ package kfusion.tornado;
 
 import java.awt.EventQueue;
 
-import kfusion.TornadoModel;
-import kfusion.ui.KfusionTornadoCanvas;
-import kfusion.ui.TornadoConfigPanel;
-import kfusion.ui.TornadoWorkbenchFrame;
+import kfusion.tornado.common.TornadoModel;
+import kfusion.tornado.ui.KfusionTornadoCanvas;
+import kfusion.tornado.ui.TornadoConfigPanel;
+import kfusion.tornado.ui.TornadoWorkbenchFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class GUI {

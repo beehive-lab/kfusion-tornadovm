@@ -30,9 +30,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import kfusion.TornadoModel;
 import kfusion.Utils;
 import kfusion.algorithms.Raycast;
+import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;

@@ -35,10 +35,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import kfusion.TornadoModel;
 import kfusion.Utils;
 import kfusion.algorithms.IterativeClosestPoint;
 import kfusion.algorithms.TrackingResult;
+import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float8;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;

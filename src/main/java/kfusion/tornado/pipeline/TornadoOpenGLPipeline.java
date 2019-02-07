@@ -22,15 +22,16 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.pipeline;
+package kfusion.tornado.pipeline;
 
 import static uk.ac.manchester.tornado.matrix.MatrixMath.sgemm;
 
-import kfusion.TornadoModel;
 import kfusion.devices.Device;
+import kfusion.pipeline.AbstractOpenGLPipeline;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
+import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;

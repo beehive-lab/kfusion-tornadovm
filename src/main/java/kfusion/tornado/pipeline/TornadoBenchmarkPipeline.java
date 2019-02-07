@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.pipeline;
+package kfusion.tornado.pipeline;
 
 import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.getInverseCameraMatrix;
 import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.elapsedTimeInSeconds;
@@ -30,11 +30,12 @@ import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableB
 
 import java.io.PrintStream;
 
-import kfusion.TornadoModel;
 import kfusion.devices.Device;
+import kfusion.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
+import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;

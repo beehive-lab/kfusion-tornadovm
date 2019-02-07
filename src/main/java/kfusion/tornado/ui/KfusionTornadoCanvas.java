@@ -22,23 +22,33 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.ui;
+package kfusion.tornado.ui;
 
-import javax.swing.DefaultComboBoxModel;
+import java.awt.Dimension;
 
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import javax.media.opengl.GLCapabilities;
+import javax.media.opengl.GLProfile;
+import javax.media.opengl.awt.GLCanvas;
 
-public class TornadoDeviceSelection extends DefaultComboBoxModel<TornadoDevice> {
+import kfusion.tornado.common.TornadoModel;
+import kfusion.tornado.pipeline.ProxyOpenGLPipeline;
 
-	private static final long serialVersionUID = -5945515922073691978L;
+public class KfusionTornadoCanvas extends GLCanvas {
 
-	public TornadoDeviceSelection(final TornadoDevice[] devices) {
-		super(devices);
-	}
+	private static final long serialVersionUID = 2058056651997252912L;
 
-	@Override
-	public TornadoDevice getSelectedItem() {
-		return (TornadoDevice) super.getSelectedItem();
+	@SuppressWarnings("unused") private final ProxyOpenGLPipeline<TornadoModel> pipeline;
+
+	public KfusionTornadoCanvas(TornadoModel config, int width, int height, final TornadoConfigPanel tornadoPanel) {
+		GLProfile glp = GLProfile.getDefault();
+		GLCapabilities caps = new GLCapabilities(glp);
+		caps.setDoubleBuffered(true);
+		caps.setHardwareAccelerated(true);
+
+		setPreferredSize(new Dimension(width, height));
+		setSize(width, height);
+		pipeline = new ProxyOpenGLPipeline<TornadoModel>(config, this, tornadoPanel);
+
 	}
 
 }

@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package kfusion.pipeline;
+package kfusion.tornado.pipeline;
 
-import kfusion.TornadoModel;
 import kfusion.devices.Device;
+import kfusion.pipeline.AbstractOpenGLPipeline;
+import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
 import uk.ac.manchester.tornado.api.collections.graphics.Renderer;

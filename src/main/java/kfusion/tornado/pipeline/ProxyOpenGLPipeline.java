@@ -22,15 +22,17 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.pipeline;
+package kfusion.tornado.pipeline;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.media.opengl.awt.GLCanvas;
 
-import kfusion.TornadoModel;
-import kfusion.ui.TornadoConfigPanel;
+import kfusion.pipeline.AbstractOpenGLPipeline;
+import kfusion.pipeline.JavaOpenGLPipeline;
+import kfusion.tornado.common.TornadoModel;
+import kfusion.tornado.ui.TornadoConfigPanel;
 
 public class ProxyOpenGLPipeline<T extends TornadoModel> implements ActionListener {
 
