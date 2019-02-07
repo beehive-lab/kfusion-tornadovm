@@ -35,8 +35,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import kfusion.algorithms.IterativeClosestPoint;
-import kfusion.algorithms.TrackingResult;
+import kfusion.java.algorithms.IterativeClosestPoint;
+import kfusion.java.algorithms.TrackingResult;
 import kfusion.java.common.Utils;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskSchedule;

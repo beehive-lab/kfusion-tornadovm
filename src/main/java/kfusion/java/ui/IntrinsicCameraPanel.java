@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.ui;
+package kfusion.java.ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,7 +36,7 @@ import javax.swing.border.EtchedBorder;
 
 import kfusion.java.common.KfusionConfig;
 import kfusion.java.devices.Device;
-import kfusion.numerics.Helper;
+import kfusion.java.numerics.Helper;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 
 public class IntrinsicCameraPanel<T extends KfusionConfig> extends JPanel implements ActionListener {

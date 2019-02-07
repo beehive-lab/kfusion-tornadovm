@@ -22,13 +22,13 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.algorithms;
+package kfusion.java.algorithms;
 
 import static uk.ac.manchester.tornado.api.collections.types.MatrixFloat.transpose;
 
 import kfusion.java.common.KfusionConfig;
-import kfusion.numerics.Constants;
-import kfusion.numerics.EjmlSVD2;
+import kfusion.java.numerics.Constants;
+import kfusion.java.numerics.EjmlSVD2;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.Float3;

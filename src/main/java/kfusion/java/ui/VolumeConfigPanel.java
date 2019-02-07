@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.ui;
+package kfusion.java.ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -34,7 +34,7 @@ import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 
 import kfusion.java.common.KfusionConfig;
-import kfusion.numerics.Helper;
+import kfusion.java.numerics.Helper;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.Int3;

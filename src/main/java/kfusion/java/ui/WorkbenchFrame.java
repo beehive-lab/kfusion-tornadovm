@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.ui;
+package kfusion.java.ui;
 
 import com.jogamp.opengl.util.Animator;
 import java.awt.event.KeyAdapter;

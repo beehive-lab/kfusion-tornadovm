@@ -27,8 +27,8 @@ package kfusion.java;
 import java.awt.EventQueue;
 
 import kfusion.java.common.KfusionConfig;
-import kfusion.ui.KfusionJavaCanvas;
-import kfusion.ui.WorkbenchFrame;
+import kfusion.java.ui.KfusionJavaCanvas;
+import kfusion.java.ui.WorkbenchFrame;
 
 public class GUI {
 	public static void main(String[] args) {

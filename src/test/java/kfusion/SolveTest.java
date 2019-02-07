@@ -24,7 +24,7 @@
  */
 package kfusion;
 
-import kfusion.algorithms.IterativeClosestPoint;
+import kfusion.java.algorithms.IterativeClosestPoint;
 import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.FloatSE3;

@@ -22,24 +22,23 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.numerics;
+package kfusion.java.ui;
 
-public final class Constants {
+import javax.swing.DefaultComboBoxModel;
 
-	private Constants() {
+import kfusion.java.devices.Device;
+
+public class InputDeviceSelection extends DefaultComboBoxModel<Device> {
+
+	private static final long serialVersionUID = -9003008948381483737L;
+
+	public InputDeviceSelection(final Device[] devices){
+		super(devices);
 	}
-	
-	public static final int		X		= 0;
-	public static final int		Y		= 1;
-	public static final int		Z		= 2;
-	public static final int		W		= 3;
 
-	public static final float	INVALID	= -2f;
+	@Override
+	public Device getSelectedItem() {
+		return (Device) super.getSelectedItem();
+	}
 
-	public static final int		BLACK	= -1;
-	public static final int		RED		= -2;
-	public static final int		GREEN	= -3;
-	public static final int		BLUE	= -4;
-	public static final int		YELLOW	= -5;
-	public static final int		GREY	= 1;
 }

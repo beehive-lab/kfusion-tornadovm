@@ -33,10 +33,10 @@ import javax.swing.JPanel;
 import com.jogamp.opengl.util.Animator;
 
 import kfusion.java.devices.Device;
+import kfusion.java.ui.InputDeviceConfigPanel;
+import kfusion.java.ui.IntrinsicCameraPanel;
+import kfusion.java.ui.VolumeConfigPanel;
 import kfusion.tornado.common.TornadoModel;
-import kfusion.ui.InputDeviceConfigPanel;
-import kfusion.ui.IntrinsicCameraPanel;
-import kfusion.ui.VolumeConfigPanel;
 
 public class TornadoModelConfigPanel extends JPanel implements ActionListener {
 

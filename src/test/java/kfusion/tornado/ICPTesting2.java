@@ -24,7 +24,7 @@
  */
 package kfusion.tornado;
 
-import static kfusion.algorithms.IterativeClosestPoint.reduce;
+import static kfusion.java.algorithms.IterativeClosestPoint.reduce;
 import static org.junit.Assert.fail;
 
 import java.io.FileInputStream;
@@ -36,7 +36,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import kfusion.algorithms.IterativeClosestPoint;
+import kfusion.java.algorithms.IterativeClosestPoint;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float8;

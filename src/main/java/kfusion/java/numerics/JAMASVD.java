@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.numerics;
+package kfusion.java.numerics;
 
 import Jama.Matrix;
 import Jama.SingularValueDecomposition;

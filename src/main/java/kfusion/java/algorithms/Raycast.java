@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.algorithms;
+package kfusion.java.algorithms;
 
 import static uk.ac.manchester.tornado.api.collections.types.Float3.length;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.normalise;

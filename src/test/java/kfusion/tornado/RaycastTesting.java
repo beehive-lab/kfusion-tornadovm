@@ -30,7 +30,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import kfusion.algorithms.Raycast;
+import kfusion.java.algorithms.Raycast;
 import kfusion.java.common.Utils;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskSchedule;

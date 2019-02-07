@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.ui;
+package kfusion.java.ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

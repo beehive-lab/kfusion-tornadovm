@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.algorithms;
+package kfusion.java.algorithms;
 
 import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.rigidTransform;
 import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.rotate;

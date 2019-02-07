@@ -24,15 +24,15 @@
  */
 package kfusion.java.pipeline;
 
-import kfusion.algorithms.IterativeClosestPoint;
-import kfusion.algorithms.Raycast;
-import kfusion.algorithms.TrackingResult;
+import kfusion.java.algorithms.IterativeClosestPoint;
+import kfusion.java.algorithms.Raycast;
+import kfusion.java.algorithms.TrackingResult;
 import kfusion.java.common.AbstractLogger;
 import kfusion.java.common.KfusionConfig;
 import kfusion.java.devices.DepthCamera;
 import kfusion.java.devices.Device;
 import kfusion.java.devices.VideoCamera;
-import kfusion.numerics.Helper;
+import kfusion.java.numerics.Helper;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
 import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
@@ -608,7 +608,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
             info("K:\n%s\n", K.toString(FloatOps.fmt4em));
         }
 
-        kfusion.algorithms.Integration.integrate(scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight);
+        kfusion.java.algorithms.Integration.integrate(scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight);
     }
 
     public void updateReferenceView() {

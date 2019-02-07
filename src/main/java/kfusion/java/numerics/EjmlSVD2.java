@@ -22,7 +22,7 @@
  *
  *    Authors: James Clarkson
  */
-package kfusion.numerics;
+package kfusion.java.numerics;
 
 import static uk.ac.manchester.tornado.api.collections.types.VectorFloat.max;
 
