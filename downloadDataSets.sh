@@ -34,7 +34,7 @@ make
 cd ..
 mkdir -p datasets
 cd datasets
-wget -O compressFil $url
+wget -O $compressFile $url
 tar xzf $compressFile
 cd ..
 
