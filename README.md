@@ -57,7 +57,7 @@ Summary: time=6.50, frames=882, FPS=135.79
 This implementation runs on TornadoVM to achieve GPU acceleration and real-time performance.
 Hence, you need to install [Tornado](https://github.com/beehive-lab/Tornado) following the instructions from [Tornado-INSTALL](https://github.com/beehive-lab/Tornado/blob/master/INSTALL.md)
 
-After you successfuly build Tornado, then issue the following commands to install locally its JAR files:
+After you successfully build Tornado, then issue the following commands to install locally its JAR files:
 
 ```bash
 $ cd path/to/tornado
@@ -88,7 +88,9 @@ $ kfusion kfusion.tornado.Benchmark <config file>
 
 ## How to get the datasets? 
 
-KFusion-Tornado uses the [ICL-NUIM](https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html) datasets. We provide a script to automatically download and compose the video files in `raw` format. Alternatively, when running the Java program (Kfusion-TorandoVM) the first time, it will download the corresponding video raw-file and install it locally. 
+KFusion-Tornado uses the [ICL-NUIM](https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html) datasets.<br>
+We provide a script to automatically download and compose the video files in `raw` format. <br>
+Alternatively, when running the Java program (KFusion-TornadoVM) the first time, it will download the corresponding video raw-file and install it locally. 
 
 ### Option a) Automatically
 
