@@ -150,8 +150,6 @@ This work was initially supported by the EPSRC grants [PAMELA EP/K008730/1](http
 
 ## Collaborations
 
-We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](CONTRIBUTIONS.md).
-
 For academic collaborations please contact [Christos Kotselidis](https://www.kotselidis.net).
 
 
