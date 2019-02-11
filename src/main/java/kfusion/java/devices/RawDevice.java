@@ -103,17 +103,19 @@ public class RawDevice extends AbstractLogger implements Device {
         return buffer == null;
     }
     
-    private void printHelpMessageForDataset() {
+    private void printHelpMessageForDataset(String sample) {
 		System.out.println("Please, download with the ./downloadDataSets.sh script");
+		System.out.println("Example: `" + sample + "`");
 		System.exit(-1);
     }
     
     @SuppressWarnings("resource")
-	private void checkDataSet() throws IOException, InterruptedException {
+	private void downloadDataSet() throws IOException, InterruptedException {
     	String home = System.getenv("HOME");
     	String fileName = home + "/.kfusion_tornado/" + path.split(",")[1];
 		System.out.println("\t: Reading configuration file: " + fileName);
 		File f = new File(fileName);
+		String cmd = "./downloadDataSets.sh " + path.split(",")[0] + " " + path.split(",")[1];
 		
 		if (f.exists() && !f.isDirectory()) {	
 			file = new RandomAccessFile(fileName, "r");
@@ -129,13 +131,12 @@ public class RawDevice extends AbstractLogger implements Device {
 			try {
 				nextLine = scanner.nextLine();
 			} catch (NoSuchElementException e){
-				printHelpMessageForDataset();
+				printHelpMessageForDataset(cmd);
 			} finally {
 				scanner.close();
 			}
 			if (nextLine.toLowerCase().startsWith("yes")) {
 				System.out.println("Downloading. This might take a while ... ");
-				String cmd = "./downloadDataSets.sh " + path.split(",")[0] + " " + path.split(",")[1];
 				String[] command = cmd.split(" ");
 				System.out.println(cmd);
 				ProcessBuilder buildProcess = new ProcessBuilder(command);
@@ -151,7 +152,7 @@ public class RawDevice extends AbstractLogger implements Device {
 				}
 				writer.close();				
 			} else {
-				printHelpMessageForDataset();
+				printHelpMessageForDataset(cmd);
 			}
 		}
     }
@@ -162,7 +163,7 @@ public class RawDevice extends AbstractLogger implements Device {
         try {
             if (file == null) {
             	if (path.startsWith("http:")) {
-            		checkDataSet();
+            		downloadDataSet();
             	} else {
             		file = new RandomAccessFile(path, "r");
             		fileSize = file.length();
