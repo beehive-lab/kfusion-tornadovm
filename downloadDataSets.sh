@@ -10,6 +10,11 @@ else
 	echo "Setting $url"
 fi
 
+IFS='/' read -r -a array <<< $url
+compressFile=${array[-1]}
+
+echo "FILE : $compressFile"
+
 if [ -z $file ]
 then
 	file="living_room_traj2_loop.raw"
@@ -29,8 +34,8 @@ make
 cd ..
 mkdir -p datasets
 cd datasets
-wget $url
-tar xzf living_room_traj2_loop.tgz
+wget -O compressFil $url
+tar xzf $compressFile
 cd ..
 
 ./slambench/build/kfusion/thirdparty/scene2raw datasets $file

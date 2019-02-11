@@ -28,8 +28,8 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
@@ -135,19 +135,20 @@ public class RawDevice extends AbstractLogger implements Device {
 			if (nextLine.toLowerCase().startsWith("yes")) {
 				System.out.println("Downloading. This might take a while ... ");
 				String cmd = "./downloadDataSets.sh " + path.split(",")[0] + " " + path.split(",")[1];
+				String[] command = cmd.split(" ");
 				System.out.println(cmd);
-				Runtime run = Runtime.getRuntime();
-				Process pr = run.exec(cmd);
-				pr.waitFor();
-				
-				// Write log file
+				ProcessBuilder buildProcess = new ProcessBuilder(command);
+				buildProcess.redirectErrorStream(true);
+				Process process = buildProcess.start();
+				InputStream outputProcess = process.getInputStream();
+				BufferedReader bufferReader = new BufferedReader(new InputStreamReader(outputProcess));
+				String line = null;
 				BufferedWriter writer = new BufferedWriter(new FileWriter("dataset.log"));
-				BufferedReader buf = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-				String line = "";
-				while ((line=buf.readLine())!=null) {
+				while ((line = bufferReader.readLine()) != null) {
+					System.out.println(line);
 					writer.write(line);
 				}
-				writer.close();
+				writer.close();				
 			} else {
 				printHelpMessageForDataset();
 			}
