@@ -50,23 +50,25 @@ KFusion can run in two modes receiving input from:
 $ kfusion kfusion.tornado.GUI
 ```
 
-2) Pre-defined datasets
+2) Pre-defined datasets again through the GUI selection or"
 ```bash
 ## Run KFusion-Tornado GUI 
 $ kfusion kfusion.tornado.Benchmark <config file>
 ```
-In our examples, we use datasets from the ICL-NUIM which will be downloaded automatically when issuing the following command:
+In our examples, we use images from the [ICL-NUIM](https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html) dataset which will be downloaded automatically when issuing the following command:
+
 ```bash
 $ kfusion kfusion.java.Benchmark conf/bm-traj2.settings 
 ```
 
 Note: 
-* Sample configuration files from SLAMBench are under the `conf/` directory.
+* Sample configuration files are under the `conf/` directory.
 
 ## Output ##
 
 If you enable the GUI while running KFusion you will see a real-time 3D space reconstruction similar to the image below:
 
+![KFusion GUI output](../images/kfusion-gui-output.png?raw=true "KFusion GUI output")
 
 In addition, you will see output text with performance metrics across the frames that KFusion processes:
 
