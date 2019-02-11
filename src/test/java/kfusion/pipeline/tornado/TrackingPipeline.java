@@ -1,37 +1,37 @@
 /*
- *    This file is part of Slambench-Tornado: A Tornado version of the SLAMBENCH computer vision benchmark suite
- *    https://github.com/beehive-lab/slambench-tornado
+ *  This file is part of Tornado-KFusion: A Java version of the KFusion computer vision
+ *  algorithm running on TornadoVM.
+ *  URL: https://github.com/beehive-lab/kfusion-tornadovm
  *
- *    Copyright (c) 2013-2019 APT Group, School of Computer Science,
- *    The University of Manchester
+ *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
+ *  The University of Manchester
  *
- *    This work is partially supported by EPSRC grants:
- *    Anyscale EP/L000725/1 and PAMELA EP/K008730/1.
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  *
- *    Authors: James Clarkson
  */
 package kfusion.pipeline.tornado;
 
 import static uk.ac.manchester.tornado.api.collections.types.Float4.mult;
 
-import kfusion.TornadoModel;
-import kfusion.Utils;
-import kfusion.devices.Device;
-import kfusion.devices.TestingDevice;
-import kfusion.pipeline.AbstractPipeline;
+import kfusion.java.common.Utils;
+import kfusion.java.devices.Device;
+import kfusion.java.devices.TestingDevice;
+import kfusion.java.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
+import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
