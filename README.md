@@ -68,7 +68,7 @@ Note:
 
 If you enable the GUI while running KFusion you will see a real-time 3D space reconstruction similar to the image below:
 
-![KFusion GUI output](https://github.com/beehive-lab/kfusion-tornadovm/tree/doc/README/doc/images/kfusion-gui-output.png?raw=true "KFusion GUI output")
+![KFusion GUI output](doc/images/kfusion-gui-output.png)
 
 In addition, you will see output text with performance metrics across the frames that KFusion processes:
 ```bash
