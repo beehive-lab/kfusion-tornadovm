@@ -86,6 +86,30 @@ $ kfusion kfusion.tornado.GUI
 $ kfusion kfusion.tornado.Benchmark <config file>
 ```
 
+## How to get the datasets? 
+
+KFusion-Tornado uses the [ICL-NUIM](https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html) datasets. We provide a script to automatically download and compose the video files in `raw` format. Alternatively, when running the Java program (Kfusion-TorandoVM) the first time, it will download the corresponding video raw-file and install it locally. 
+
+### Option a) Automatically
+
+The first time you run the application and if the raw file is not installed locally (`~/.kfusion_tornado`), then the program will ask you if you want to download it auotmatically:
+
+```bash
+$ kfusion kfusion.tornado.Benchmark conf/bm-traj3.settings 
+KFussion Accelerated with Tornado
+	: Reading configuration file: /home/juan/.kfusion_tornado/living_room_traj3_loop.raw
+Data Set file does not exist. Do you want to download it automatically? (~2GB) 
+Press [yes/no] (default: yes) : 
+```
+
+### Option b) Manually
+
+Run the `downloadDataSets.sh <url> <fileName>`, for example:
+
+```bash
+$ bash downloadDataSets.sh  http://www.doc.ic.ac.uk/~ahanda/living_room_traj2_loop.tgz living_room_traj2_loop.raw
+```
+
 ## Running KFusion-Tornado ##
 
 KFusion can run in two modes receiving input from:
