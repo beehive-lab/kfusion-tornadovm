@@ -1,7 +1,10 @@
 # KFusion-TornadoVM #
 
 A Java implementation of the Kinect Fusion application running on TornadoVM.
-It can run on existing datasets as well as realtime with an RBG-d camera.
+
+It can run on existing datasets as well as in real-time with input frames from an attached RBG-d camera.
+
+The performance of the current implementation is outlined in the following [publication](https://www.researchgate.net/publication/327097904_Exploiting_High-Performance_Heterogeneous_Hardware_for_Java_Programs_using_Graal).
 
 ### Releases
   * KFusion-TornadoVM 0.1.0 - 11/02/2019: Initial release of Kinect Fusion on TornadoVM.
@@ -30,10 +33,10 @@ export TORNADO_ROOT=/path/to/tornado
 export PATH="${PATH}:${TORNADO_ROOT}/bin/bin/"
 export TORNADO_SDK=${TORNADO_ROOT}/bin/sdk
 
-## Compile and run kfusion-tornado
+## Compile and run KFusion-TornadoVM
 $ mvn clean install -DskipTests
 
-## Run KFusion-Tornado GUI 
+## Run KFusion-TornadoVM GUI 
 $ kfusion kfusion.tornado.GUI
 
 ## Run Benchmarking mode
@@ -44,13 +47,13 @@ $ kfusion kfusion.tornado.Benchmark <config file>
 
 KFusion can run in two modes receiving input from:
 
-1) RGB-d camera where you select the input source from the drop-down menu.
+1) RGB-d camera where you select the input source from the drop-down menu:
 ```bash
 ## Run KFusion-Tornado GUI 
 $ kfusion kfusion.tornado.GUI
 ```
 
-2) Pre-defined datasets again through the GUI selection or"
+2) Pre-defined datasets again through the GUI selection or:
 ```bash
 ## Run KFusion-Tornado GUI 
 $ kfusion kfusion.tornado.Benchmark <config file>
