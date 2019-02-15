@@ -130,7 +130,7 @@ $ kfusion kfusion.tornado.Benchmark <config file>
 In our examples, we use images from the [ICL-NUIM](https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html) dataset which will be downloaded automatically when issuing the following command:
 
 ```bash
-$ kfusion kfusion.java.Benchmark conf/bm-traj2.settings 
+$ kfusion kfusion.tornado.Benchmark conf/bm-traj2.settings 
 ```
 
 Note: 
