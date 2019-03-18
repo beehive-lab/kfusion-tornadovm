@@ -29,7 +29,7 @@ import static uk.ac.manchester.tornado.api.collections.types.VectorFloat.max;
 import org.ejml.simple.SimpleMatrix;
 import org.ejml.simple.SimpleSVD;
 
-import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 
 /**
@@ -67,7 +67,7 @@ public strictfp class EjmlSVD2 {
      * @param Arg
      *            Rectangular matrix
      */
-    public EjmlSVD2(MatrixFloat arg) {
+    public EjmlSVD2(Matrix2DFloat arg) {
         m = EjmlUtil.toMatrix(arg);
         // printMatrix(m);
         // System.out.println("Simple matrix");
@@ -118,7 +118,7 @@ public strictfp class EjmlSVD2 {
      * 
      * @return U
      */
-    public MatrixFloat getU() {
+    public Matrix2DFloat getU() {
         // svd.getU().print();
         return EjmlUtil.toMatrixFloat(svd.getU());
     }
@@ -128,7 +128,7 @@ public strictfp class EjmlSVD2 {
      * 
      * @return V
      */
-    public MatrixFloat getV() {
+    public Matrix2DFloat getV() {
         return EjmlUtil.toMatrixFloat(svd.getV());
     }
 
@@ -150,12 +150,12 @@ public strictfp class EjmlSVD2 {
      * 
      * @return S
      */
-    public MatrixFloat getS() {
+    public Matrix2DFloat getS() {
         return EjmlUtil.toMatrixFloat(svd.getW());
     }
 
-    public MatrixFloat getSinv(float condition) {
-        final MatrixFloat X = EjmlUtil.toMatrixFloat(svd.getW());
+    public Matrix2DFloat getSinv(float condition) {
+        final Matrix2DFloat X = EjmlUtil.toMatrixFloat(svd.getW());
         for (int i = 0; i < X.M(); i++) {
             float value = X.get(i, i);
             if (value * condition <= X.get(0, 0))

@@ -26,14 +26,14 @@ package kfusion.java.numerics;
 
 import Jama.Matrix;
 import Jama.SingularValueDecomposition;
-import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 
 public class JAMASVD {
 
     final SingularValueDecomposition svd;
     final double scale;
 
-    public JAMASVD(MatrixFloat m) {
+    public JAMASVD(Matrix2DFloat m) {
         final Matrix matrix = new Matrix(m.M(), m.N());
         double minValue = 0f;
         for (int row = 0; row < m.M(); row++)
@@ -52,28 +52,28 @@ public class JAMASVD {
         svd = new SingularValueDecomposition(matrix);
     }
 
-    public MatrixFloat getU() {
+    public Matrix2DFloat getU() {
         return toMatrixFloat(svd.getU().times(scale));
     }
 
-    public MatrixFloat getV() {
+    public Matrix2DFloat getV() {
         return toMatrixFloat(svd.getV().times(scale));
     }
 
-    public MatrixFloat getS() {
+    public Matrix2DFloat getS() {
         return toMatrixFloat(svd.getS().times(scale));
     }
 
-    private MatrixFloat toMatrixFloat(Matrix m) {
-        final MatrixFloat result = new MatrixFloat(m.getRowDimension(), m.getColumnDimension());
+    private Matrix2DFloat toMatrixFloat(Matrix m) {
+        final Matrix2DFloat result = new Matrix2DFloat(m.getRowDimension(), m.getColumnDimension());
         for (int row = 0; row < result.M(); row++)
             for (int col = 0; col < result.N(); col++)
                 result.set(row, col, (float) m.get(row, col));
         return result;
     }
 
-    public MatrixFloat getSinv(float condition) {
-        final MatrixFloat X = toMatrixFloat(svd.getS());
+    public Matrix2DFloat getSinv(float condition) {
+        final Matrix2DFloat X = toMatrixFloat(svd.getS());
         for (int i = 0; i < X.M(); i++) {
             float value = X.get(i, i);
             if (value * condition <= X.get(0, 0))

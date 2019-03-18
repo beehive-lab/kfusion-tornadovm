@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 
 public class ICPTesting {
 
@@ -260,7 +260,7 @@ public class ICPTesting {
                 badFrames++;
             }
 
-            new MatrixFloat(32, 1);
+            new Matrix2DFloat(32, 1);
 
             final TrackingResult result = new TrackingResult();
             result.setResultImage(results);

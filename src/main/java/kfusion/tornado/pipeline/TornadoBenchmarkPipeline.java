@@ -190,9 +190,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		final TornadoDevice tornadoDevice = (TornadoDevice) config.getTornadoDevice();
 		info("mapping onto %s\n", tornadoDevice.toString());
 
-		final long localMemSize = tornadoDevice.getDevice().getLocalMemorySize();
+		final long localMemSize = tornadoDevice.getDevice().getDeviceLocalMemorySize();
 		final float fraction = Float.parseFloat(TornadoRuntime.getProperty("kfusion.reduce.fraction", "1.0"));
-		cus = (int) (tornadoDevice.getDevice().getMaxComputeUnits() * fraction);
+		cus = (int) (tornadoDevice.getDevice().getDeviceMaxComputeUnits() * fraction);
 		final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
 		final int maxBinsPerCU = roundToWgs(maxBinsPerResource, 128);
 

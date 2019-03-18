@@ -83,8 +83,8 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
         super.configure(device);
 
         final TornadoDevice oclDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-        final long localMemSize = oclDevice.getDevice().getLocalMemorySize();
-        cus = oclDevice.getDevice().getMaxComputeUnits();
+        final long localMemSize = oclDevice.getDevice().getDeviceLocalMemorySize();
+        cus = oclDevice.getDevice().getDeviceMaxComputeUnits();
 
         final float cuLF = Float.parseFloat(TornadoRuntime.getProperty("culf", "1.0"));
         final float wgLF = Float.parseFloat(TornadoRuntime.getProperty("wglf", "1.0"));

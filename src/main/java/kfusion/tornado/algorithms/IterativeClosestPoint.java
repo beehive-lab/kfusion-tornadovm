@@ -41,13 +41,13 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
 import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
 
 public class IterativeClosestPoint {
 
-	private static void makeJTJ(final MatrixFloat a, final float[] vals, final int offset) {
+	private static void makeJTJ(final Matrix2DFloat a, final float[] vals, final int offset) {
 		a.set(0, 0, vals[0 + offset]);
 		a.set(0, 1, vals[1 + offset]);
 		a.set(0, 2, vals[2 + offset]);
@@ -565,7 +565,7 @@ public class IterativeClosestPoint {
 	}
 
 	public static void solve(final Float6 result, final float[] vals, int offset) {
-		final MatrixFloat C = new MatrixFloat(6, 6);
+		final Matrix2DFloat C = new Matrix2DFloat(6, 6);
 		final Float6 b = new Float6();
 
 		for (int i = 0; i < 6; i++) {
@@ -585,15 +585,15 @@ public class IterativeClosestPoint {
 
 			// System.out.printf("C:\n%s\n",C.toString());
 			// svd backsub
-			final MatrixFloat V = svd.getV();
-			final MatrixFloat U = svd.getU();
+			final Matrix2DFloat V = svd.getV();
+			final Matrix2DFloat U = svd.getU();
 
 			// System.out.printf("V:\n%s\n",V.toString());
 			// System.out.printf("U:\n%s\n",U.toString());
-			MatrixFloat.transpose(U);
+			Matrix2DFloat.transpose(U);
 
 			// System.out.printf("U':\n%s\n",U.toString());
-			final MatrixFloat inv = svd.getSinv((float) 1e6);
+			final Matrix2DFloat inv = svd.getSinv((float) 1e6);
 
 			final Float6 t1 = new Float6();
 			MatrixMath.multiply(t1, U, b);

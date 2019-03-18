@@ -26,12 +26,12 @@ package kfusion.java.numerics;
 
 import org.ejml.simple.SimpleMatrix;
 
-import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 
 public class EjmlUtil {
 
-    public static MatrixFloat toMatrixFloat(SimpleMatrix m) {
-        MatrixFloat result = new MatrixFloat(m.numCols(), m.numRows());
+    public static Matrix2DFloat toMatrixFloat(SimpleMatrix m) {
+        Matrix2DFloat result = new Matrix2DFloat(m.numCols(), m.numRows());
         for (int i = 0; i < m.numRows(); i++) {
             for (int j = 0; j < m.numCols(); j++) {
                 result.set(i, j, (float) m.get(i, j));
@@ -40,7 +40,7 @@ public class EjmlUtil {
         return result;
     }
 
-    public static SimpleMatrix toMatrix(MatrixFloat m) {
+    public static SimpleMatrix toMatrix(Matrix2DFloat m) {
         SimpleMatrix result = new SimpleMatrix(m.M(), m.N());
         for (int i = 0; i < m.M(); i++) {
             for (int j = 0; j < m.N(); j++) {
