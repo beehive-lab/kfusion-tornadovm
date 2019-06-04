@@ -44,20 +44,18 @@ public class JavaOpenGLPipeline<T extends KfusionConfig> extends AbstractOpenGLP
             boolean hasTracked = estimatePose();
 
             if (hasTracked && frames % integrationRate == 0 || firstPass) {
-
                 integrate();
-
                 updateReferenceView();
 
-                if (firstPass)
+                if (firstPass) {
                     firstPass = false;
+                }
             }
 
             Renderer.renderDepth(renderedDepthImage, filteredDepthImage, nearPlane, farPlane);
             Renderer.renderLight(renderedCurrentViewImage, currentView.getVerticies(), currentView.getNormals(), light, ambient);
             Renderer.renderTrack(renderedTrackingImage, trackingResult.getResultImage());
             Renderer.renderLight(renderedReferenceViewImage, referenceView.getVerticies(), referenceView.getNormals(), light, ambient);
-
         }
 
         if (haveVideoImage) {

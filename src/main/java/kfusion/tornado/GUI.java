@@ -29,6 +29,7 @@ import java.awt.EventQueue;
 import kfusion.tornado.common.TornadoModel;
 import kfusion.tornado.ui.KfusionTornadoCanvas;
 import kfusion.tornado.ui.TornadoConfigPanel;
+import kfusion.tornado.ui.TornadoFramesPanel;
 import kfusion.tornado.ui.TornadoWorkbenchFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 

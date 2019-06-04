@@ -69,7 +69,6 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
             execute();
 
             final int borderSize = 5;
-
             final int x0 = borderSize;
             final int y0 = 500 - borderSize;
 
@@ -82,7 +81,6 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
 
             drawImageRGBA(renderedCurrentViewImage, gl, x0, y0 - borderSize - scaledVideoImage.Y());
             drawImageRGBA(renderedReferenceViewImage, gl, x0 + renderedCurrentViewImage.X() + 2 * borderSize, y0 - borderSize - scaledVideoImage.Y());
-
             drawImageRGBA(renderedScene, gl, (scaledVideoImage.X() * 2) + 4 * borderSize, y0);
 
         }
@@ -101,7 +99,6 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
     }
 
     private void drawImageRGB(ImageByte3 image, final GL2 gl, int x, int y) {
-
         final ByteBuffer bb = image.asBuffer();
         bb.rewind();
         gl.glWindowPos2i(x, y);
@@ -111,7 +108,6 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
     private void drawImageRGBA(ImageByte4 image, final GL2 gl, int x, int y) {
         final ByteBuffer bb = image.asBuffer();
         bb.rewind();
-
         gl.glWindowPos2i(x, y);
         gl.glDrawPixels(image.X(), image.Y(), GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, bb);
     }
@@ -119,13 +115,11 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
     @Override
     public void dispose(GLAutoDrawable arg0) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void init(GLAutoDrawable arg0) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -148,7 +142,6 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
 
     @Override
     public void renderScene() {
-
         final Matrix4x4Float scenePose = sceneView.getPose();
         final Matrix4x4Float tmp = new Matrix4x4Float();
         final Matrix4x4Float tmp2 = new Matrix4x4Float();

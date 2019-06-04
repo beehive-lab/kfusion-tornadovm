@@ -38,41 +38,38 @@ import kfusion.java.devices.Device;
 
 public class InputDeviceConfigPanel<T extends KfusionConfig> extends JPanel implements ActionListener {
 
-	private static final long serialVersionUID = 4887971237978617495L;
-	
-	private final InputDeviceSelection  inputDeviceSelectModel;
-	private final JComboBox<Device> inputDeviceComboBox;
-	private final T config;
-	
-	public InputDeviceConfigPanel(final T config, final JButton startButton, final JButton resetButton, ActionListener actionListener) {
-	    this.config = config;
-		inputDeviceSelectModel = new InputDeviceSelection(config.discoverDevices());
-		
-		inputDeviceComboBox = new JComboBox<Device>();
-		inputDeviceComboBox.setModel(inputDeviceSelectModel);
-		
-		inputDeviceComboBox.addActionListener(actionListener);
-		
-		setBorder(BorderFactory.createTitledBorder(
-			BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
-			"Input Configuration"));
-		
-		add(inputDeviceComboBox);
-		add(startButton);
-		add(resetButton);
-	}
-	
-	public JComboBox<Device> getComboBox(){
-		return inputDeviceComboBox;
-	}
+    private static final long serialVersionUID = 4887971237978617495L;
 
-	public void updateModel(){
-		config.setDevice((Device) inputDeviceComboBox.getSelectedItem()); 
-	}
+    private final InputDeviceSelection inputDeviceSelectModel;
+    private final JComboBox<Device> inputDeviceComboBox;
+    private final T config;
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		updateModel();
-	}
+    public InputDeviceConfigPanel(final T config, final JButton startButton, final JButton resetButton, ActionListener actionListener) {
+        this.config = config;
+        inputDeviceSelectModel = new InputDeviceSelection(config.discoverDevices());
+
+        inputDeviceComboBox = new JComboBox<Device>();
+        inputDeviceComboBox.setModel(inputDeviceSelectModel);
+        inputDeviceComboBox.addActionListener(actionListener);
+
+        setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED), "Input Configuration"));
+
+        add(inputDeviceComboBox);
+        add(startButton);
+        add(resetButton);
+    }
+
+    public JComboBox<Device> getComboBox() {
+        return inputDeviceComboBox;
+    }
+
+    public void updateModel() {
+        config.setDevice((Device) inputDeviceComboBox.getSelectedItem());
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        updateModel();
+    }
 
 }

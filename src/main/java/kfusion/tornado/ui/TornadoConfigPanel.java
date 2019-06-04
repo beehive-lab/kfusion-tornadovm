@@ -43,57 +43,58 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class TornadoConfigPanel extends JPanel implements ActionListener {
 
-	private static final long serialVersionUID = 4887971237978617495L;
-	final JComboBox<TornadoDevice> deviceComboBox;
-	public final JCheckBox enableTornadoCheckBox;
+    private static final long serialVersionUID = 4887971237978617495L;
+    private static final String PANEL_NAME = "Tornado Configuration";
 
-	private final TornadoModel config;
+    final JComboBox<TornadoDevice> deviceComboBox;
+    public final JCheckBox enableTornadoCheckBox;
 
-	public TornadoConfigPanel(final TornadoModel config) {
-		this.config = config;
-		final List<TornadoDevice> tmpDevices = new ArrayList<>();
-		
-		TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+    private final TornadoModel config;
 
-		final TornadoDevice[] devices;
-		if (driver != null) {
-			
-			for (int devIndex = 0; devIndex < driver.getDeviceCount(); devIndex++) {
-				final TornadoDevice device = driver.getDevice(devIndex);
-				tmpDevices.add(device);
-			}
-			
-			devices = new TornadoDevice[tmpDevices.size()];
-			tmpDevices.toArray(devices);
+    private TornadoDevice[] getAllTornadoDevices() {
+        final TornadoDevice[] devices;
+        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        final List<TornadoDevice> tmpDevices = new ArrayList<>();
+        if (driver != null) {
+            for (int devIndex = 0; devIndex < driver.getDeviceCount(); devIndex++) {
+                final TornadoDevice device = driver.getDevice(devIndex);
+                tmpDevices.add(device);
+            }
+            devices = new TornadoDevice[tmpDevices.size()];
+            tmpDevices.toArray(devices);
+        } else {
+            devices = new TornadoDevice[0];
+        }
+        return devices;
+    }
 
-		} else {
-			devices = new TornadoDevice[0];
-		}
+    public TornadoConfigPanel(final TornadoModel config) {
+        this.config = config;
+        final TornadoDevice[] devices = getAllTornadoDevices();
+        final TornadoDeviceSelection deviceSelectModel = new TornadoDeviceSelection(devices);
+        deviceComboBox = new JComboBox<>();
+        deviceComboBox.setModel(deviceSelectModel);
+        deviceComboBox.setEnabled(false);
+        deviceComboBox.addActionListener(this);
 
-		final TornadoDeviceSelection deviceSelectModel = new TornadoDeviceSelection(devices);
-		deviceComboBox = new JComboBox<>();
-		deviceComboBox.setModel(deviceSelectModel);
-		deviceComboBox.setEnabled(false);
-		deviceComboBox.addActionListener(this);
+        enableTornadoCheckBox = new JCheckBox("Use Tornado");
+        enableTornadoCheckBox.setSelected(false);
+        enableTornadoCheckBox.addActionListener(this);
 
-		enableTornadoCheckBox = new JCheckBox("Use Tornado");
-		enableTornadoCheckBox.setSelected(false);
-		enableTornadoCheckBox.addActionListener(this);
+        setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), PANEL_NAME));
+        add(enableTornadoCheckBox);
+        add(new JLabel("  Tornado Device:"));
+        add(deviceComboBox);
+    }
 
-		setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Tornado Configuration"));
-		add(enableTornadoCheckBox);
-		add(new JLabel("Tornado Device:"));
-		add(deviceComboBox);
-	}
+    public void updateModel() {
+        config.setTornadoDevice((TornadoDevice) deviceComboBox.getSelectedItem());
+        config.setUseTornado(enableTornadoCheckBox.isSelected());
+    }
 
-	public void updateModel() {
-		config.setTornadoDevice((TornadoDevice)deviceComboBox.getSelectedItem());
-		config.setUseTornado(enableTornadoCheckBox.isSelected());
-	}
-
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		deviceComboBox.setEnabled(enableTornadoCheckBox.isSelected());
-		updateModel();
-	}
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        deviceComboBox.setEnabled(enableTornadoCheckBox.isSelected());
+        updateModel();
+    }
 }

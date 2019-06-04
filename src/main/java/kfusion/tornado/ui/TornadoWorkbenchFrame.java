@@ -44,141 +44,140 @@ import kfusion.tornado.common.TornadoModel;
 
 public class TornadoWorkbenchFrame extends JFrame implements WindowListener {
 
-	final private Animator animator;
-	@SuppressWarnings("unused") private GLCanvas canvas;
-	private Timer timer;
-	private final TornadoModel config;
+    private static final String APP_TITLE = "KFusion TornadoVM Workbench";
+    final private Animator animator;
 
-	private static final long serialVersionUID = 382257735843448290L;
+    private Timer timer;
+    private final TornadoModel config;
 
-	public TornadoWorkbenchFrame(final TornadoModel config, KfusionTornadoCanvas canvas,
-			TornadoConfigPanel configPanel) {
-		this.config = config;
-		setTitle("KFusion Workbench");
-		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		addWindowListener(this);
+    private static final long serialVersionUID = 382257735843448290L;
 
-		animator = new Animator();
-		animator.setRunAsFastAsPossible(true);
+    public TornadoWorkbenchFrame(final TornadoModel tornadoConfig, KfusionTornadoCanvas canvas, TornadoConfigPanel configPanel) {
+        this.config = tornadoConfig;
+        setTitle(APP_TITLE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        addWindowListener(this);
 
-		final TornadoModelConfigPanel modelConfigPanel = new TornadoModelConfigPanel(config, animator, configPanel);
+        animator = new Animator();
+        animator.setRunAsFastAsPossible(true);
 
-		this.canvas = canvas;
-		canvas.addKeyListener(new KeyAdapter() {
+        final TornadoModelConfigPanel modelConfigPanel = new TornadoModelConfigPanel(tornadoConfig, animator, configPanel);
 
-			@Override
-			public void keyPressed(KeyEvent e) {
-				switch (e.getKeyCode()) {
-				case KeyEvent.VK_Q:
-					config.setQuit();
-					System.exit(0);
-					break;
-				case KeyEvent.VK_R:
-					config.setReset();
-					break;
-				case KeyEvent.VK_SPACE:
-					if (animator.isStarted())
-						stop();
-					else {
-						config.setReset();
-						start();
-					}
-					break;
-				case KeyEvent.VK_T:
-					config.setDrawDepth(!config.drawDepth());
-					break;
-				case KeyEvent.VK_LEFT:
-					config.rotateNegativeY();
-					break;
-				case KeyEvent.VK_RIGHT:
-					config.rotatePositiveY();
-					break;
-				case KeyEvent.VK_UP:
-					config.rotatePositiveX();
-					break;
-				case KeyEvent.VK_DOWN:
-					config.rotateNegativeX();
-					break;
+        canvas.addKeyListener(new KeyAdapter() {
 
-				case KeyEvent.VK_D:
-					config.toggleDebug();
-					break;
-				}
-			}
+            @Override
+            public void keyPressed(KeyEvent keyEvent) {
+                switch (keyEvent.getKeyCode()) {
+                    case KeyEvent.VK_Q:
+                        tornadoConfig.setQuit();
+                        System.exit(0);
+                        break;
+                    case KeyEvent.VK_R:
+                        tornadoConfig.setReset();
+                        break;
+                    case KeyEvent.VK_SPACE:
+                        if (animator.isStarted()) {
+                            stop();
+                        } else {
+                            tornadoConfig.setReset();
+                            start();
+                        }
+                        break;
+                    case KeyEvent.VK_T:
+                        tornadoConfig.setDrawDepth(!tornadoConfig.drawDepth());
+                        break;
+                    case KeyEvent.VK_LEFT:
+                        tornadoConfig.rotateNegativeY();
+                        break;
+                    case KeyEvent.VK_RIGHT:
+                        tornadoConfig.rotatePositiveY();
+                        break;
+                    case KeyEvent.VK_UP:
+                        tornadoConfig.rotatePositiveX();
+                        break;
+                    case KeyEvent.VK_DOWN:
+                        tornadoConfig.rotateNegativeX();
+                        break;
 
-		});
+                    case KeyEvent.VK_D:
+                        tornadoConfig.toggleDebug();
+                        break;
+                }
+            }
 
-		final JPanel p = new JPanel();
-		p.setLayout(new BoxLayout(p, BoxLayout.PAGE_AXIS));
-		p.setPreferredSize(canvas.getPreferredSize());
-		p.add(canvas);
+        });
 
-		final JSplitPane p1 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, modelConfigPanel, p);
-		p1.setDividerLocation(200);
+        final JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.PAGE_AXIS));
+        p.setPreferredSize(canvas.getPreferredSize());
+        p.add(canvas);
 
-		getContentPane().add(p1);
+        final JSplitPane p1 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, modelConfigPanel, p);
+        p1.setDividerLocation(200);
 
-		animator.add(canvas);
+        getContentPane().add(p1);
 
-		pack();
+        animator.add(canvas);
 
-		setSize(640 * 2 + 200, 480 + 250);
-	}
+        pack();
 
-	private void start() {
-		if (!animator.isAnimating())
-			animator.start();
-		if (!timer.isRunning())
-			timer.start();
-	}
+        setSize(640 * 2 + 200, 480 + 250);
+    }
 
-	private void stop() {
-		if (animator.isAnimating())
-			animator.stop();
-		if (timer.isRunning())
-			timer.stop();
-	}
+    private void start() {
+        if (!animator.isAnimating())
+            animator.start();
+        if (!timer.isRunning())
+            timer.start();
+    }
 
-	@Override
-	public void windowOpened(WindowEvent e) {
+    private void stop() {
+        if (animator.isAnimating())
+            animator.stop();
+        if (timer.isRunning())
+            timer.stop();
+    }
 
-	}
+    @Override
+    public void windowOpened(WindowEvent e) {
 
-	@Override
-	public void windowClosing(WindowEvent e) {
-		if (animator.isStarted()) {
-			animator.stop();
-		}
+    }
 
-		final Device device = config.getDevice();
-		if (device != null && device.isRunning()) {
-			device.stop();
-			device.shutdown();
-		}
-	}
+    @Override
+    public void windowClosing(WindowEvent e) {
+        if (animator.isStarted()) {
+            animator.stop();
+        }
 
-	@Override
-	public void windowClosed(WindowEvent e) {
+        final Device device = config.getDevice();
+        if (device != null && device.isRunning()) {
+            device.stop();
+            device.shutdown();
+        }
+    }
 
-	}
+    @Override
+    public void windowClosed(WindowEvent e) {
 
-	@Override
-	public void windowIconified(WindowEvent e) {
+    }
 
-	}
+    @Override
+    public void windowIconified(WindowEvent e) {
 
-	@Override
-	public void windowDeiconified(WindowEvent e) {
+    }
 
-	}
+    @Override
+    public void windowDeiconified(WindowEvent e) {
 
-	@Override
-	public void windowActivated(WindowEvent e) {
+    }
 
-	}
+    @Override
+    public void windowActivated(WindowEvent e) {
 
-	@Override
-	public void windowDeactivated(WindowEvent e) {
+    }
 
-	}
+    @Override
+    public void windowDeactivated(WindowEvent e) {
+
+    }
 }
