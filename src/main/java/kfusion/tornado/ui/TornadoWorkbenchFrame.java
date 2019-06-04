@@ -123,7 +123,6 @@ public class TornadoWorkbenchFrame extends JFrame implements WindowListener {
 		pack();
 
 		setSize(640 * 2 + 200, 480 + 250);
-
 	}
 
 	private void start() {

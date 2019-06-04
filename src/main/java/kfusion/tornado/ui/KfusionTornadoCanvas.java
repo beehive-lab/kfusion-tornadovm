@@ -44,11 +44,9 @@ public class KfusionTornadoCanvas extends GLCanvas {
 		GLCapabilities caps = new GLCapabilities(glp);
 		caps.setDoubleBuffered(true);
 		caps.setHardwareAccelerated(true);
-
 		setPreferredSize(new Dimension(width, height));
 		setSize(width, height);
 		pipeline = new ProxyOpenGLPipeline<TornadoModel>(config, this, tornadoPanel);
-
 	}
 
 }

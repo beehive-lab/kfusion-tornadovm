@@ -263,15 +263,14 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				final int numElements = result.X() * result.Y();
 				final int numWgs = Math.min(roundToWgs(numElements / cus, 128), maxwgs);
 
-				trackingPyramid[i]
-						.prebuiltTask("customReduce" + i,
-								tornadoDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
-										"./opencl/optMapReduce.cl",
-										new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
-										new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
-										tornadoDevice,
-										new int[]{numWgs})
-						.streamOut(icpResultIntermediate1);
+				trackingPyramid[i].prebuiltTask("customReduce" + i,
+									tornadoDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
+									"./opencl/optMapReduce.cl",
+									new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
+									new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
+									tornadoDevice,
+									new int[]{numWgs})
+								  .streamOut(icpResultIntermediate1);
 
 				TaskMetaDataInterface meta = trackingPyramid[i].getTask("icp" + i + "." + "customReduce" + i).meta();
 				String compilerFlags = meta.getCompilerFlags();
@@ -279,7 +278,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				meta.setGlobalWork(new long[]{maxwgs});
 				meta.setLocalWork(new long[]{maxBinsPerCU});
 			} else if (config.useSimpleReduce()) {
-
 				trackingPyramid[i]
 						.task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
 						.streamOut(icpResultIntermediate1);
@@ -295,7 +293,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				trackingPyramid[i].streamOut(pyramidTrackingResults[i]);
 			}
 			//@formatter:on
-
 			trackingPyramid[i].mapAllTo(tornadoDevice);
 		}
 
