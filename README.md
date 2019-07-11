@@ -1,8 +1,6 @@
 # KFusion-TornadoVM #
 
-A Java implementation of the Kinect Fusion application running on TornadoVM.<br>
-It can run on existing datasets as well as in real-time with input frames from an attached RBG-d camera.<br>
-Detailed explanation and performance evaluation can be found in the following [publication](https://www.researchgate.net/publication/327097904_Exploiting_High-Performance_Heterogeneous_Hardware_for_Java_Programs_using_Graal).
+A Java implementation of the Kinect Fusion application running on TornadoVM. It can run on existing datasets as well as in real-time with input frames from an attached RBG-d camera. Detailed explanation and performance evaluation can be found in the following [publication](https://www.researchgate.net/publication/327097904_Exploiting_High-Performance_Heterogeneous_Hardware_for_Java_Programs_using_Graal).
 
 ### Releases
   * KFusion-TornadoVM 0.1.0 - 11/02/2019: Initial release of Kinect Fusion on TornadoVM.
