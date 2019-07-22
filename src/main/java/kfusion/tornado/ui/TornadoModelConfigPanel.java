@@ -101,7 +101,6 @@ public class TornadoModelConfigPanel extends JPanel implements ActionListener {
         });
 
         add(inputDeviceConfig);
-        add(new JLabel("Frames per second: "));
         add(tornadoConfig);
         add(cameraConfig);
         add(volumeConfig);
