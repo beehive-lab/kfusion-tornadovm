@@ -55,162 +55,160 @@ import uk.ac.manchester.tornado.matrix.MatrixMath;
 
 public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
-	private Float3 initialPosition;
+    private Float3 initialPosition;
 
-	private TaskSchedule preprocessingSchedule;
-	private TaskSchedule estimatePoseSchedule;
-	private TaskSchedule trackingPyramid[];
-	private TaskSchedule integrateSchedule;
-	private TaskSchedule raycastSchedule;
-	private TaskSchedule renderTrack;
-	private TaskSchedule renderSchedule;
+    private TaskSchedule preprocessingSchedule;
+    private TaskSchedule estimatePoseSchedule;
+    private TaskSchedule trackingPyramid[];
+    private TaskSchedule integrateSchedule;
+    private TaskSchedule raycastSchedule;
+    private TaskSchedule renderTrack;
+    private TaskSchedule renderSchedule;
 
-	private Matrix4x4Float[] scaledInvKs;
-	private Matrix4x4Float pyramidPose;
+    private Matrix4x4Float[] scaledInvKs;
+    private Matrix4x4Float pyramidPose;
 
-	private float[] icpResultIntermediate1;
-	private float[] icpResult;
+    private float[] icpResultIntermediate1;
+    private float[] icpResult;
 
-	private int cus;
+    private int cus;
 
-	private final PrintStream out;
+    private final PrintStream out;
 
-	public static final float ICP_THRESHOLD = 1e-5f;
+    public static final float ICP_THRESHOLD = 1e-5f;
 
-	public static boolean EXECUTE_WITH_PROFILER = Boolean.parseBoolean(System.getProperty("slambench.profiler", "False"));
-	
-	private static final String HEAD_BENCHMARK = "frame\tacquisition\tpreprocessing\ttracking\tintegration\traycasting\trendering\tcomputation\ttotal    \tX          \tY          \tZ         \ttracked   \tintegrated";
-	
-	private static final Policy policy = Policy.PERFORMANCE;
+    public static boolean EXECUTE_WITH_PROFILER = Boolean.parseBoolean(System.getProperty("slambench.profiler", "False"));
 
-	public TornadoBenchmarkPipeline(TornadoModel config, PrintStream out) {
-		super(config);
-		this.out = out;
-		initialPosition = new Float3();
-	}
+    private static final String HEAD_BENCHMARK = "frame\tacquisition\tpreprocessing\ttracking\tintegration\traycasting\trendering\tcomputation\ttotal    \tX          \tY          \tZ         \ttracked   \tintegrated";
 
-	private static int roundToWgs(int value, int wgs) {
-		final int numWgs = value / wgs;
-		return numWgs * wgs;
-	}
+    private static final Policy policy = Policy.PERFORMANCE;
 
-	@Override
-	public void execute() {
-		if (config.getDevice() != null) {
+    public TornadoBenchmarkPipeline(TornadoModel config, PrintStream out) {
+        super(config);
+        this.out = out;
+        initialPosition = new Float3();
+    }
 
-			out.println(HEAD_BENCHMARK);
+    private static int roundToWgs(int value, int wgs) {
+        final int numWgs = value / wgs;
+        return numWgs * wgs;
+    }
 
-			final long[] timings = new long[7];
+    @Override
+    public void execute() {
+        if (config.getDevice() != null) {
 
-			timings[0] = System.nanoTime();
-			boolean haveDepthImage = depthCamera.pollDepth(depthImageInput);
-			videoCamera.skipVideoFrame();
+            out.println(HEAD_BENCHMARK);
 
-			// @SuppressWarnings("unused")
-			// boolean haveVideoImage = videoCamera.pollVideo(videoImageInput);
+            final long[] timings = new long[7];
 
-			// read all frames
-			while (haveDepthImage) {
+            timings[0] = System.nanoTime();
+            boolean haveDepthImage = depthCamera.pollDepth(depthImageInput);
+            videoCamera.skipVideoFrame();
 
-				timings[1] = System.nanoTime();
-				preprocessing();
-				timings[2] = System.nanoTime();
+            // @SuppressWarnings("unused")
+            // boolean haveVideoImage = videoCamera.pollVideo(videoImageInput);
 
-				boolean hasTracked = estimatePose();
+            // read all frames
+            while (haveDepthImage) {
 
-				timings[3] = System.nanoTime();
+                timings[1] = System.nanoTime();
+                preprocessing();
+                timings[2] = System.nanoTime();
 
-				final boolean doIntegrate = (hasTracked && frames % integrationRate == 0) || frames <= 3;
-				if (doIntegrate) {
-					integrate();
-				}
+                boolean hasTracked = estimatePose();
 
-				timings[4] = System.nanoTime();
+                timings[3] = System.nanoTime();
 
-				final boolean doUpdate = frames > 2;
+                final boolean doIntegrate = (hasTracked && frames % integrationRate == 0) || frames <= 3;
+                if (doIntegrate) {
+                    integrate();
+                }
 
-				if (doUpdate) {
-					updateReferenceView();
-				}
+                timings[4] = System.nanoTime();
 
-				timings[5] = System.nanoTime();
+                final boolean doUpdate = frames > 2;
 
-				if (frames % renderingRate == 0) {
-					if (EXECUTE_WITH_PROFILER) {
-						renderTrack.executeWithProfilerSequential(policy);
-						renderSchedule.executeWithProfilerSequential(policy);
-					} else {
-						renderTrack.execute();
-						renderSchedule.execute();
-					}
-				}
+                if (doUpdate) {
+                    updateReferenceView();
+                }
 
-				timings[6] = System.nanoTime();
-				final Float3 currentPos = currentView.getPose().column(3).asFloat3();
-				final Float3 pos = Float3.sub(currentPos, initialPosition);
+                timings[5] = System.nanoTime();
 
-				out.printf("%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\t%d\n", frames,
-						elapsedTimeInSeconds(timings[0], timings[1]), elapsedTimeInSeconds(timings[1], timings[2]),
-						elapsedTimeInSeconds(timings[2], timings[3]), elapsedTimeInSeconds(timings[3], timings[4]),
-						elapsedTimeInSeconds(timings[4], timings[5]), elapsedTimeInSeconds(timings[5], timings[6]),
-						elapsedTimeInSeconds(timings[1], timings[5]), elapsedTimeInSeconds(timings[0], timings[6]),
-						pos.getX(), pos.getY(), pos.getZ(), (hasTracked) ? 1 : 0, (doIntegrate) ? 1 : 0);
-				frames++;
-				timings[0] = System.nanoTime();
-				haveDepthImage = depthCamera.pollDepth(depthImageInput);
-				videoCamera.skipVideoFrame();
-			}
+                if (frames % renderingRate == 0) {
+                    if (EXECUTE_WITH_PROFILER) {
+                        renderTrack.executeWithProfilerSequential(policy);
+                        renderSchedule.executeWithProfilerSequential(policy);
+                    } else {
+                        renderTrack.execute();
+                        renderSchedule.execute();
+                    }
+                }
 
-			if (config.printKernels()) {
-				preprocessingSchedule.dumpProfiles();
-				estimatePoseSchedule.dumpProfiles();
-				for (TaskSchedule trackingPyramid1 : trackingPyramid) {
-					trackingPyramid1.dumpProfiles();
-				}
-				integrateSchedule.dumpProfiles();
-				raycastSchedule.dumpProfiles();
-				renderTrack.dumpProfiles();
-				renderSchedule.dumpProfiles();
-			}
-		}
-	}
+                timings[6] = System.nanoTime();
+                final Float3 currentPos = currentView.getPose().column(3).asFloat3();
+                final Float3 pos = Float3.sub(currentPos, initialPosition);
 
-	@Override
-	public void configure(Device device) {
-		super.configure(device);
+                out.printf("%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\t%d\n", frames, elapsedTimeInSeconds(timings[0], timings[1]), elapsedTimeInSeconds(timings[1], timings[2]),
+                        elapsedTimeInSeconds(timings[2], timings[3]), elapsedTimeInSeconds(timings[3], timings[4]), elapsedTimeInSeconds(timings[4], timings[5]),
+                        elapsedTimeInSeconds(timings[5], timings[6]), elapsedTimeInSeconds(timings[1], timings[5]), elapsedTimeInSeconds(timings[0], timings[6]), pos.getX(), pos.getY(), pos.getZ(),
+                        (hasTracked) ? 1 : 0, (doIntegrate) ? 1 : 0);
+                frames++;
+                timings[0] = System.nanoTime();
+                haveDepthImage = depthCamera.pollDepth(depthImageInput);
+                videoCamera.skipVideoFrame();
+            }
 
-		initialPosition = Float3.mult(config.getOffset(), volumeDims);
-		frames = 0;
+            if (config.printKernels()) {
+                preprocessingSchedule.dumpProfiles();
+                estimatePoseSchedule.dumpProfiles();
+                for (TaskSchedule trackingPyramid1 : trackingPyramid) {
+                    trackingPyramid1.dumpProfiles();
+                }
+                integrateSchedule.dumpProfiles();
+                raycastSchedule.dumpProfiles();
+                renderTrack.dumpProfiles();
+                renderSchedule.dumpProfiles();
+            }
+        }
+    }
 
-		info("initial offset: %s", initialPosition.toString("%.2f,%.2f,%.2f"));
+    @Override
+    public void configure(Device device) {
+        super.configure(device);
 
-		/**
-		 * Tornado tasks
-		 */
-		final TornadoDevice tornadoDevice = (TornadoDevice) config.getTornadoDevice();
-		info("mapping onto %s\n", tornadoDevice.toString());
+        initialPosition = Float3.mult(config.getOffset(), volumeDims);
+        frames = 0;
 
-		final long localMemSize = tornadoDevice.getDevice().getDeviceLocalMemorySize();
-		final float fraction = Float.parseFloat(TornadoRuntime.getProperty("kfusion.reduce.fraction", "1.0"));
-		cus = (int) (tornadoDevice.getDevice().getDeviceMaxComputeUnits() * fraction);
-		final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
-		final int maxBinsPerCU = roundToWgs(maxBinsPerResource, 128);
+        info("initial offset: %s", initialPosition.toString("%.2f,%.2f,%.2f"));
 
-		final int maxwgs = maxBinsPerCU * cus;
+        /**
+         * Tornado tasks
+         */
+        final TornadoDevice tornadoDevice = (TornadoDevice) config.getTornadoDevice();
+        info("mapping onto %s\n", tornadoDevice.toString());
 
-		info("local mem size   : %s\n", humanReadableByteCount(localMemSize, false));
-		info("num compute units: %d\n", cus);
-		info("max bins per cu  : %d\n", maxBinsPerCU);
+        final long localMemSize = tornadoDevice.getDevice().getDeviceLocalMemorySize();
+        final float fraction = Float.parseFloat(TornadoRuntime.getProperty("kfusion.reduce.fraction", "1.0"));
+        cus = (int) (tornadoDevice.getDevice().getDeviceMaxComputeUnits() * fraction);
+        final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
+        final int maxBinsPerCU = roundToWgs(maxBinsPerResource, 128);
 
-		pyramidPose = new Matrix4x4Float();
-		pyramidDepths[0] = filteredDepthImage;
-		pyramidVerticies[0] = currentView.getVerticies();
-		pyramidNormals[0] = currentView.getNormals();
-		icpResult = new float[32];
+        final int maxwgs = maxBinsPerCU * cus;
 
-		final Matrix4x4Float scenePose = sceneView.getPose();
+        info("local mem size   : %s\n", humanReadableByteCount(localMemSize, false));
+        info("num compute units: %d\n", cus);
+        info("max bins per cu  : %d\n", maxBinsPerCU);
 
-		//@formatter:off
+        pyramidPose = new Matrix4x4Float();
+        pyramidDepths[0] = filteredDepthImage;
+        pyramidVerticies[0] = currentView.getVerticies();
+        pyramidNormals[0] = currentView.getNormals();
+        icpResult = new float[32];
+
+        final Matrix4x4Float scenePose = sceneView.getPose();
+
+        //@formatter:off
 		preprocessingSchedule = new TaskSchedule("pp")
 				.streamIn(depthImageInput)
 				.task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
@@ -218,39 +216,39 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				.mapAllTo(tornadoDevice);
 		//@formatter:on
 
-		final int iterations = pyramidIterations.length;
-		scaledInvKs = new Matrix4x4Float[iterations];
-		for (int i = 0; i < iterations; i++) {
-			final Float4 cameraDup = Float4.mult(scaledCamera, 1f / (1 << i));
-			scaledInvKs[i] = new Matrix4x4Float();
-			getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
-		}
+        final int iterations = pyramidIterations.length;
+        scaledInvKs = new Matrix4x4Float[iterations];
+        for (int i = 0; i < iterations; i++) {
+            final Float4 cameraDup = Float4.mult(scaledCamera, 1f / (1 << i));
+            scaledInvKs[i] = new Matrix4x4Float();
+            getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
+        }
 
-		estimatePoseSchedule = new TaskSchedule("estimatePose");
-		for (int i = 1; i < iterations; i++) {
-			estimatePoseSchedule.task("resizeImage" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2);
-		}
+        estimatePoseSchedule = new TaskSchedule("estimatePose");
+        for (int i = 1; i < iterations; i++) {
+            estimatePoseSchedule.task("resizeImage" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2);
+        }
 
-		for (int i = 0; i < iterations; i++) {
-			//@formatter:off
+        for (int i = 0; i < iterations; i++) {
+            //@formatter:off
 			estimatePoseSchedule
 				.task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
 				.task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]);
 			//@formatter:on
-		}
+        }
 
-		estimatePoseSchedule.streamIn(projectReference).mapAllTo(tornadoDevice);
+        estimatePoseSchedule.streamIn(projectReference).mapAllTo(tornadoDevice);
 
-		if (config.useCustomReduce()) {
-			icpResultIntermediate1 = new float[cus * 32];
-		} else if (config.useSimpleReduce()) {
-			icpResultIntermediate1 = new float[config.getReductionSize() * 32];
-		}
+        if (config.useCustomReduce()) {
+            icpResultIntermediate1 = new float[cus * 32];
+        } else if (config.useSimpleReduce()) {
+            icpResultIntermediate1 = new float[config.getReductionSize() * 32];
+        }
 
-		trackingPyramid = new TaskSchedule[iterations];
+        trackingPyramid = new TaskSchedule[iterations];
 
-		for (int i = 0; i < iterations; i++) {
-			//@formatter:off
+        for (int i = 0; i < iterations; i++) {
+            //@formatter:off
 			trackingPyramid[i] = new TaskSchedule("icp" + i)
 					.streamIn(pyramidPose)
 					.task("track" + i, IterativeClosestPoint::trackPose,
@@ -293,27 +291,27 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				trackingPyramid[i].streamOut(pyramidTrackingResults[i]);
 			}
 			//@formatter:on
-			trackingPyramid[i].mapAllTo(tornadoDevice);
-		}
+            trackingPyramid[i].mapAllTo(tornadoDevice);
+        }
 
-		//@formatter:off
+        //@formatter:off
 		integrateSchedule = new TaskSchedule("integrate")
 				.streamIn(invTrack)
 				.task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight)
 				.mapAllTo(tornadoDevice);
 		//@formatter:on
 
-		final ImageFloat3 verticies = referenceView.getVerticies();
-		final ImageFloat3 normals = referenceView.getNormals();
+        final ImageFloat3 verticies = referenceView.getVerticies();
+        final ImageFloat3 normals = referenceView.getNormals();
 
-		//@formatter:off
+        //@formatter:off
 		raycastSchedule = new TaskSchedule("raycast")
 				.streamIn(referencePose)
 				.task("raycast", Raycast::raycast, verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep)
 				.mapAllTo(tornadoDevice);
 		//@formatter:on
 
-		//@formatter:off
+        //@formatter:off
 		//        renderSchedule = new TaskSchedule("render")
 		//                .streamIn(scenePose)
 		//                .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
@@ -325,111 +323,104 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 		//                .mapAllTo(oclDevice);
 		//@formatter:on
 
-		renderTrack = new TaskSchedule("renderTrack")
-				.task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
-				.mapAllTo(tornadoDevice);
+        renderTrack = new TaskSchedule("renderTrack").task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0]).mapAllTo(tornadoDevice);
 
-		renderSchedule = new TaskSchedule("render").streamIn(scenePose)
-				.task("renderVolume", Renderer::renderVolume, renderedScene, volume, volumeDims, scenePose, nearPlane,
-						farPlane * 2f, smallStep, largeStep, light, ambient)
-				.mapAllTo(tornadoDevice);
+        renderSchedule = new TaskSchedule("render").streamIn(scenePose)
+                .task("renderVolume", Renderer::renderVolume, renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient).mapAllTo(tornadoDevice);
 
-		preprocessingSchedule.warmup();
-		estimatePoseSchedule.warmup();
-		for (TaskSchedule trackingPyramid1 : trackingPyramid) {
-			trackingPyramid1.warmup();
-		}
-		integrateSchedule.warmup();
-		raycastSchedule.warmup();
-		renderTrack.warmup();
-		renderSchedule.warmup();
-	}
+        preprocessingSchedule.warmup();
+        estimatePoseSchedule.warmup();
+        for (TaskSchedule trackingPyramid1 : trackingPyramid) {
+            trackingPyramid1.warmup();
+        }
+        integrateSchedule.warmup();
+        raycastSchedule.warmup();
+        renderTrack.warmup();
+        renderSchedule.warmup();
+    }
 
-	@Override
-	protected void preprocessing() {
-		if (EXECUTE_WITH_PROFILER) {
-			preprocessingSchedule.executeWithProfilerSequential(policy);
-		} else {
-			preprocessingSchedule.execute();
-		}
-	}
+    @Override
+    protected void preprocessing() {
+        if (EXECUTE_WITH_PROFILER) {
+            preprocessingSchedule.executeWithProfilerSequential(policy);
+        } else {
+            preprocessingSchedule.execute();
+        }
+    }
 
-	@Override
-	protected void integrate() {
-		invTrack.set(currentView.getPose());
-		MatrixFloatOps.inverse(invTrack);
+    @Override
+    protected void integrate() {
+        invTrack.set(currentView.getPose());
+        MatrixFloatOps.inverse(invTrack);
 
-		if (EXECUTE_WITH_PROFILER) {
-			integrateSchedule.executeWithProfilerSequential(policy);
-		} else {
-			integrateSchedule.execute();
-		}
-	}
+        if (EXECUTE_WITH_PROFILER) {
+            integrateSchedule.executeWithProfilerSequential(policy);
+        } else {
+            integrateSchedule.execute();
+        }
+    }
 
-	@Override
-	protected boolean estimatePose() {
+    @Override
+    protected boolean estimatePose() {
 
-		invReferencePose.set(referenceView.getPose());
-		MatrixFloatOps.inverse(invReferencePose);
-		MatrixMath.sgemm(K, invReferencePose, projectReference);
+        invReferencePose.set(referenceView.getPose());
+        MatrixFloatOps.inverse(invReferencePose);
+        MatrixMath.sgemm(K, invReferencePose, projectReference);
 
-		estimatePoseSchedule.execute();
+        estimatePoseSchedule.execute();
 
-		// perform ICP
-		pyramidPose.set(currentView.getPose());
-		for (int level = pyramidIterations.length - 1; level >= 0; level--) {
-			for (int i = 0; i < pyramidIterations[level]; i++) {
-				trackingPyramid[level].execute();
+        // perform ICP
+        pyramidPose.set(currentView.getPose());
+        for (int level = pyramidIterations.length - 1; level >= 0; level--) {
+            for (int i = 0; i < pyramidIterations[level]; i++) {
+                trackingPyramid[level].execute();
 
-				final boolean updated;
-				if (config.useCustomReduce()) {
-					for (int k = 1; k < cus; k++) {
-						final int index = k * 32;
-						for (int j = 0; j < 32; j++) {
-							icpResultIntermediate1[j] += icpResultIntermediate1[index + j];
-						}
-					}
-					trackingResult.resultImage = pyramidTrackingResults[level];
-					updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResultIntermediate1,
-							pyramidPose, ICP_THRESHOLD);
-				} else if (config.useSimpleReduce()) {
-					IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
-					trackingResult.resultImage = pyramidTrackingResults[level];
-					updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose,
-							ICP_THRESHOLD);
-				} else {
-					updated = IterativeClosestPoint.estimateNewPose(config, trackingResult,
-							pyramidTrackingResults[level], pyramidPose, ICP_THRESHOLD);
-				}
+                final boolean updated;
+                if (config.useCustomReduce()) {
+                    for (int k = 1; k < cus; k++) {
+                        final int index = k * 32;
+                        for (int j = 0; j < 32; j++) {
+                            icpResultIntermediate1[j] += icpResultIntermediate1[index + j];
+                        }
+                    }
+                    trackingResult.resultImage = pyramidTrackingResults[level];
+                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResultIntermediate1, pyramidPose, ICP_THRESHOLD);
+                } else if (config.useSimpleReduce()) {
+                    IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
+                    trackingResult.resultImage = pyramidTrackingResults[level];
+                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, ICP_THRESHOLD);
+                } else {
+                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, pyramidTrackingResults[level], pyramidPose, ICP_THRESHOLD);
+                }
 
-				pyramidPose.set(trackingResult.getPose());
+                pyramidPose.set(trackingResult.getPose());
 
-				if (updated) {
-					break;
-				}
-			}
-		}
+                if (updated) {
+                    break;
+                }
+            }
+        }
 
-		// If the tracking result meets our constraints, update the current view
-		// with the estimated pose
-		boolean hasTracked = trackingResult.getRSME() < RSMEThreshold
-				&& trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold;
-				if (hasTracked) {
-					currentView.getPose().set(trackingResult.getPose());
-				}
-				return hasTracked;
-	}
+        // If the tracking result meets our constraints, update the current view
+        // with the estimated pose
+        boolean hasTracked = trackingResult.getRSME() < RSMEThreshold && trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold;
+        if (hasTracked) {
+            currentView.getPose().set(trackingResult.getPose());
+        }
+        return hasTracked;
+    }
 
-	@Override
-	public void updateReferenceView() {
-		referenceView.getPose().set(currentView.getPose());
-		// convert the tracked pose into correct co-ordinate system for
-		// raycasting which system (homogeneous co-ordinates? or virtual image?)
-		MatrixMath.sgemm(currentView.getPose(), scaledInvK, referencePose);
-		if (EXECUTE_WITH_PROFILER) {
-			raycastSchedule.executeWithProfilerSequential(policy);
-		} else {
-			raycastSchedule.execute();
-		}
-	}
+    @Override
+    public void updateReferenceView() {
+        referenceView.getPose().set(currentView.getPose());
+        // convert the tracked pose into correct co-ordinate system for
+        // raycasting which system (homogeneous co-ordinates? or virtual image?)
+        MatrixMath.sgemm(currentView.getPose(), scaledInvK, referencePose);
+        if (EXECUTE_WITH_PROFILER) {
+            raycastSchedule.executeWithProfilerSequential(policy);
+        } else {
+            raycastSchedule.execute();
+        }
+    }
+
 }

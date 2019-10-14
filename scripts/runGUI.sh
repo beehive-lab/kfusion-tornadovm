@@ -1,3 +1,3 @@
 #!/bin/bash
 
-kfusion -Dtornado.benchmarking=False kfusion.tornado.GUI 
+kfusion -Xmx512m -Xms512m -Dtornado.benchmarking=False kfusion.tornado.GUI 

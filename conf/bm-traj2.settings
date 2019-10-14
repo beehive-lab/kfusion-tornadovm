@@ -1,5 +1,8 @@
 kfusion.model.initialpositions.enable = false
 
+kfusion.tornado.platform=0
+kfusion.tornado.device=0
+
 kfusion.model.integrationrate = 2
 kfusion.model.renderingrate = 4
 
