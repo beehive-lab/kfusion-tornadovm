@@ -53,7 +53,7 @@ public strictfp class EjmlSVD2 {
      * ------------------------ Class variables ------------------------
      */
 
-    private SimpleSVD svd;
+    private SimpleSVD<SimpleMatrix> svd;
     private SimpleMatrix m;
     private boolean expection;
 

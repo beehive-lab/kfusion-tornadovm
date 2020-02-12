@@ -93,18 +93,10 @@
             <scope>system</scope>
         </dependency>
 
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>hotspot</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-            <version>${jvmci.version}</version>
-        </dependency>
-
     <dependency>
       <groupId>org.ejml</groupId>
-      <artifactId>all</artifactId>
-      <version>0.28</version>
+      <artifactId>ejml-all</artifactId>
+      <version>0.38</version>
     </dependency>
     <dependency>
       <groupId>net.java.dev.jna</groupId>
@@ -122,14 +114,14 @@
       <version>2.1.4</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>2.5</version>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-api</artifactId>
+        <version>2.12.1</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>2.5</version>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-core</artifactId>
+        <version>2.12.1</version>
     </dependency>
     <dependency>
       <groupId>ar.com.hjg</groupId>
