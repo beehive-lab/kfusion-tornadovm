@@ -18,6 +18,13 @@
         <tornado.version>0.1.0-SNAPSHOT</tornado.version>
     </properties>
 
+	<repositories>
+     <repository>
+       <id>universityOfManchester-graal</id>
+       <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
+     </repository>
+   </repositories>
+
     <build>
         <plugins>
             <plugin>
