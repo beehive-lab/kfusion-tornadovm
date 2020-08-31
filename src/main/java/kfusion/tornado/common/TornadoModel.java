@@ -50,7 +50,7 @@ public class TornadoModel extends KfusionConfig {
 	}
 
 	public String getBackendName() {
-		return settings.getProperty("kfusion.tornado.backend", "PTX");
+		return settings.getProperty("kfusion.tornado.backend", "OpenCL");
 	}
 
 	public void setTornadoDevice(TornadoDevice device) {
