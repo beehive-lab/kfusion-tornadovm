@@ -49,6 +49,10 @@ public class TornadoModel extends KfusionConfig {
 		return Integer.parseInt(settings.getProperty("kfusion.tornado.device", "0"));
 	}
 
+	public String getBackendName() {
+		return settings.getProperty("kfusion.tornado.backend", "OpenCL");
+	}
+
 	public void setTornadoDevice(TornadoDevice device) {
 		tornadoDevice = device;
 	}
@@ -85,6 +89,6 @@ public class TornadoModel extends KfusionConfig {
 	public void reset() {
 		super.reset();
 		useTornado = Boolean.parseBoolean(settings.getProperty("kfusion.tornado.enable", "False"));
-		tornadoDevice = TornadoRuntime.createDevice(getPlatformIndex(), getDeviceIndex());
+		tornadoDevice = TornadoRuntime.createDevice(getBackendName(), getPlatformIndex(), getDeviceIndex());
 	}
 }

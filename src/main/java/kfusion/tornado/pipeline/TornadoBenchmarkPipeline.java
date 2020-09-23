@@ -291,7 +291,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				trackingPyramid[i].streamOut(pyramidTrackingResults[i]);
 			}
 			//@formatter:on
-            trackingPyramid[i].mapAllTo(tornadoDevice);
+            if (!config.useCustomReduce()) {
+                trackingPyramid[i].mapAllTo(tornadoDevice);
+            }
         }
 
         //@formatter:off
