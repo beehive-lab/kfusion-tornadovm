@@ -1,3 +1,5 @@
+kfusion.tornado.backend=OpenCL
+
 kfusion.debug = false
 tornado.debug = false
 tornado.memory.check= false
