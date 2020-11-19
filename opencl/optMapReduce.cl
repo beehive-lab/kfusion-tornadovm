@@ -193,7 +193,7 @@ __kernel void optMapReduceBump(__global void *bump, __global uchar *_heap_base, 
      */
     ulong a3 = args.y + 32;
     ulong a4 =  *((__global ulong *) a3);
-    
+
     /*
      * define access to raw storage of data
      */
