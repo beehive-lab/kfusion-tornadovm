@@ -78,7 +78,6 @@ public class ICPTesting2 {
 
         try {
             testing.setUp();
-
             testing.testTrack();
             testing.tearDown();
 
@@ -97,8 +96,6 @@ public class ICPTesting2 {
         }
         return result;
     }
-
-    private float dist_threshold;
 
     final private String FILE_PATH = "/Users/jamesclarkson/Downloads/kfusion_ut_data";
     final int height = 240;

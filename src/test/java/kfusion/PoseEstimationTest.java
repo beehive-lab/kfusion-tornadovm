@@ -90,8 +90,8 @@ public class PoseEstimationTest {
 
             if (!TornadoMath.isEqualTol(newPose.asBuffer().array(), newPoseRef.asBuffer().array(), EPSILON)) {
                 System.out.printf("[%04d]: arrays do not match:\n", i);
-                System.out.println("calc:\n" + newPose.toString(FloatOps.fmt4em));
-                System.out.println("ref :\n" + newPoseRef.toString(FloatOps.fmt4em));
+                System.out.println("calc:\n" + newPose.toString(FloatOps.FMT_4_EM));
+                System.out.println("ref :\n" + newPoseRef.toString(FloatOps.FMT_4_EM));
 
                 // System.out.println("result:\n" + result.toString());
                 // System.out.println("delta :\n" + delta.toString());

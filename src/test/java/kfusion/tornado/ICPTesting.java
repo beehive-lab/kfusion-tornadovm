@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,7 +79,6 @@ public class ICPTesting {
 
         try {
             testing.setUp();
-
             testing.testTrack();
             testing.tearDown();
 
@@ -195,7 +194,7 @@ public class ICPTesting {
     @Test
     public void testTrack() {
 
-        final int[] frames = { 2, 13, 12, 14, 16, 15, 27, 26, 28, 30, 29, 40, 42, 41, 43, 54, 53, 55, 57, 56, 58, 60, 59, 62, 61 };
+        final int[] frames = {2, 13, 12, 14, 16, 15, 27, 26, 28, 30, 29, 40, 42, 41, 43, 54, 53, 55, 57, 56, 58, 60, 59, 62, 61};
         // final int[] frames = {0,3,4,5,6,17,18,19,20,31,32,33,34,44,45,46,47};
 
         int badFrames = 0;
