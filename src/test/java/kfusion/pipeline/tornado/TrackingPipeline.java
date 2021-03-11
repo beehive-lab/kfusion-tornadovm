@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -196,7 +196,7 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
                     info(String.format("normals: " + pyramidNormals[level].summerise()));
                     info(String.format("ref verticies: " + referenceView.getVerticies().summerise()));
                     info(String.format("ref normals: " + referenceView.getNormals().summerise()));
-                    info(String.format("pose: \n%s\n", pose.toString(FloatOps.fmt4em)));
+                    info(String.format("pose: \n%s\n", pose.toString(FloatOps.FMT_4_EM)));
                 }
 
                 IterativeClosestPoint.trackPose(pyramidTrackingResults[level], pyramidVerticies[level], pyramidNormals[level], referenceView.getVerticies(), referenceView.getNormals(), pose,
@@ -292,8 +292,8 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
 
         System.out.printf("\tpose            : error %s\n", poseError.toString());
         if (poseError.getMaxUlp() > 5f) {
-            System.out.printf("calc pose:\n%s\n", trackingResult.getPose().toString(FloatOps.fmt4em));
-            System.out.printf("ref  pose:\n%s\n", refPose.toString(FloatOps.fmt4em));
+            System.out.printf("calc pose:\n%s\n", trackingResult.getPose().toString(FloatOps.FMT_4_EM));
+            System.out.printf("ref  pose:\n%s\n", refPose.toString(FloatOps.FMT_4_EM));
             match = false;
         }
         return match;

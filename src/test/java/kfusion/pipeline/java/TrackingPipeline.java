@@ -147,8 +147,8 @@ public class TrackingPipeline extends AbstractPipeline<KfusionConfig> {
         }
         System.out.printf("\tpose has %d errors\n", errors);
         if (errors > 0) {
-            System.out.printf("calc pose:\n%s\n", calcPose.toString(FloatOps.fmt4em));
-            System.out.printf("ref  pose:\n%s\n", refPose.toString(FloatOps.fmt4em));
+            System.out.printf("calc pose:\n%s\n", calcPose.toString(FloatOps.FMT_4_EM));
+            System.out.printf("ref  pose:\n%s\n", refPose.toString(FloatOps.FMT_4_EM));
         }
         return match;
     }

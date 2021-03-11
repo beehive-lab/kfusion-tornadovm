@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,23 +51,20 @@ public class UtilsTest {
                     final Float4 v4 = new Float4();
 
                     Utils.loadData(filename, v4.asBuffer());
-                    System.out.println(v4.toString(FloatOps.fmt4em));
+                    System.out.println(v4.toString(FloatOps.FMT_4_EM));
                     break;
-
                 case "Matrix4x4Float":
                     final Matrix4x4Float m4x4 = new Matrix4x4Float();
 
                     Utils.loadData(filename, m4x4.asBuffer());
-                    System.out.println(m4x4.toString(FloatOps.fmt4em));
+                    System.out.println(m4x4.toString(FloatOps.FMT_4_EM));
                     break;
-
                 case "ImageFloat320x240":
                     final ImageFloat img320_240 = new ImageFloat(320, 240);
 
                     Utils.loadData(filename, img320_240.asBuffer());
                     System.out.println(img320_240.summerise());
                     break;
-
                 case "Float":
                     FloatBuffer fb = FloatBuffer.allocate(1);
                     Utils.loadData(filename, fb);
@@ -81,7 +78,5 @@ public class UtilsTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
-
 }

@@ -372,8 +372,8 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
 
         System.out.printf("\tpose            : error %s\n", poseError.toString());
         if (poseError.getMaxUlp() > 5f) {
-            System.out.printf("calc pose:\n%s\n", trackingResult.getPose().toString(FloatOps.fmt4em));
-            System.out.printf("ref  pose:\n%s\n", refPose.toString(FloatOps.fmt4em));
+            System.out.printf("calc pose:\n%s\n", trackingResult.getPose().toString(FloatOps.FMT_4_EM));
+            System.out.printf("ref  pose:\n%s\n", refPose.toString(FloatOps.FMT_4_EM));
             match = false;
         }
         return match;
