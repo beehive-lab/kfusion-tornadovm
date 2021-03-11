@@ -556,7 +556,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
                     info(String.format("normals: " + pyramidNormals[level].summerise()));
                     info(String.format("ref verticies: " + referenceView.getVerticies().summerise()));
                     info(String.format("ref normals: " + referenceView.getNormals().summerise()));
-                    info(String.format("pose: \n%s\n", pose.toString(FloatOps.fmt4em)));
+                    info(String.format("pose: \n%s\n", pose.toString(FloatOps.FMT_4_EM)));
                 }
 
                 IterativeClosestPoint.trackPose(pyramidTrackingResults[level], pyramidVerticies[level], pyramidNormals[level], referenceView.getVerticies(), referenceView.getNormals(), pose,
@@ -604,8 +604,8 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
 
         if (config.debug()) {
             info("============== integration ==============");
-            info("invTrack:\n%s\n", invTrack.toString(FloatOps.fmt4em));
-            info("K:\n%s\n", K.toString(FloatOps.fmt4em));
+            info("invTrack:\n%s\n", invTrack.toString(FloatOps.FMT_4_EM));
+            info("K:\n%s\n", K.toString(FloatOps.FMT_4_EM));
         }
 
         kfusion.java.algorithms.Integration.integrate(scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight);

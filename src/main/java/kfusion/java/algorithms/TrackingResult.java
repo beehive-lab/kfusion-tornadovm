@@ -79,7 +79,7 @@ public class TrackingResult {
 		sb.append(String.format("               : points=%.0f\n",getPoints()));
 		sb.append(String.format("               : RSME=%e\n",getRSME()));
 		sb.append(String.format("               : x.norm=%e\n",length(x)));
-		sb.append(String.format("               : x=%s\n",x.toString(FloatOps.fmt6e)));
+		sb.append(String.format("               : x=%s\n",x.toString(FloatOps.FMT_6_E)));
 		sb.append(String.format("               : pose\n%s\n",pose.toString()));
 		return sb.toString();
 	}
