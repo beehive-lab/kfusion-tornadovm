@@ -471,13 +471,13 @@ public class IterativeClosestPoint {
         solve(result.x, icpResults, 1);
 
         if (config.debug()) {
-            System.out.printf("\tx: %s\n", result.x.toString(FloatOps.fmt6e));
+            System.out.printf("\tx: %s\n", result.x.toString(FloatOps.FMT_6_E));
         }
 
         final Matrix4x4Float delta = new FloatSE3(result.x).toMatrix4();
 
         if (config.debug()) {
-            System.out.printf("*delta:\n%s\n", delta.toString(FloatOps.fmt4em));
+            System.out.printf("*delta:\n%s\n", delta.toString(FloatOps.FMT_4_EM));
             System.out.printf("*current pose:\n%s\n", currentPose.toString());
         }
 
