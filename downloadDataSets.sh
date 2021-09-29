@@ -29,7 +29,8 @@ mkdir -p slambench
 cd slambench
 git clone https://github.com/pamela-project/slambench
 cd slambench
-make
+make deps
+make slambench
 
 cd ..
 mkdir -p datasets

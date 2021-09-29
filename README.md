@@ -28,15 +28,17 @@ Summary: time=6.50, frames=882, FPS=135.79
 This implementation runs on TornadoVM to achieve GPU acceleration and real-time performance.
 Hence, you need to install [Tornado](https://github.com/beehive-lab/Tornado) following the instructions from [Tornado-INSTALL](https://github.com/beehive-lab/Tornado/blob/master/INSTALL.md)
 
-After you successfully build Tornado, then issue the following commands to install locally its JAR files:
+After you successfully build Tornado, you can install KFusion-TornadoVM by issuing the following commands:
+
+
+##### Dependencies:
 
 ```bash
-$ cd path/to/tornado
-$ ./tornadoLocalInstallMaven
+sudo dnf install -y yaml-cpp-devel gtk2-devel mesa-libEGL-devel vtk-devel cmake make git mercurial wget unzip gcc gcc-c++ lapack blas lapack-devel blas-devel findutils cvs glut-devel glew-devel boost-devel glog-devel gflags-devel libXmu-devel
 ```
 
-Finally, you can install KFusion-TornadoVM by issuing the following commands:
 
+Then install KFUSION-TornadoVM
 
 ```bash
 # Setup:
