@@ -214,7 +214,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				.task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
 				.task("bilateralFilter", ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian, eDelta, radius)
 				.mapAllTo(tornadoDevice)
-                .pinObjectsInMemory(depthImageInput, scaledDepthImage, pyramidDepths[0], gaussian);
+                .lockObjectsInMemory(depthImageInput, scaledDepthImage, pyramidDepths[0], gaussian);
         //@formatter:on
 
         final int iterations = pyramidIterations.length;
@@ -243,7 +243,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 .mapAllTo(tornadoDevice);
 
         for (int i = 0; i < iterations; i++) {
-            estimatePoseSchedule.pinObjectsInMemory(projectReference, pyramidDepths[i], pyramidVerticies[i], scaledInvKs[i], pyramidNormals[i]);
+            estimatePoseSchedule.lockObjectsInMemory(projectReference, pyramidDepths[i], pyramidVerticies[i], scaledInvKs[i], pyramidNormals[i]);
         }
 
         if (config.useCustomReduce()) {
@@ -301,7 +301,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             if (!config.useCustomReduce()) {
                 trackingPyramid[i].mapAllTo(tornadoDevice);
             }
-            trackingPyramid[i].pinObjectsInMemory(pyramidPose, pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
+            trackingPyramid[i].lockObjectsInMemory(pyramidPose, pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
                     referenceView.getVerticies(), referenceView.getNormals(), projectReference);
         }
 
@@ -310,7 +310,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				.streamIn(invTrack)
 				.task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight)
 				.mapAllTo(tornadoDevice)
-                .pinObjectsInMemory(scaledDepthImage, invTrack, K, volumeDims, volume);
+                .lockObjectsInMemory(scaledDepthImage, invTrack, K, volumeDims, volume);
 		//@formatter:on
 
         final ImageFloat3 verticies = referenceView.getVerticies();
@@ -321,7 +321,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				.streamIn(referencePose)
 				.task("raycast", Raycast::raycast, verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep)
 				.mapAllTo(tornadoDevice)
-                .pinObjectsInMemory(referencePose, verticies, normals, volume, volumeDims, referencePose);
+                .lockObjectsInMemory(referencePose, verticies, normals, volume, volumeDims, referencePose);
 		//@formatter:on
 
         //@formatter:off
@@ -339,12 +339,12 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         renderTrack = new TaskSchedule("renderTrack")
                 .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
                 .mapAllTo(tornadoDevice)
-                .pinObjectsInMemory(renderedTrackingImage, pyramidTrackingResults[0]);
+                .lockObjectsInMemory(renderedTrackingImage, pyramidTrackingResults[0]);
 
         renderSchedule = new TaskSchedule("render").streamIn(scenePose)
                 .task("renderVolume", Renderer::renderVolume, renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient)
                 .mapAllTo(tornadoDevice)
-                .pinObjectsInMemory(renderedScene, volume, volumeDims, scenePose, light, ambient);
+                .lockObjectsInMemory(renderedScene, volume, volumeDims, scenePose, light, ambient);
 
         preprocessingSchedule.warmup();
         estimatePoseSchedule.warmup();
