@@ -97,7 +97,8 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
                 .streamIn(depthImageInput)
                 .task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
                 .task("bilateralFilter", ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian, eDelta, radius)
-                .mapAllTo(oclDevice);
+                .mapAllTo(oclDevice)
+                .lockObjectsInMemory(depthImageInput, scaledDepthImage, pyramidDepths[0], gaussian);
         //@formatter:on
 
         final int iterations = pyramidIterations.length;
@@ -127,6 +128,10 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         estimatePoseSchedule.streamIn(projectReference).mapAllTo(oclDevice);
 
+        for (int i = 0; i < iterations; i++) {
+            estimatePoseSchedule.lockObjectsInMemory(projectReference, pyramidDepths[i], pyramidVerticies[i], scaledInvKs[i], pyramidNormals[i]);
+        }
+
         trackingPyramid = new TaskSchedule[iterations];
         for (int i = 0; i < iterations; i++) {
 
@@ -139,7 +144,9 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
                             projectReference, distanceThreshold, normalThreshold)
                     .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
                     .streamOut(icpResultIntermediate1)
-                    .mapAllTo(oclDevice);
+                    .mapAllTo(oclDevice)
+                    .lockObjectsInMemory(pyramidPose, pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
+                    referenceView.getVerticies(), referenceView.getNormals(), projectReference);
             //@formatter:on
         }
 
@@ -147,7 +154,8 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         integrateSchedule = new TaskSchedule("integrate")
                 .streamIn(invTrack)
                 .task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight)
-                .mapAllTo(oclDevice);
+                .mapAllTo(oclDevice)
+                .lockObjectsInMemory(scaledDepthImage, invTrack, K, volumeDims, volume);
         //@formatter:on
 
         final ImageFloat3 verticies = referenceView.getVerticies();
@@ -157,7 +165,8 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         raycastSchedule = new TaskSchedule("raycast")
                 .streamIn(referencePose)
                 .task("raycast", Raycast::raycast, verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep)
-                .mapAllTo(oclDevice);
+                .mapAllTo(oclDevice)
+                .lockObjectsInMemory(referencePose, verticies, normals, volume, volumeDims, referencePose);
         //@formatter:on
 
         // final PrebuiltTask renderDepth = TaskUtils.createTask(
@@ -178,7 +187,8 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
                 // .task(renderDepth)
                 .task("renderVolume", Renderer::renderVolume, renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient)
                 .streamOut(renderedCurrentViewImage, renderedReferenceViewImage, renderedTrackingImage, renderedDepthImage, renderedScene)
-                .mapAllTo(oclDevice);
+                .mapAllTo(oclDevice)
+                .lockObjectsInMemory(renderedScene, volume, volumeDims, scenePose, light, ambient, pyramidVerticies[0], pyramidNormals[0], verticies, normals, pyramidTrackingResults[0]);
         //@formatter:on
 
         preprocessingSchedule.warmup();
