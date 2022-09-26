@@ -4,4 +4,4 @@ JARS=$(echo ${KFUSION_ROOT}/target/*.jar | tr ' ' ':')
 
 JFLAGS="-Xms28G -Xmx28G -Dtornado.kernels.coarsener=False -Dtornado.enable.fix.reads=False -Dlog4j.configurationFile=${KFUSION_ROOT}/conf/log4j2.xml"
 
-CLASSPATH=${CLASSPATH}:${JARS} tornado ${JFLAGS} $@
+CLASSPATH=${CLASSPATH}:${JARS} tornado --jvm="${JFLAGS}" $@
