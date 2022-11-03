@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,21 +34,16 @@ public class JAMASVD {
     final double scale;
 
     public JAMASVD(Matrix2DFloat m) {
-        final Matrix matrix = new Matrix(m.M(), m.N());
+        final Matrix matrix = new Matrix(m.getNumRows(), m.getNumColumns());
         double minValue = 0f;
-        for (int row = 0; row < m.M(); row++)
-            for (int col = 0; col < m.N(); col++) {
+        for (int row = 0; row < m.getNumRows(); row++)
+            for (int col = 0; col < m.getNumRows(); col++) {
                 double value = m.get(row, col);
                 minValue = Math.min(value, minValue);
                 matrix.set(row, col, value);
             }
-
         scale = 1.0;// Math.getExponent(minValue);
-
         matrix.times(1.0 / scale);
-
-        // System.out.printf("scale = %.4e\n",scale);
-
         svd = new SingularValueDecomposition(matrix);
     }
 
@@ -66,22 +61,21 @@ public class JAMASVD {
 
     private Matrix2DFloat toMatrixFloat(Matrix m) {
         final Matrix2DFloat result = new Matrix2DFloat(m.getRowDimension(), m.getColumnDimension());
-        for (int row = 0; row < result.M(); row++)
-            for (int col = 0; col < result.N(); col++)
+        for (int row = 0; row < result.getNumRows(); row++)
+            for (int col = 0; col < result.getNumColumns(); col++)
                 result.set(row, col, (float) m.get(row, col));
         return result;
     }
 
     public Matrix2DFloat getSinv(float condition) {
         final Matrix2DFloat X = toMatrixFloat(svd.getS());
-        for (int i = 0; i < X.M(); i++) {
+        for (int i = 0; i < X.getNumRows(); i++) {
             float value = X.get(i, i);
             if (value * condition <= X.get(0, 0))
                 X.set(i, i, 0f);
             else
                 X.set(i, i, 1.0f / value);
         }
-
         return X;
     }
 

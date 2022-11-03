@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,10 +41,10 @@ public class EjmlUtil {
     }
 
     public static SimpleMatrix toMatrix(Matrix2DFloat m) {
-        SimpleMatrix result = new SimpleMatrix(m.M(), m.N());
-        for (int i = 0; i < m.M(); i++) {
-            for (int j = 0; j < m.N(); j++) {
-                result.set(i, j, (double) m.get(i, j));
+        SimpleMatrix result = new SimpleMatrix(m.getNumRows(), m.getNumColumns());
+        for (int i = 0; i < m.getNumRows(); i++) {
+            for (int j = 0; j < m.getNumColumns(); j++) {
+                result.set(i, j, m.get(i, j));
             }
         }
         return result;

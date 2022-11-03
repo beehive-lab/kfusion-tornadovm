@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,15 +63,12 @@ public strictfp class EjmlSVD2 {
 
     /**
      * Construct the singular value decomposition Structure to access U, S and V.
-     * 
-     * @param Arg
+     *
+     * @param arg
      *            Rectangular matrix
      */
     public EjmlSVD2(Matrix2DFloat arg) {
         m = EjmlUtil.toMatrix(arg);
-        // printMatrix(m);
-        // System.out.println("Simple matrix");
-        // m.print();
         try {
             svd = m.svd();
         } catch (RuntimeException e) {
@@ -115,7 +112,7 @@ public strictfp class EjmlSVD2 {
 
     /**
      * Return the left singular vectors
-     * 
+     *
      * @return U
      */
     public Matrix2DFloat getU() {
@@ -125,7 +122,7 @@ public strictfp class EjmlSVD2 {
 
     /**
      * Return the right singular vectors
-     * 
+     *
      * @return V
      */
     public Matrix2DFloat getV() {
@@ -134,7 +131,7 @@ public strictfp class EjmlSVD2 {
 
     /**
      * Return the one-dimensional array of singular values
-     * 
+     *
      * @return diagonal of S.
      */
     public float[] getSingularValues() {
@@ -147,7 +144,7 @@ public strictfp class EjmlSVD2 {
 
     /**
      * Return the diagonal matrix of singular values
-     * 
+     *
      * @return S
      */
     public Matrix2DFloat getS() {
@@ -156,7 +153,7 @@ public strictfp class EjmlSVD2 {
 
     public Matrix2DFloat getSinv(float condition) {
         final Matrix2DFloat X = EjmlUtil.toMatrixFloat(svd.getW());
-        for (int i = 0; i < X.M(); i++) {
+        for (int i = 0; i < X.getNumRows(); i++) {
             float value = X.get(i, i);
             if (value * condition <= X.get(0, 0))
                 X.set(i, i, 0f);
@@ -166,27 +163,6 @@ public strictfp class EjmlSVD2 {
 
         return X;
     }
-
-    // /** Two norm
-    // @return max(S)
-    // */
-    // public float norm2 () {
-    // return (float) svd.norm2();
-    // }
-    //
-    // /** Two norm condition number
-    // @return max(S)/min(S)
-    // */
-    // public float cond () {
-    // return (float) svd.cond();
-    // }
-    //
-    // /** Effective numerical matrix rank
-    // @return Number of nonnegligible singular values.
-    // */
-    // public int rank () {
-    // return svd.rank();
-    // }
 
     public float[] getPsuedoInverse(float condition) {
         // float[] s = getSingularValues();
