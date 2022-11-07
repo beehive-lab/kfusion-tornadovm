@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,12 +30,13 @@ import org.junit.Test;
 
 import kfusion.java.common.Utils;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.utils.TornadoUtilities;
 
 public class Depth2Vertex {
@@ -61,8 +62,8 @@ public class Depth2Vertex {
     final String d2v_prefix = "depth2vertex_";
     final String v2n_prefix = "vertex2normal_";
 
-    TaskSchedule depthToVertex;
-    TaskSchedule vertexToNormal;
+    TaskGraph depthToVertex;
+    TaskGraph vertexToNormal;
 
     @Before
     public void setUp() throws Exception {
@@ -87,36 +88,21 @@ public class Depth2Vertex {
 
         invK = new Matrix4x4Float();
 
-        // DomainTree domain = new DomainTree(2);
-        // domain.set(0, new IntDomain(0, 1, widths[0]));
-        // domain.set(1, new IntDomain(0, 1, heights[0]));
-        // ExecutableTask d2v = GraphicsMath.depthToVertexCode.invoke(vertex[0],
-        // depth[0], invK);
-        // d2v.meta().addProvider(DomainTree.class, domain);
-        // d2v.disableJIT();
-        // d2v.mapTo(EXTERNAL_GPU);
-        // d2v.loadFromFile("opencl/depth2vertex.cl");
         //@formatter:off
-        depthToVertex = new TaskSchedule("s0")
-                .streamIn(depth[0], invK)
+        depthToVertex = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, depth[0], invK)
                 .task("d2v", GraphicsMath::depth2vertex, vertex[0], depth[0], invK)
-                .streamOut(vertex[0])
+                .transferToHost(vertex[0])
                 .mapAllTo(config.getTornadoDevice());
         //@formatter:on
 
-        // depthToVertex.getStack().getEvent().waitOn();
         //@formatter:off
-        vertexToNormal = new TaskSchedule("s1")
-                .streamIn(vertex[0])
+        vertexToNormal = new TaskGraph("s1")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, vertex[0])
                 .task("v2n", GraphicsMath::vertex2normal, normal[0], vertex[0])
-                .streamOut(normal[0])
+                .transferToHost(normal[0])
                 .mapAllTo(config.getTornadoDevice());
         //@formatter:on
-
-        // vertexToNormal =
-        // GraphicsMath.vertexToNormalTask.invoke(normalRef[0],vertexRef[0]);
-        // vertexToNormal.mapTo(EXTERNAL_GPU);
-        // vertexToNormal.getStack().getEvent().waitOn();
     }
 
     @After

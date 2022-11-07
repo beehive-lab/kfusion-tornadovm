@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,7 @@ import kfusion.java.devices.TestingDevice;
 import kfusion.java.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.utils.TornadoUtilities;
@@ -67,9 +68,9 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
         return String.format("%s/%04d_%s_%s_%s", path, frame, kernel, variable, (isInput) ? "in" : "out");
     }
 
-    private TaskSchedule graph1;
-    private TaskSchedule graph2;
-    private TaskSchedule[] trackingPyramid;
+    private TaskGraph graph1;
+    private TaskGraph graph2;
+    private TaskGraph[] trackingPyramid;
     private Matrix4x4Float[] scaledInvKs;
     private float[] icpResult;
     private Matrix4x4Float pyramidPose;
@@ -114,23 +115,23 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
             scaledInvKs[i] = new Matrix4x4Float();
         }
 
-        graph1 = new TaskSchedule("s0").streamIn(pyramidDepths[0]);
+        graph1 = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidDepths[0]);
 
         for (int i = 1; i < iterations; i++) {
-            graph1.task("resizeImage" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2).streamOut(pyramidDepths[i]);
+            graph1.task("resizeImage" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2).transferToHost(pyramidDepths[i]);
         }
 
         // graph2 = new TaskSchedule();
         for (int i = 0; i < iterations; i++) {
-            graph1.streamIn(scaledInvKs[i]).task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
-                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]).streamOut(pyramidVerticies[i], pyramidNormals[i]);
+            graph1.transferToDevice(DataTransferMode.EVERY_EXECUTION, scaledInvKs[i]).task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
+                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]).transferToHost(pyramidVerticies[i], pyramidNormals[i]);
         }
-        graph1.streamIn(projectReference);
+        graph1.transferToDevice(DataTransferMode.EVERY_EXECUTION, projectReference);
 
-        trackingPyramid = new TaskSchedule[iterations];
+        trackingPyramid = new TaskGraph[iterations];
         for (int i = 0; i < iterations; i++) {
-            trackingPyramid[i] = new TaskSchedule("s0")
-                    .streamIn(pyramidPose)
+            trackingPyramid[i] = new TaskGraph("s0")
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidPose)
                     .task("track" + i, IterativeClosestPoint::trackPose,
                             pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
                             referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
@@ -142,7 +143,7 @@ public class ReducePipeline extends AbstractPipeline<TornadoModel> {
                             new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
                             oclDevice,
                             new int[]{wgs})
-                    .streamOut(icpResultIntermediate1, pyramidTrackingResults[i])
+                    .transferToHost(icpResultIntermediate1, pyramidTrackingResults[i])
                     .mapAllTo(oclDevice);
 
             TaskMetaDataInterface meta = trackingPyramid[i].getTask("s0.optMapReduce" + i).meta();

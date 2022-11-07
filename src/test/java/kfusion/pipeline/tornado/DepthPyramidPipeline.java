@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,11 +29,12 @@ import kfusion.java.devices.Device;
 import kfusion.java.devices.TestingDevice;
 import kfusion.java.pipeline.AbstractPipeline;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
 
@@ -45,7 +46,7 @@ public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
     private ImageFloat3[] refVerticies;
     private ImageFloat3[] refNormals;
 
-    private TaskSchedule vertexGraph;
+    private TaskGraph vertexGraph;
 
     private static String makeFilename(String path, int frame, String kernel, String variable, boolean isInput) {
         return String.format("%s/%04d_%s_%s_%s", path, frame, kernel, variable, (isInput) ? "in" : "out");
@@ -59,7 +60,7 @@ public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
         refVerticies = new ImageFloat3[3];
         refNormals = new ImageFloat3[3];
 
-        vertexGraph = new TaskSchedule("s0");
+        vertexGraph = new TaskGraph("s0");
 
         pyramidDepths[0] = filteredDepthImage;
         pyramidVerticies[0] = currentView.getVerticies();
@@ -71,8 +72,10 @@ public class DepthPyramidPipeline extends AbstractPipeline<TornadoModel> {
             refVerticies[i] = pyramidVerticies[i].duplicate();
             refNormals[i] = pyramidNormals[i].duplicate();
 
-            vertexGraph.streamIn(pyramidDepths[i], invK[i]).task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], invK[i])
-                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]).streamOut(pyramidVerticies[i], pyramidNormals[i]);
+            vertexGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidDepths[i], invK[i])
+                    .task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], invK[i])
+                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i])
+                    .transferToHost(pyramidVerticies[i], pyramidNormals[i]);
         }
 
         vertexGraph.mapAllTo(config.getTornadoDevice());

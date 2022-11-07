@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,10 +27,11 @@ package kfusion.tornado.pipeline;
 import kfusion.java.devices.Device;
 import kfusion.java.pipeline.AbstractOpenGLPipeline;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
 import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class TornadoBilateralFilterPipeline<T extends TornadoModel> extends AbstractOpenGLPipeline<T> {
 
@@ -46,7 +47,7 @@ public class TornadoBilateralFilterPipeline<T extends TornadoModel> extends Abst
     }
 
     private TornadoDevice oclDevice;
-    private TaskSchedule preprocessingSchedule;
+    private TaskGraph preprocessingSchedule;
 
     @Override
     public void configure(Device device) {
@@ -61,11 +62,12 @@ public class TornadoBilateralFilterPipeline<T extends TornadoModel> extends Abst
         oclDevice.reset();
 
         //@formatter:off
-        preprocessingSchedule = new TaskSchedule("pp")
-                .streamIn(depthImageInput)
+        preprocessingSchedule = new TaskGraph("pp")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, depthImageInput)
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, scaledDepthImage, filteredDepthImage, scaledDepthImage, gaussian)
                 .task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
                 .task("bilateralFilter", ImagingOps::bilateralFilter, filteredDepthImage, scaledDepthImage, gaussian, eDelta, radius)
-                .streamOut(filteredDepthImage)
+                .transferToHost(filteredDepthImage)
                 .mapAllTo(oclDevice);
         //@formatter:on
 

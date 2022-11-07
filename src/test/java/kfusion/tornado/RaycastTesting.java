@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,15 +33,16 @@ import org.junit.Test;
 import kfusion.java.algorithms.Raycast;
 import kfusion.java.common.Utils;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class RaycastTesting {
-	
+
     final private TornadoModel config = new TornadoModel();
     final private String FILE_PATH = "/Users/jamesclarkson/Downloads/kfusion_ut_data";
 
@@ -60,7 +61,7 @@ public class RaycastTesting {
     private float step;
     private float largeStep;
 
-    private TaskSchedule graph;
+    private TaskGraph graph;
 
     @Before
     public void setUp() throws Exception {
@@ -89,10 +90,11 @@ public class RaycastTesting {
         System.out.printf("      step: %f\n", step);
         System.out.printf("large step: %f\n", largeStep);
 
-        graph = new TaskSchedule("s0").streamIn(volume, view).task("raycast", Raycast::raycast, vOut, nOut, volume, volumeDims, view, nearPlane, farPlane, largeStep / 0.75f, step)
-                .streamOut(vOut, nOut).mapAllTo(config.getTornadoDevice());
-
-        // makeVolatile(volume,view);
+        graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, volume, view)
+                .task("raycast", Raycast::raycast, vOut, nOut, volume, volumeDims, view, nearPlane, farPlane, largeStep / 0.75f, step)
+                .transferToHost(vOut, nOut)
+                .mapAllTo(config.getTornadoDevice());
     }
 
     @After

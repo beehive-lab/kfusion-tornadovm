@@ -32,7 +32,7 @@ import kfusion.java.devices.TestingDevice;
 import kfusion.java.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
 import uk.ac.manchester.tornado.api.utils.TornadoUtilities;
@@ -55,8 +56,8 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
         return String.format("%s/%04d_%s_%s_%s", path, frame, kernel, variable, (isInput) ? "in" : "out");
     }
 
-    private TaskSchedule graph1;
-    private TaskSchedule graph2;
+    private TaskGraph graph1;
+    private TaskGraph graph2;
     private Matrix4x4Float[] scaledInvKs;
 
     @Override
@@ -74,16 +75,16 @@ public class TrackingPipeline extends AbstractPipeline<TornadoModel> {
             scaledInvKs[i] = new Matrix4x4Float();
         }
 
-        graph1 = new TaskSchedule("s0").streamIn(pyramidDepths[0]);
+        graph1 = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidDepths[0]);
 
         for (int i = 1; i < iterations; i++) {
-            graph1.task("resize" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2).streamOut(pyramidDepths[i]);
+            graph1.task("resize" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2).transferToHost(pyramidDepths[i]);
         }
 
-        graph2 = new TaskSchedule("s1");
+        graph2 = new TaskGraph("s1");
         for (int i = 0; i < iterations; i++) {
-            graph2.streamIn(scaledInvKs[i]).task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
-                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]).streamOut(pyramidVerticies[i], pyramidNormals[i]);
+            graph2.transferToDevice(DataTransferMode.EVERY_EXECUTION,scaledInvKs[i]).task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
+                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]).transferToHost(pyramidVerticies[i], pyramidNormals[i]);
         }
 
         graph1.mapAllTo(config.getTornadoDevice());

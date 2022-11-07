@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,7 @@ package kfusion.tornado;
 import static kfusion.java.algorithms.IterativeClosestPoint.reduce;
 import static org.junit.Assert.fail;
 
+import java.awt.image.DataBuffer;
 import java.io.FileInputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -38,10 +39,11 @@ import org.junit.Test;
 
 import kfusion.java.algorithms.IterativeClosestPoint;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float8;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class ICPTesting2 {
@@ -106,7 +108,7 @@ public class ICPTesting2 {
 
     final String track_prefix = "track_";
 
-    private TaskSchedule graph;
+    private TaskGraph graph;
 
     private boolean compareTrackData(final Float8 value, final Float8 ref) {
         boolean output = true;
@@ -138,11 +140,11 @@ public class ICPTesting2 {
         final float[] intermediate = new float[8192];
 
         //@formatter:off
-        graph = new TaskSchedule("s0")
-                .streamIn(input)
+        graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("reduce1", IterativeClosestPoint::reduce1, intermediate, input)
                 .task("reduce2", IterativeClosestPoint::reduce2, output, intermediate)
-                .streamOut(output)
+                .transferToHost(output)
                 .mapAllTo(config.getTornadoDevice());
         //@formatter:on
     }

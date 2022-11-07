@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,13 +33,14 @@ import org.junit.Test;
 import kfusion.java.algorithms.Integration;
 import kfusion.java.common.Utils;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.Short2;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class IntegrationTesting {
 
@@ -62,7 +63,7 @@ public class IntegrationTesting {
 
     private final float[] integrationDims = { 2f, 2f, 2f };
 
-    private TaskSchedule graph;
+    private TaskGraph graph;
 
     @Before
     public void setUp() throws Exception {
@@ -82,21 +83,8 @@ public class IntegrationTesting {
         Utils.loadData(String.format("%s/%s%s.%04d", FILE_PATH, integrate_prefix, "maxweight.in", 0), tmp);
         maxweight = tmp[0];
 
-        // final PrebuiltTask integrate = TaskUtils.createTask("integrate",
-        // "integrate",
-        // "./opencl/integrate.cl",
-        // new Object[]{depth, invTrack, K, volumeDims, vol, mu, maxweight},
-        // new Access[]{Access.READ, Access.READ, Access.READ, Access.READ,
-        // Access.READ_WRITE, Access.READ, Access.READ},
-        // config.getTornadoDevice(),
-        // new int[]{vol.X(), vol.Y()});
-        graph = new TaskSchedule("s0").streamIn(vol, depth, invTrack, K).task("integrate", Integration::integrate, depth, invTrack, K, volumeDims, vol, mu, maxweight)
-                // .task(integrate)
-                .streamOut(vol).mapAllTo(config.getTornadoDevice());
-
-        // integrateTask.mapTo(EXTERNAL_GPU);
-        // integrateTask.getStack().getEvent().waitOn();
-        // makeVolatile(vol,depth,invTrack,K);
+        graph = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, vol, depth, invTrack, K).task("integrate", Integration::integrate, depth, invTrack, K, volumeDims, vol, mu, maxweight)
+                .transferToHost(vol).mapAllTo(config.getTornadoDevice());
     }
 
     @After

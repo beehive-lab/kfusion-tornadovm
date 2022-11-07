@@ -39,13 +39,14 @@ import kfusion.java.algorithms.IterativeClosestPoint;
 import kfusion.java.algorithms.TrackingResult;
 import kfusion.java.common.Utils;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float8;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class ICPTesting {
 
@@ -117,7 +118,7 @@ public class ICPTesting {
 
     final String track_prefix = "track_";
 
-    private TaskSchedule graph;
+    private TaskGraph graph;
 
     private Matrix4x4Float Ttrack;
 
@@ -166,24 +167,11 @@ public class ICPTesting {
         Utils.loadData(String.format("%s/%snormal_threshold.in.%04d", FILE_PATH, track_prefix, 2), tmp);
         normal_threshold = tmp[0];
 
-        // trackingData,errorData,results,inVertex,inNormal,refVertex,refNormal,Ttrack,view,dist_threshold,normal_threshold
-        // final TornadoExecuteTask trackPose =
-        // IterativeClosestPoint.trackCode.invoke(results, inVertex, inNormal,
-        // refVertex, refNormal, Ttrack, view, dist_threshold, normal_threshold);
-        // trackPose.disableJIT();
-        // trackPose.meta().addProvider(DomainTree.class, domain);
-        // trackPose.mapTo(EXTERNAL_GPU);
-        // trackPose.loadFromFile("trackPose-bad.cl");
-        graph = new TaskSchedule("s0").streamIn(inVertex, inNormal, refVertex, refNormal, Ttrack, view)
-                .task("track", IterativeClosestPoint::trackPose, results, inVertex, inNormal, refVertex, refNormal, Ttrack, view, dist_threshold, normal_threshold).streamOut(results)
+        graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, inVertex, inNormal, refVertex, refNormal, Ttrack, view)
+                .task("track", IterativeClosestPoint::trackPose, results, inVertex, inNormal, refVertex, refNormal, Ttrack, view, dist_threshold, normal_threshold)
+                .transferToHost(results)
                 .mapAllTo(config.getTornadoDevice());
-        // ((TornadoTaskInvocation) trackInv).disableJIT();
-        // trackInv.meta().addProvider(DomainTree.class, domain);
-        // trackInv.mapTo(EXTERNAL_GPU);
-        // ((TornadoTaskInvocation) trackInv).loadFromFile("trackPose2.cl");
-        // trackInv.getStack().getEvent().waitOn();
-
-        // makeVolatile(inVertex,inNormal,refVertex,refNormal,Ttrack,view);
     }
 
     @After

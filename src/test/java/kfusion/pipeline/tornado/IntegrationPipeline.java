@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,12 +30,13 @@ import kfusion.java.devices.TestingDevice;
 import kfusion.java.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.Short2;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 
 public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
@@ -46,26 +47,17 @@ public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
 
     private VolumeShort2 refVolume;
 
-    private TaskSchedule graph;
+    private TaskGraph graph;
 
     @Override
     public void configure(Device device) {
         super.configure(device);
 
-        graph = new TaskSchedule("s0");
+        graph = new TaskGraph("s0");
 
-        // final PrebuiltTask integrate = TaskUtils.createTask("customIntegrate",
-        // "integrate",
-        // "./opencl/integrate.cl",
-        // new Object[]{scaledDepthImage, invTrack, K, volumeDims,
-        // volume, mu, maxWeight},
-        // new Access[]{Access.READ, Access.READ, Access.READ, Access.READ,
-        // Access.READ_WRITE, Access.READ, Access.READ},
-        // config.getTornadoDevice(),
-        // new int[]{volume.X(), volume.Y()});
-        graph.streamIn(volume, scaledDepthImage, invTrack, K).task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight)
-                // .task(integrate)
-                .streamOut(volume).mapAllTo(config.getTornadoDevice());
+        graph.transferToDevice(DataTransferMode.EVERY_EXECUTION, volume, scaledDepthImage, invTrack, K)
+                .task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight)
+                .transferToHost(volume).mapAllTo(config.getTornadoDevice());
     }
 
     private static String makeFilename(String path, int frame, String kernel, String variable, boolean isInput) {
@@ -93,10 +85,6 @@ public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
 
             Matrix4x4Float refK = new Matrix4x4Float();
             Utils.loadData(makeFilename(path, index, "integration", "cameraMatrix", true), refK.asBuffer());
-
-            // System.out.printf("ref inv
-            // pose:\n%s\n",refInversePose.toString(FloatOps.fmt4em));
-            // System.out.printf("ref K :\n%s\n",refK.toString(FloatOps.fmt4em));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -104,9 +92,6 @@ public class IntegrationPipeline extends AbstractPipeline<TornadoModel> {
 
     @Override
     public void execute() {
-
-        // Integration.integrate(scaledDepthImage, invTrack, K, volumeDims,
-        // volume, mu, maxWeight);
         graph.execute();
         graph.dumpTimes();
 

@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,10 +30,11 @@ import kfusion.java.devices.TestingDevice;
 import kfusion.java.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.Raycast;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.types.FloatingPointError;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
 
 public class RaycastPipeline extends AbstractPipeline<TornadoModel> {
@@ -45,7 +46,7 @@ public class RaycastPipeline extends AbstractPipeline<TornadoModel> {
     private ImageFloat3 refVerticies;
     private ImageFloat3 refNormals;
 
-    private TaskSchedule graph;
+    private TaskGraph graph;
 
     @Override
     public void configure(Device device) {
@@ -53,15 +54,12 @@ public class RaycastPipeline extends AbstractPipeline<TornadoModel> {
 
         final ImageFloat3 verticies = referenceView.getVerticies();
         final ImageFloat3 normals = referenceView.getNormals();
-        
+
         //@formatter:off
-        graph = new TaskSchedule("s0")
-                .streamIn(referencePose, volume, volumeDims)
-                .task("raycast", Raycast::raycast,
-                        verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep,
-                        smallStep)
-                //                .task(raycast)
-                .streamOut(verticies, normals)
+        graph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, referencePose, volume, volumeDims)
+                .task("raycast", Raycast::raycast, verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep)
+                .transferToHost(verticies, normals)
                 .mapAllTo(config.getTornadoDevice());
         //@formatter:on
 
@@ -105,7 +103,7 @@ public class RaycastPipeline extends AbstractPipeline<TornadoModel> {
 
     @Override
     public void execute() {
-    	
+
         final ImageFloat3 verticies = referenceView.getVerticies().duplicate();
         final ImageFloat3 normals = referenceView.getNormals().duplicate();
 
