@@ -28,6 +28,7 @@ import kfusion.java.devices.Device;
 import kfusion.java.pipeline.AbstractOpenGLPipeline;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
 import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -43,11 +44,12 @@ public class TornadoBilateralFilterPipeline<T extends TornadoModel> extends Abst
     @Override
     protected void preprocessing() {
         super.preprocessing();
-        preprocessingSchedule.execute();
+        preprocessingPlan.execute();
     }
 
     private TornadoDevice oclDevice;
-    private TaskGraph preprocessingSchedule;
+    private TaskGraph preprocessingGraph;
+    private TornadoExecutionPlan preprocessingPlan;
 
     @Override
     public void configure(Device device) {
@@ -61,17 +63,15 @@ public class TornadoBilateralFilterPipeline<T extends TornadoModel> extends Abst
          */
         oclDevice.reset();
 
-        //@formatter:off
-        preprocessingSchedule = new TaskGraph("pp")
+
+        preprocessingGraph = new TaskGraph("pp")
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, depthImageInput)
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, scaledDepthImage, filteredDepthImage, scaledDepthImage, gaussian)
                 .task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
                 .task("bilateralFilter", ImagingOps::bilateralFilter, filteredDepthImage, scaledDepthImage, gaussian, eDelta, radius)
-                .transferToHost(filteredDepthImage)
-                .mapAllTo(oclDevice);
-        //@formatter:on
-
-        preprocessingSchedule.warmup();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, filteredDepthImage);
+        preprocessingPlan = new TornadoExecutionPlan(preprocessingGraph.snapshot()).withDevice(oclDevice);
+        preprocessingPlan.withWarmUp();
 
     }
 
