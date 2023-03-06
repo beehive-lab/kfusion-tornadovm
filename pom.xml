@@ -89,7 +89,7 @@
      <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.15</version>
+         <version>0.15.1-dev</version>
      </dependency>
 
         <dependency>
