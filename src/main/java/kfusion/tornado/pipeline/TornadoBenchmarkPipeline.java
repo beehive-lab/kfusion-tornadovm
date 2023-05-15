@@ -268,7 +268,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 									tornadoDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
 									"./opencl/optMapReduce.cl",
 									new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
-									new Access[]{Access.WRITE, Access.READ, Access.READ, Access.READ},
+									new Access[]{Access.WRITE_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY},
 									tornadoDevice,
 									new int[]{numWgs})
 								  .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
