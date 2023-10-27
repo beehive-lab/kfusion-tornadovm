@@ -44,11 +44,12 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class Kinect extends AbstractLogger implements Device {
 
     final private static float DEPTH_SCALE_FACTOR = 1e-3f;
-    final private static Float4 CAMERA = new Float4(new float[] { 531.15f, 531.15f, 640 / 2, 480 / 2 });
+    final private static Float4 CAMERA = new Float4(531.15f, 531.15f, 640 / 2, 480 / 2);
 
     private Context context;
     private org.openkinect.freenect.Device device;

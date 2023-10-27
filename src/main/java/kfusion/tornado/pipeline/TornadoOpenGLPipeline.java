@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
@@ -73,8 +74,8 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
     private Matrix4x4Float pyramidPose;
     private Matrix4x4Float[] scaledInvKs;
 
-    private float[] icpResultIntermediate1;
-    private float[] icpResult;
+    private FloatArray icpResultIntermediate1;
+    private FloatArray icpResult;
 
     @Override
     public void configure(final Device device) {
@@ -96,8 +97,8 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         pyramidVerticies[0] = currentView.getVerticies();
         pyramidNormals[0] = currentView.getNormals();
 
-        icpResultIntermediate1 = new float[config.getReductionSize() * 32];
-        icpResult = new float[32];
+        icpResultIntermediate1 = new FloatArray(config.getReductionSize() * 32);
+        icpResult = new FloatArray(32);
 
         final Matrix4x4Float scenePose = sceneView.getPose();
 

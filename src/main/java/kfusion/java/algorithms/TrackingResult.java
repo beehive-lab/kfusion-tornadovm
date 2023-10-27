@@ -24,12 +24,11 @@
  */
 package kfusion.java.algorithms;
 
-import static uk.ac.manchester.tornado.api.collections.types.Float6.length;
-
-import uk.ac.manchester.tornado.api.collections.types.Float6;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class TrackingResult {
 
@@ -59,16 +58,37 @@ public class TrackingResult {
 	public float other;
 	public final Matrix4x4Float pose;
 	public  ImageFloat8	resultImage;
-	public final Float6 x;
+	public final FloatArray x;
 	public float error;
 
 	public TrackingResult(){
 		pose = new Matrix4x4Float();
-		x = new Float6();
+		x = new FloatArray(6);//Float6();
 		tracked = 0;
 		tooFar = 0;
 		wrongNormal = 0;
 		other = 0;
+	}
+
+	private static float length(FloatArray value) {
+		return TornadoMath.sqrt(dot(value, value));
+	}
+
+	public static float dot(FloatArray a, FloatArray b) {
+		float result = 0f;
+		final FloatArray m = mult(a, b);
+		for (int i = 0; i < a.getSize(); i++) {
+			result += m.get(i);
+		}
+		return result;
+	}
+
+	public static FloatArray mult(FloatArray a, FloatArray b) {
+		final FloatArray result = new FloatArray(6);
+		for (int i = 0; i < result.getSize(); i++) {
+			result.set(i, a.get(i) * b.get(i));
+		}
+		return result;
 	}
 
 	public String toString(){
@@ -79,9 +99,17 @@ public class TrackingResult {
 		sb.append(String.format("               : points=%.0f\n",getPoints()));
 		sb.append(String.format("               : RSME=%e\n",getRSME()));
 		sb.append(String.format("               : x.norm=%e\n",length(x)));
-		sb.append(String.format("               : x=%s\n",x.toString(FloatOps.FMT_6_E)));
+		sb.append(String.format("               : x=%s\n",stringRepresentation(x)));
 		sb.append(String.format("               : pose\n%s\n",pose.toString()));
 		return sb.toString();
+	}
+
+	private static String stringRepresentation(FloatArray x) {
+		String values = "";
+		for (int i = 0; i < x.getSize(); i++) {
+			values = values + " " + x.get(i);
+		}
+		return values;
 	}
 
 	public double getPoints(){
@@ -108,7 +136,7 @@ public class TrackingResult {
 		return pose;
 	}
 
-	public Float6 getX() {
+	public FloatArray getX() {
 		return x;
 	}
 

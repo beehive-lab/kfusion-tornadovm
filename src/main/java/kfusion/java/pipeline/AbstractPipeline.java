@@ -39,7 +39,6 @@ import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.FloatSE3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
@@ -52,6 +51,7 @@ import uk.ac.manchester.tornado.api.collections.types.Int3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.Short2;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
 
@@ -59,7 +59,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
 
     protected static final float INVALID = -2f;
 
-    protected static final void updateRotation(final Matrix4x4Float m, final Float6 x) {
+    protected static final void updateRotation(final Matrix4x4Float m, final FloatArray x) {
         final Matrix4x4Float transform = new FloatSE3(x).toMatrix4();
         final Matrix4x4Float current = m.duplicate();
 
@@ -210,6 +210,15 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
     protected ImageByte4 renderedScene;
     protected View sceneView;
     protected ImageFloat sceneDepths;
+
+    // used to replace Float6.scale
+    private static FloatArray scale(FloatArray fl, float value) {
+        final FloatArray result = new FloatArray(6);
+        for (int i = 0; i < 6; i++) {
+            result.set(i, fl.get(i) * value);
+        }
+        return result;
+    }
 
     public AbstractPipeline(T config) {
         this.config = config;
@@ -434,13 +443,23 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         /**
          * configure raycast (render model)
          */
-        preTrans = new FloatSE3(new Float6(0, 0, -volumeDims.getX(), 0, 0, 0)).toMatrix4();
-        Float6 value = new Float6(.5f, .5f, .5f, 0, 0, 0);
-        value = Float6.scale(value, volumeDims.getX());
+        FloatArray float6 = new FloatArray(6);
+        float6.set(0, 0);
+        float6.set(1, 0);
+        float6.set(2, -volumeDims.getX());
+        float6.set(3, 0);
+        float6.set(4, 0);
+        float6.set(5, 0);
+
+        preTrans = new FloatSE3(float6).toMatrix4();
+        //Float6 value = new Float6(.5f, .5f, .5f, 0, 0, 0);
+        FloatArray value = new FloatArray(6);
+
+        value = scale(value, volumeDims.getX()); //Float6.scale(value, volumeDims.getX());
 
         trans = new FloatSE3(value).toMatrix4();
 
-        rot = new FloatSE3(new Float6()).toMatrix4();
+        rot = new FloatSE3(new FloatArray(6)).toMatrix4();
 
         renderedScene = new ImageByte4(inputSize.getX(), inputSize.getY());
 
@@ -552,10 +571,10 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
                     info(String.format("level: %d", level));
                     info(String.format("iteration: %d", i));
                     info(String.format("size: {%d,%d}", pyramidVerticies[level].X(), pyramidVerticies[level].Y()));
-                    info(String.format("verticies: " + pyramidVerticies[level].summerise()));
-                    info(String.format("normals: " + pyramidNormals[level].summerise()));
-                    info(String.format("ref verticies: " + referenceView.getVerticies().summerise()));
-                    info(String.format("ref normals: " + referenceView.getNormals().summerise()));
+                    info(String.format("verticies: " + pyramidVerticies[level].summarise()));
+                    info(String.format("normals: " + pyramidNormals[level].summarise()));
+                    info(String.format("ref verticies: " + referenceView.getVerticies().summarise()));
+                    info(String.format("ref normals: " + referenceView.getNormals().summarise()));
                     info(String.format("pose: \n%s\n", pose.toString(FloatOps.FMT_4_EM)));
                 }
 

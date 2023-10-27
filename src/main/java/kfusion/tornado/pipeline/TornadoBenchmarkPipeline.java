@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -79,8 +80,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     private Matrix4x4Float[] scaledInvKs;
     private Matrix4x4Float pyramidPose;
 
-    private float[] icpResultIntermediate1;
-    private float[] icpResult;
+    private FloatArray icpResultIntermediate1;
+    private FloatArray icpResult;
 
     private int cus;
 
@@ -203,7 +204,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         pyramidDepths[0] = filteredDepthImage;
         pyramidVerticies[0] = currentView.getVerticies();
         pyramidNormals[0] = currentView.getNormals();
-        icpResult = new float[32];
+        icpResult = new FloatArray(32);
 
         final Matrix4x4Float scenePose = sceneView.getPose();
 
@@ -240,9 +241,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         estimatePoseGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, projectReference);
 
         if (config.useCustomReduce()) {
-            icpResultIntermediate1 = new float[cus * 32];
+            icpResultIntermediate1 = new FloatArray(cus * 32);
         } else if (config.useSimpleReduce()) {
-            icpResultIntermediate1 = new float[config.getReductionSize() * 32];
+            icpResultIntermediate1 = new FloatArray(config.getReductionSize() * 32);
         }
 
         trackingPyramidGraphs = new TaskGraph[iterations];
@@ -383,7 +384,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                     for (int k = 1; k < cus; k++) {
                         final int index = k * 32;
                         for (int j = 0; j < 32; j++) {
-                            icpResultIntermediate1[j] += icpResultIntermediate1[index + j];
+                            icpResultIntermediate1.set(j, icpResultIntermediate1.get(j) + icpResultIntermediate1.get(index + j));
                         }
                     }
                     trackingResult.resultImage = pyramidTrackingResults[level];
