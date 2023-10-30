@@ -564,7 +564,6 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
 
                 boolean updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, pyramidTrackingResults[level], pose, 1e-5f);
 
-                // System.out.printf("tracking: %s\n",trackingResult.toString());
                 if (config.debug()) {
                     info("solve: %s", trackingResult.toString());
                 }
