@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -552,10 +552,10 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
                     info(String.format("level: %d", level));
                     info(String.format("iteration: %d", i));
                     info(String.format("size: {%d,%d}", pyramidVerticies[level].X(), pyramidVerticies[level].Y()));
-                    info(String.format("verticies: " + pyramidVerticies[level].summerise()));
-                    info(String.format("normals: " + pyramidNormals[level].summerise()));
-                    info(String.format("ref verticies: " + referenceView.getVerticies().summerise()));
-                    info(String.format("ref normals: " + referenceView.getNormals().summerise()));
+                    info(String.format("verticies: " + pyramidVerticies[level].summarise()));
+                    info(String.format("normals: " + pyramidNormals[level].summarise()));
+                    info(String.format("ref verticies: " + referenceView.getVerticies().summarise()));
+                    info(String.format("ref normals: " + referenceView.getNormals().summarise()));
                     info(String.format("pose: \n%s\n", pose.toString(FloatOps.FMT_4_EM)));
                 }
 
@@ -585,7 +585,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
 
             }
         }
-        
+
         // if the tracking result meets our constraints, update the current view with
         // the estimated
         // pose
