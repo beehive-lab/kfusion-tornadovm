@@ -485,7 +485,7 @@ public class IterativeClosestPoint {
         MatrixMath.sgemm(delta, currentPose, result.pose);
 
         if (config.debug()) {
-            System.out.printf("*newPose:\n%s\n", result.pose.toString());
+            System.out.printf("*newPose:\n%s\n", result.pose);
         }
 
         return (length(result.x) < icpThreshold);
@@ -498,14 +498,14 @@ public class IterativeClosestPoint {
     public static float dot(FloatArray a, FloatArray b) {
         float result = 0f;
         final FloatArray m = mult(a, b);
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < a.getSize(); i++) {
             result += m.get(i);
         }
         return result;
     }
 
     public static FloatArray mult(FloatArray a, FloatArray b) {
-        final FloatArray result = new FloatArray(6);
+        final FloatArray result = new FloatArray(a.getSize());
         for (int i = 0; i < result.getSize(); i++) {
             result.set(i, a.get(i) * b.get(i));
         }
