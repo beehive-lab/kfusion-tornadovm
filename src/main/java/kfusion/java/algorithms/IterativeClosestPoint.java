@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -139,12 +139,13 @@ public class IterativeClosestPoint {
         }
 
         // float base[0] += error^2
-        sums.set(0, sums.get(0) + (error * error));
+        sums.set(0, (sums.get(0) + (error * error)));
 
         // System.out.printf("row error: error=%.4e, acc=%.4e\n",error,base.get(0));
         // Float6 base(+1) += row.scale(error)
         for (int i = 0; i < 6; i++) {
-            sums.set(i + 1, sums.get(i + 1) + error * value.get(i));
+            float val = sums.get(i + 1) + error * value.get(i);
+            sums.set(i + 1, val);
         }
 
         // is this jacobian transpose jacobian?
@@ -211,7 +212,8 @@ public class IterativeClosestPoint {
                 // System.out.printf("row error: error=%.4e, acc=%.4e\n",error,base.get(0));
                 // Float6 base(+1) += row.scale(error)
                 for (int i = 0; i < 6; i++) {
-                    sums.set(i + 1, sums.get(i + 1) + error * row.get(i));
+                    float val = sums.get(i + 1) + error * row.get(i);
+                    sums.set(i + 1, val);
                 }
 
                 // is this jacobian transpose jacobian?
@@ -416,7 +418,7 @@ public class IterativeClosestPoint {
     public static float dot(FloatArray a, FloatArray b) {
         float result = 0f;
         final FloatArray m = mult(a, b);
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < a.getSize(); i++) {
             result += m.get(i);
         }
         return result;

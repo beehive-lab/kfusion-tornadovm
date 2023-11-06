@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -311,7 +311,7 @@ public class IterativeClosestPoint {
                 // acc=%.4e\n",error,base.get(0));
                 // Float6 base(+1) += row.scale(error)
                 for (int i = 0; i < 6; i++) {
-                    sums.set(i + 1, sums.get(i + 1) + error * row.get(i));
+                    sums.set(i + 1, (sums.get(i + 1) + error * row.get(i)));
                 }
 
                 // is this jacobian transpose jacobian?

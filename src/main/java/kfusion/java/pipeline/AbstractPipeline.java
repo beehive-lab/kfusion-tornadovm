@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -212,10 +212,10 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
     protected ImageFloat sceneDepths;
 
     // used to replace Float6.scale
-    private static FloatArray scale(FloatArray fl, float value) {
+    private static FloatArray scale(FloatArray array, float value) {
         final FloatArray result = new FloatArray(6);
-        for (int i = 0; i < 6; i++) {
-            result.set(i, fl.get(i) * value);
+        for (int i = 0; i < result.getSize(); i++) {
+            result.set(i, array.get(i) * value);
         }
         return result;
     }
@@ -454,12 +454,20 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         preTrans = new FloatSE3(float6).toMatrix4();
         //Float6 value = new Float6(.5f, .5f, .5f, 0, 0, 0);
         FloatArray value = new FloatArray(6);
+        value.set(0, 5.0f);
+        value.set(1, 5.0f);
+        value.set(2, 5.0f);
+        value.set(3, 0.0f);
+        value.set(4, 0.0f);
+        value.set(5, 0.0f);
 
         value = scale(value, volumeDims.getX()); //Float6.scale(value, volumeDims.getX());
 
         trans = new FloatSE3(value).toMatrix4();
 
-        rot = new FloatSE3(new FloatArray(6)).toMatrix4();
+        FloatArray aux = new FloatArray(6);
+        aux.init(0.0f);
+        rot = new FloatSE3(aux).toMatrix4();
 
         renderedScene = new ImageByte4(inputSize.getX(), inputSize.getY());
 
@@ -604,7 +612,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
 
             }
         }
-        
+
         // if the tracking result meets our constraints, update the current view with
         // the estimated
         // pose

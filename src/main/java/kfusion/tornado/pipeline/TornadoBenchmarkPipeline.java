@@ -384,7 +384,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                     for (int k = 1; k < cus; k++) {
                         final int index = k * 32;
                         for (int j = 0; j < 32; j++) {
-                            icpResultIntermediate1.set(j, icpResultIntermediate1.get(j) + icpResultIntermediate1.get(index + j));
+                            float value = icpResultIntermediate1.get(j) + icpResultIntermediate1.get(index + j);
+                            icpResultIntermediate1.set(j, value);
                         }
                     }
                     trackingResult.resultImage = pyramidTrackingResults[level];
@@ -407,7 +408,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
         // If the tracking result meets our constraints, update the current view
         // with the estimated pose
-        boolean hasTracked = trackingResult.getRSME() < RSMEThreshold && trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold;
+        boolean hasTracked = (trackingResult.getRSME() < RSMEThreshold) && (trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold);
         if (hasTracked) {
             currentView.getPose().set(trackingResult.getPose());
         }
