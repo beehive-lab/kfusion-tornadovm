@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -133,31 +133,31 @@ public class KfusionConfig {
     public KfusionConfig() {
         // init FloatArrays
         downTrans.set(0, 0.0f);
-        downTrans.set(1, 0f);
-        downTrans.set(2, 0f);
-        downTrans.set(3, 0f);
-        downTrans.set(4, 0f);
+        downTrans.set(1, 0.0f);
+        downTrans.set(2, 0.0f);
+        downTrans.set(3, 0.0f);
+        downTrans.set(4, 0.0f);
         downTrans.set(5, 0.1f);
 
         leftTrans.set(0, 0.0f);
-        leftTrans.set(1, 0f);
-        leftTrans.set(2, 0f);
-        leftTrans.set(3, 0f);
+        leftTrans.set(1, 0.0f);
+        leftTrans.set(2, 0.0f);
+        leftTrans.set(3, 0.0f);
         leftTrans.set(4, 0.1f);
-        leftTrans.set(5, 0f);
+        leftTrans.set(5, 0.0f);
 
         rightTrans.set(0, 0.0f);
-        rightTrans.set(1, 0f);
-        rightTrans.set(2, 0f);
-        rightTrans.set(3, 0f);
+        rightTrans.set(1, 0.0f);
+        rightTrans.set(2, 0.0f);
+        rightTrans.set(3, 0.0f);
         rightTrans.set(4, -0.1f);
-        rightTrans.set(5, 0f);
+        rightTrans.set(5, 0.0f);
 
         upTrans.set(0, 0.0f);
-        upTrans.set(1, 0f);
-        upTrans.set(2, 0f);
-        upTrans.set(3, 0f);
-        upTrans.set(4, 0f);
+        upTrans.set(1, 0.0f);
+        upTrans.set(2, 0.0f);
+        upTrans.set(3, 0.0f);
+        upTrans.set(4, 0.0f);
         upTrans.set(5, -0.1f);
 
         inputSize = new Int2();
