@@ -232,8 +232,11 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         camera = new Float4();
         scaledCamera = new Float4();
         K = new Matrix4x4Float();
+        K.clear();
         invK = new Matrix4x4Float();
+        invK.clear();
         scaledInvK = new Matrix4x4Float();
+        scaledInvK.clear();
 
         /**
          * static volume parameters
@@ -241,11 +244,14 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         volumeSize = new Int3();
         volumeDims = new Float3();
         referencePose = new Matrix4x4Float();
+        referencePose.clear();
         invReferencePose = new Matrix4x4Float();
+        invReferencePose.clear();
         /**
          * static rendering parameters
          */
         modelPose = new Matrix4x4Float();
+        modelPose.clear();
         light = new Float3();
         ambient = new Float3();
 
@@ -253,7 +259,9 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
          * misc parameters
          */
         invTrack = new Matrix4x4Float();
+        invTrack.clear();
         projectReference = new Matrix4x4Float();
+        projectReference.clear();
         integrateDelta = new Float3();
         tmp = new Float3();
         cameraDelta = new Float3();

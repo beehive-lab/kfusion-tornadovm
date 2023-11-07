@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,11 +27,11 @@ package kfusion.java.devices;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 
 public interface VideoCamera {
-    public boolean pollVideo(ImageByte3 buffer);
+    boolean pollVideo(ImageByte3 buffer);
 
-    public void skipVideoFrame();
+    void skipVideoFrame();
 
-    public int getHeight();
+    int getHeight();
 
-    public int getWidth();
+    int getWidth();
 }
