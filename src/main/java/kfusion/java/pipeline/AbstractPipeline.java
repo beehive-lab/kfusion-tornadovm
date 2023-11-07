@@ -113,7 +113,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
     /**
      * bilateral filter
      */
-    protected float[] gaussian;
+    protected FloatArray gaussian;
     protected final Float3 integrateDelta;
     protected int integrationCount;
 
@@ -310,7 +310,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         radius = config.getRadius();
         delta = config.getDelta();
 
-        gaussian = new float[(radius * 2) + 1];
+        gaussian = new FloatArray((radius * 2) + 1);
         generateGaussian();
 
         filteredDepthImage = new ImageFloat(scaledInputSize.getX(), scaledInputSize.getY());
@@ -454,9 +454,9 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         preTrans = new FloatSE3(float6).toMatrix4();
         //Float6 value = new Float6(.5f, .5f, .5f, 0, 0, 0);
         FloatArray value = new FloatArray(6);
-        value.set(0, 5.0f);
-        value.set(1, 5.0f);
-        value.set(2, 5.0f);
+        value.set(0, 0.5f);
+        value.set(1, 0.5f);
+        value.set(2, 0.5f);
         value.set(3, 0.0f);
         value.set(4, 0.0f);
         value.set(5, 0.0f);
@@ -692,9 +692,9 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
     }
 
     private void generateGaussian() {
-        for (int i = 0; i < gaussian.length; i++) {
+        for (int i = 0; i < gaussian.getSize(); i++) {
             final int x = i - radius;
-            gaussian[i] = (float) Math.exp(-(x * x) / (2 * delta * delta));
+            gaussian.set(i, (float) Math.exp(-(x * x) / (2 * delta * delta)));
         }
     }
 

@@ -191,13 +191,7 @@ public class IterativeClosestPoint {
 
         final int base = startIndex + 7;
         final int info = startIndex + 28;
-
-        int N = 6;
-
-        Float8 valueFloat8 = trackingResults.get(resultIndex);
-
-        // XXX: Due to a bug in Tornado, explicit copy does not currently work.
-        // float[] value = valueFloat8.getStorage();
+        final int N = 6;
 
         final FloatArray value = getPlainArray(trackingResults.get(resultIndex));
 
@@ -227,9 +221,12 @@ public class IterativeClosestPoint {
         final float error = value.getS6();
 
         if (result < 1) {
-            sums.set(info + 1, sums.get(info + 1) + ((result == -4) ? 1 : 0));
-            sums.set(info + 2, sums.get(info + 2) + ((result == -5) ? 1 : 0));
-            sums.set(info + 3, sums.get(info + 3) + ((result > -4) ? 1 : 0));
+            int condA = ((result == -4) ? 1 : 0);
+            int condB = ((result == -5) ? 1 : 0);
+            int condC = ((result > -4) ? 1 : 0);
+            sums.set(info + 1, sums.get(info + 1) + condA);
+            sums.set(info + 2, sums.get(info + 2) + condB);
+            sums.set(info + 3, sums.get(info + 3) + condC);
             return;
         }
 
