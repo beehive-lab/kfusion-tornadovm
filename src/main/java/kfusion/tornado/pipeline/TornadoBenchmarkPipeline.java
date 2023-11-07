@@ -200,6 +200,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         info("max bins per cu  : %d\n", maxBinsPerCU);
 
         pyramidPose = new Matrix4x4Float();
+        pyramidPose.clear();
         pyramidDepths[0] = filteredDepthImage;
         pyramidVerticies[0] = currentView.getVerticies();
         pyramidNormals[0] = currentView.getNormals();
@@ -219,6 +220,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         for (int i = 0; i < iterations; i++) {
             final Float4 cameraDup = Float4.mult(scaledCamera, 1f / (1 << i));
             scaledInvKs[i] = new Matrix4x4Float();
+            scaledInvKs[i].clear();
             getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
         }
 
@@ -272,12 +274,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 									tornadoDevice,
 									new int[]{numWgs})
 								  .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
-
-//				TaskMetaDataInterface meta = trackingPyramidGraphs[i].getTask("icp" + i + "." + "customReduce" + i).meta();
-//				String compilerFlags = meta.getCompilerFlags();
-//				meta.setCompilerFlags(compilerFlags + " -DWGS=" + maxBinsPerCU);
-//				meta.setGlobalWork(new long[]{maxwgs});
-//				meta.setLocalWork(new long[]{maxBinsPerCU});
 			} else if (config.useSimpleReduce()) {
 				trackingPyramidGraphs[i]
 						.task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
