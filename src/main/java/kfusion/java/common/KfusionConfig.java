@@ -131,6 +131,12 @@ public class KfusionConfig {
     private int renderingRate;
 
     public KfusionConfig() {
+
+        downTrans.clear();
+        leftTrans.clear();
+        rightTrans.clear();
+        upTrans.clear();
+
         // init FloatArrays
         downTrans.set(0, 0.0f);
         downTrans.set(1, 0.0f);
@@ -168,15 +174,22 @@ public class KfusionConfig {
         offset = new Float3();
         iterations = new int[3];
         rotParams = new FloatArray(6);
+        rotParams.clear();
         transParams = new FloatArray(6);
+        transParams.clear();
         preTransParams = new FloatArray(6);
+        preTransParams.clear();
         initialPositionFactors = new Float3();
         pose = new FloatArray(6);
+        pose.clear();
         camera = new Float4();
 
         trans = new Matrix4x4Float();
+        trans.clear();
         preTrans = new Matrix4x4Float();
+        preTrans.clear();
         rot = new Matrix4x4Float();
+        rot.clear();
 
         loadSettings();
 
