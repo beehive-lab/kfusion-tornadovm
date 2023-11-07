@@ -117,9 +117,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             boolean haveDepthImage = depthCamera.pollDepth(depthImageInput);
             videoCamera.skipVideoFrame();
 
-            // @SuppressWarnings("unused")
-            // boolean haveVideoImage = videoCamera.pollVideo(videoImageInput);
-
             // read all frames
             while (haveDepthImage) {
 
