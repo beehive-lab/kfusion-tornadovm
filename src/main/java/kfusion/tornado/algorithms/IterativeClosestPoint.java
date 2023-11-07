@@ -348,7 +348,9 @@ public class IterativeClosestPoint {
 
     public static void solve(final FloatArray result, final FloatArray vals, int offset) {
         final Matrix2DFloat C = new Matrix2DFloat(6, 6);
+        C.clear();
         final FloatArray b = new FloatArray(6);
+        b.clear();
 
         for (int i = 0; i < 6; i++) {
             b.set(i, vals.get(i + offset)); // vals.subVector(0,
@@ -444,6 +446,7 @@ public class IterativeClosestPoint {
     public static <T extends KfusionConfig> boolean estimateNewPose(final T config, final TrackingResult result, final ImageFloat8 trackingResults, final Matrix4x4Float currentPose,
             final float icpThreshold) {
         final FloatArray icpResults = new FloatArray(32);
+        icpResults.clear();
         reduce(icpResults, trackingResults);
         result.resultImage = trackingResults;
         return estimateNewPose(config, result, icpResults, currentPose, icpThreshold);

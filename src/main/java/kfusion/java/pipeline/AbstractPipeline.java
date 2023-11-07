@@ -414,7 +414,6 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         pyramidDepths = new ImageFloat[pyramidIterations.length];
         pyramidVerticies = new ImageFloat3[pyramidIterations.length];
         pyramidNormals = new ImageFloat3[pyramidIterations.length];
-
         pyramidTrackingResults = new ImageFloat8[pyramidIterations.length];
 
         info("image pyramid: number of levels = %d", pyramidIterations.length);
@@ -695,7 +694,9 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
 
     public void updateUserPose() {
         final Matrix4x4Float tmp = new Matrix4x4Float();
+        tmp.clear();
         final Matrix4x4Float tmp2 = new Matrix4x4Float();
+        tmp2.clear();
 
         if (config.getAndClearRotateNegativeX()) {
             updateRotation(rot, config.getUptrans());
