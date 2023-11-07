@@ -236,7 +236,6 @@ public class IterativeClosestPoint {
         // float base[0] += error^2
         sums.set(startIndex, sums.get(startIndex) + (error * error));
 
-        // Float6 base(+1) += row.scale(error)
         // for (int i = 0; i < 6; i++) {
         // sums[startIndex + i + 1] += error * value.get(i);
         // sums[startIndex + i + 1] = value.get(i);
