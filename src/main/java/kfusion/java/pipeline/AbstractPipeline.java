@@ -220,13 +220,13 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         return result;
     }
 
-    public AbstractPipeline(T config) {
+    protected AbstractPipeline(T config) {
         this.config = config;
 
         inputSize = new Int2();
         scaledInputSize = new Int2();
 
-        /**
+        /*
          * static camera parameters
          */
         camera = new Float4();
@@ -238,7 +238,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         scaledInvK = new Matrix4x4Float();
         scaledInvK.clear();
 
-        /**
+        /*
          * static volume parameters
          */
         volumeSize = new Int3();
@@ -247,7 +247,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         referencePose.clear();
         invReferencePose = new Matrix4x4Float();
         invReferencePose.clear();
-        /**
+        /*
          * static rendering parameters
          */
         modelPose = new Matrix4x4Float();
@@ -255,7 +255,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         light = new Float3();
         ambient = new Float3();
 
-        /**
+        /*
          * misc parameters
          */
         invTrack = new Matrix4x4Float();
@@ -271,7 +271,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
 
     public void configure(final Device device) {
 
-        /**
+        /*
          * configure devices
          */
         info("Setting depth camera...");
@@ -280,29 +280,31 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         info("Setting video camera...");
         config.setVideoInput(device);
 
-        /**
+        /*
          * configure depth input
          */
         if (config.getDepthInput() != null) {
             depthCamera = config.getDepthInput();
             depthImageInput = new ImageFloat(depthCamera.getWidth(), depthCamera.getHeight());
+            depthImageInput.clear();
             info("depth input image: {%d, %d}\n", depthImageInput.X(), depthImageInput.Y());
         } else {
             warn("No depth input available: disabling depth");
         }
 
-        /**
+        /*
          * configure video input
          */
         if (config.getVideoInput() != null) {
             videoCamera = config.getVideoInput();
             videoImageInput = new ImageByte3(videoCamera.getWidth(), videoCamera.getHeight());
+            videoImageInput.clear();
             info("video input image: {%d, %d}\n", videoImageInput.X(), videoImageInput.Y());
         } else {
             warn("No video input available: disabling video");
         }
 
-        /**
+        /*
          * configure scaling and filtering
          */
         info("depth camera: %s", depthCamera.toString());
@@ -319,20 +321,25 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         delta = config.getDelta();
 
         gaussian = new FloatArray((radius * 2) + 1);
+        gaussian.clear();
         generateGaussian();
 
         filteredDepthImage = new ImageFloat(scaledInputSize.getX(), scaledInputSize.getY());
+        filteredDepthImage.clear();
         info("filtered depth image: {%d, %d}", filteredDepthImage.X(), filteredDepthImage.Y());
 
         /**
          * configure reference view
          */
         final Matrix4x4Float referenceViewPose = new Matrix4x4Float();
+        referenceViewPose.clear();
 
         final ImageFloat3 referenceViewVerticies = new ImageFloat3(scaledInputSize.getX(), scaledInputSize.getY());
+        referenceViewVerticies.clear();
         info("ref view verticies: {%d, %d}", referenceViewVerticies.X(), referenceViewVerticies.Y());
 
         final ImageFloat3 referenceViewNormals = new ImageFloat3(scaledInputSize.getX(), scaledInputSize.getY());
+        referenceViewNormals.clear();
         info("ref view normals  : {%d, %d}", referenceViewNormals.X(), referenceViewNormals.Y());
 
         referenceView = new View(referenceViewNormals, referenceViewVerticies, referenceViewPose);
@@ -341,12 +348,15 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
          * configure current view
          */
         final ImageFloat3 currentViewNormals = new ImageFloat3(scaledInputSize.getX(), scaledInputSize.getY());
+        currentViewNormals.clear();
         info("current view normals image: {%d, %d}", currentViewNormals.X(), currentViewNormals.Y());
 
         final ImageFloat3 currentViewVerticies = new ImageFloat3(scaledInputSize.getX(), scaledInputSize.getY());
+        currentViewVerticies.clear();
         info("current view verticies image: {%d, %d}", currentViewVerticies.X(), currentViewVerticies.Y());
 
         final Matrix4x4Float currentViewPose = new Matrix4x4Float();
+        currentViewPose.clear();
         info("intial pose:\t%s", config.getInitialPose());
 
         currentViewPose.set(FloatSE3.toMatrix4(config.getInitialPose()));
@@ -374,6 +384,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         volumeSize.set(config.getVolumeSize());
 
         volume = new VolumeShort2(volumeSize.getX(), volumeSize.getY(), volumeSize.getZ());
+        volume.clear();
 
         initVolume(new Float2(1f, 0f));
 
@@ -386,9 +397,11 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
          * configure input scaling of depth and video images
          */
         scaledDepthImage = new ImageFloat(scaledInputSize.getX(), scaledInputSize.getY());
+        scaledDepthImage.clear();
         info("scaled depth image: {%d, %d}", scaledDepthImage.X(), scaledDepthImage.Y());
 
         scaledVideoImage = new ImageByte3(scaledInputSize.getX(), scaledInputSize.getY());
+        scaledVideoImage.clear();
         info("scaled video image: {%d, %d}", scaledVideoImage.X(), scaledVideoImage.Y());
 
         /**
@@ -410,9 +423,13 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
             final int y = scaledInputSize.getY() >>> i;
             info("image pyramid: level=%d, {%d,%d}", i, x, y);
             pyramidDepths[i] = new ImageFloat(x, y);
+            pyramidDepths[i].clear();
             pyramidVerticies[i] = new ImageFloat3(x, y);
+            pyramidVerticies[i].clear();
             pyramidNormals[i] = new ImageFloat3(x, y);
+            pyramidNormals[i].clear();
             pyramidTrackingResults[i] = new ImageFloat8(x, y);
+            pyramidTrackingResults[i].clear();
         }
 
         /**
@@ -452,6 +469,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
          * configure raycast (render model)
          */
         FloatArray float6 = new FloatArray(6);
+        float6.clear();
         float6.set(0, 0);
         float6.set(1, 0);
         float6.set(2, -volumeDims.getX());
@@ -474,10 +492,11 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         trans = new FloatSE3(value).toMatrix4();
 
         FloatArray aux = new FloatArray(6);
-        aux.init(0.0f);
+        aux.clear();
         rot = new FloatSE3(aux).toMatrix4();
 
         renderedScene = new ImageByte4(inputSize.getX(), inputSize.getY());
+        renderedScene.clear();
 
         info("scene image: {%d, %d}", renderedScene.X(), renderedScene.Y());
 
@@ -488,6 +507,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         info("scene normals  : {%d, %d}", normals.X(), normals.Y());
 
         sceneDepths = new ImageFloat(inputSize.getX(), inputSize.getY());
+        sceneDepths.clear();
         info("scene depth  : {%d, %d}", sceneDepths.X(), sceneDepths.Y());
 
         final Matrix4x4Float view = new FloatSE3(config.getInitialPose()).toMatrix4();
@@ -504,15 +524,19 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         ambient.set(config.getAmbient());
 
         renderedDepthImage = new ImageByte4(scaledInputSize.getX(), scaledInputSize.getY());
+        renderedDepthImage.clear();
         info("rendered depth image: {%d, %d}", renderedDepthImage.X(), renderedDepthImage.Y());
 
         renderedCurrentViewImage = new ImageByte4(scaledInputSize.getX(), scaledInputSize.getY());
+        renderedCurrentViewImage.clear();
         info("rendered current view image: {%d, %d}", renderedCurrentViewImage.X(), renderedCurrentViewImage.Y());
 
         renderedReferenceViewImage = new ImageByte4(scaledInputSize.getX(), scaledInputSize.getY());
+        renderedReferenceViewImage.clear();
         info("rendered ref view image: {%d, %d}", renderedReferenceViewImage.X(), renderedReferenceViewImage.Y());
 
         renderedTrackingImage = new ImageByte3(scaledInputSize.getX(), scaledInputSize.getY());
+        renderedTrackingImage.clear();
 
         info("rendered tracking image: {%d, %d}", renderedTrackingImage.X(), renderedTrackingImage.Y());
 
