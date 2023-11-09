@@ -63,8 +63,7 @@ public class TrackingResult {
 
 	public TrackingResult(){
 		pose = new Matrix4x4Float();
-		x = new FloatArray(6);//Float6();
-		x.clear();
+		x = new FloatArray(6);
 		tracked = 0;
 		tooFar = 0;
 		wrongNormal = 0;

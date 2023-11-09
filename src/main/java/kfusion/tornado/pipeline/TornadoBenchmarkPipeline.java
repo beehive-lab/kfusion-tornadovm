@@ -197,7 +197,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         info("max bins per cu  : %d\n", maxBinsPerCU);
 
         pyramidPose = new Matrix4x4Float();
-        pyramidPose.clear();
         pyramidDepths[0] = filteredDepthImage;
         pyramidVerticies[0] = currentView.getVerticies();
         pyramidNormals[0] = currentView.getNormals();

@@ -48,17 +48,13 @@ import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 public class KfusionConfig {
     protected static final Properties settings = new Properties(System.getProperties());
 
-    final private static FloatArray downTrans = new FloatArray(6);
-    //new float[] { 0.0f, 0f, 0f, 0f, 0f, 0.1f });
+    final private static FloatArray downTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0f, 0.1f);
 
-    final private static FloatArray leftTrans = new FloatArray(6);
-            //new float[] { 0.0f, 0f, 0f, 0f, 0.1f, 0f });
+    final private static FloatArray leftTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0.1f, 0f );
 
-    final private static FloatArray rightTrans = new FloatArray(6);
-            //new float[] { 0.0f, 0f, 0f, 0f, -0.1f, 0f });
+    final private static FloatArray rightTrans = new FloatArray(0.0f, 0f, 0f, 0f, -0.1f, 0f);
 
-    final private static FloatArray upTrans = new FloatArray(6);
-            //new float[] { 0.0f, 0f, 0f, 0f, 0f, -0.1f });
+    final private static FloatArray upTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0f, -0.1f);
 
     private boolean debug;
     private boolean printFPS;
@@ -131,41 +127,6 @@ public class KfusionConfig {
     private int renderingRate;
 
     public KfusionConfig() {
-
-        downTrans.clear();
-        leftTrans.clear();
-        rightTrans.clear();
-        upTrans.clear();
-
-        // init FloatArrays
-        downTrans.set(0, 0.0f);
-        downTrans.set(1, 0.0f);
-        downTrans.set(2, 0.0f);
-        downTrans.set(3, 0.0f);
-        downTrans.set(4, 0.0f);
-        downTrans.set(5, 0.1f);
-
-        leftTrans.set(0, 0.0f);
-        leftTrans.set(1, 0.0f);
-        leftTrans.set(2, 0.0f);
-        leftTrans.set(3, 0.0f);
-        leftTrans.set(4, 0.1f);
-        leftTrans.set(5, 0.0f);
-
-        rightTrans.set(0, 0.0f);
-        rightTrans.set(1, 0.0f);
-        rightTrans.set(2, 0.0f);
-        rightTrans.set(3, 0.0f);
-        rightTrans.set(4, -0.1f);
-        rightTrans.set(5, 0.0f);
-
-        upTrans.set(0, 0.0f);
-        upTrans.set(1, 0.0f);
-        upTrans.set(2, 0.0f);
-        upTrans.set(3, 0.0f);
-        upTrans.set(4, 0.0f);
-        upTrans.set(5, -0.1f);
-
         inputSize = new Int2();
         volumeSize = new Int3();
         volumeDimensions = new Float3();
@@ -174,22 +135,15 @@ public class KfusionConfig {
         offset = new Float3();
         iterations = new int[3];
         rotParams = new FloatArray(6);
-        rotParams.clear();
         transParams = new FloatArray(6);
-        transParams.clear();
         preTransParams = new FloatArray(6);
-        preTransParams.clear();
         initialPositionFactors = new Float3();
         pose = new FloatArray(6);
-        pose.clear();
         camera = new Float4();
 
         trans = new Matrix4x4Float();
-        trans.clear();
         preTrans = new Matrix4x4Float();
-        preTrans.clear();
         rot = new Matrix4x4Float();
-        rot.clear();
 
         loadSettings();
 
@@ -670,7 +624,6 @@ public class KfusionConfig {
         for (int i = 0; i < value.getSize(); i++) {
             pose.set(i, value.get(i));
         }
-       // pose.set(value);
     }
 
     public void setPreTrans(final Matrix4x4Float value) {
@@ -681,7 +634,6 @@ public class KfusionConfig {
         for (int i = 0; i < value.getSize(); i++) {
             preTransParams.set(i, value.get(i));
         }
-        //preTransParams.set(value);
     }
 
     public void setQuit() {

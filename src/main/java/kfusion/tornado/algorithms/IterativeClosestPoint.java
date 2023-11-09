@@ -230,7 +230,6 @@ public class IterativeClosestPoint {
             return;
         }
 
-        // float base[0] += error^2
         sums.set(startIndex, sums.get(startIndex) + (error * error));
 
 
@@ -296,12 +295,8 @@ public class IterativeClosestPoint {
                     continue;
                 }
 
-                // float base[0] += error^2
                 sums.set(0, sums.get(0) + (error * error));
 
-                // System.out.printf("row error: error=%.4e,
-                // acc=%.4e\n",error,base.get(0));
-                // Float6 base(+1) += row.scale(error)
                 for (int i = 0; i < 6; i++) {
                     sums.set(i + 1, (sums.get(i + 1) + error * row.get(i)));
                 }
@@ -351,8 +346,7 @@ public class IterativeClosestPoint {
         final FloatArray b = new FloatArray(6);
 
         for (int i = 0; i < 6; i++) {
-            b.set(i, vals.get(i + offset)); // vals.subVector(0,
-                                        // 6).asBuffer().array());
+            b.set(i, vals.get(i + offset));
         }
         makeJTJ(C, vals, offset + 6);
 

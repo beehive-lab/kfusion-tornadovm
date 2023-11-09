@@ -138,11 +138,8 @@ public class IterativeClosestPoint {
             return;
         }
 
-        // float base[0] += error^2
         sums.set(0, (sums.get(0) + (error * error)));
 
-        // System.out.printf("row error: error=%.4e, acc=%.4e\n",error,base.get(0));
-        // Float6 base(+1) += row.scale(error)
         for (int i = 0; i < 6; i++) {
             float val = sums.get(i + 1) + error * value.get(i);
             sums.set(i + 1, val);
@@ -206,11 +203,8 @@ public class IterativeClosestPoint {
                     continue;
                 }
 
-                // float base[0] += error^2
                 sums.set(0, sums.get(0) + (error * error));
 
-                // System.out.printf("row error: error=%.4e, acc=%.4e\n",error,base.get(0));
-                // Float6 base(+1) += row.scale(error)
                 for (int i = 0; i < 6; i++) {
                     float val = sums.get(i + 1) + error * row.get(i);
                     sums.set(i + 1, val);
@@ -381,12 +375,8 @@ public class IterativeClosestPoint {
 
         if (config.debug()) {
             System.out.printf("\tvalues: %s\n", new VectorFloat(icpResults).toString("%e "));
-            // System.out.printf("values{1,27}: %s\n", icpResults.subVector(1, 21)
-            // .toString("%e "));
         }
 
-        // System.out.printf("icpResults[1:22] -> %s\n",icpResults.subVector(1,
-        // 21).toString());
         solve(result.x, icpResults, 1);
 
         if (config.debug()) {
@@ -406,8 +396,6 @@ public class IterativeClosestPoint {
             System.out.printf("*newPose:\n%s\n", result.pose.toString());
         }
 
-        // System.out.printf("length(x): %s,
-        // %.4e\n",result.x.toString(FloatOps.fmt6e),Float6.length(result.x));
         return (length(result.x) < icpThreshold);
     }
 
