@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,6 +64,7 @@ public class TrackingResult {
 	public TrackingResult(){
 		pose = new Matrix4x4Float();
 		x = new FloatArray(6);//Float6();
+		x.clear();
 		tracked = 0;
 		tooFar = 0;
 		wrongNormal = 0;
