@@ -445,15 +445,9 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         FloatArray float6 = new FloatArray(0, 0, -volumeDims.getX(), 0, 0, 0);
 
         preTrans = new FloatSE3(float6).toMatrix4();
-        FloatArray value = new FloatArray(6);
-        value.set(0, 0.5f);
-        value.set(1, 0.5f);
-        value.set(2, 0.5f);
-        value.set(3, 0.0f);
-        value.set(4, 0.0f);
-        value.set(5, 0.0f);
+        FloatArray value = new FloatArray(.5f, .5f, .5f, 0, 0, 0);
 
-        value = scale(value, volumeDims.getX()); //Float6.scale(value, volumeDims.getX());
+        value = scale(value, volumeDims.getX());
 
         trans = new FloatSE3(value).toMatrix4();
 
