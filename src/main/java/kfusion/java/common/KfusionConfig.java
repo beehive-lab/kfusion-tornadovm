@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,21 +40,21 @@ import kfusion.java.devices.TUMRGBDevice;
 import kfusion.java.devices.VideoCamera;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.Int3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class KfusionConfig {
     protected static final Properties settings = new Properties(System.getProperties());
 
-    final private static Float6 downTrans = new Float6(new float[] { 0.0f, 0f, 0f, 0f, 0f, 0.1f });
+    final private static FloatArray downTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0f, 0.1f);
 
-    final private static Float6 leftTrans = new Float6(new float[] { 0.0f, 0f, 0f, 0f, 0.1f, 0f });
+    final private static FloatArray leftTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0.1f, 0f );
 
-    final private static Float6 rightTrans = new Float6(new float[] { 0.0f, 0f, 0f, 0f, -0.1f, 0f });
+    final private static FloatArray rightTrans = new FloatArray(0.0f, 0f, 0f, 0f, -0.1f, 0f);
 
-    final private static Float6 upTrans = new Float6(new float[] { 0.0f, 0f, 0f, 0f, 0f, -0.1f });
+    final private static FloatArray upTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0f, -0.1f);
 
     private boolean debug;
     private boolean printFPS;
@@ -88,9 +88,9 @@ public class KfusionConfig {
     private final Float3 initialPositionFactors;
 
     private final Float3 offset;
-    private final Float6 pose;
+    private final FloatArray pose;
     private final Matrix4x4Float preTrans;
-    private final Float6 preTransParams;
+    private final FloatArray preTransParams;
     private boolean quit;
 
     private int radius;
@@ -105,7 +105,7 @@ public class KfusionConfig {
 
     private boolean rotatePositiveX;
     private boolean rotatePositiveY;
-    private final Float6 rotParams;
+    private final FloatArray rotParams;
 
     private boolean drawDepth;
     private double RSMEThreshold;
@@ -119,7 +119,7 @@ public class KfusionConfig {
     private boolean stepPositiveZ;
     private float trackingThreshold;
     private final Matrix4x4Float trans;
-    private final Float6 transParams;
+    private final FloatArray transParams;
     private VideoCamera videoInput;
     private final Float3 volumeDimensions;
     private final Int3 volumeSize;
@@ -134,11 +134,11 @@ public class KfusionConfig {
         ambient = new Float3();
         offset = new Float3();
         iterations = new int[3];
-        rotParams = new Float6();
-        transParams = new Float6();
-        preTransParams = new Float6();
+        rotParams = new FloatArray(6);
+        transParams = new FloatArray(6);
+        preTransParams = new FloatArray(6);
         initialPositionFactors = new Float3();
-        pose = new Float6();
+        pose = new FloatArray(6);
         camera = new Float4();
 
         trans = new Matrix4x4Float();
@@ -286,7 +286,7 @@ public class KfusionConfig {
         return distanceThreshold;
     }
 
-    public Float6 getDowntrans() {
+    public FloatArray getDowntrans() {
         return downTrans;
     }
 
@@ -298,11 +298,11 @@ public class KfusionConfig {
         return farPlane;
     }
 
-    public Float6 getInitialPose() {
+    public FloatArray getInitialPose() {
         Float3 pos = Float3.mult(initialPositionFactors, volumeDimensions);
-        pose.setS0(pos.getX());
-        pose.setS1(pos.getY());
-        pose.setS2(pos.getZ());
+        pose.set(0, pos.getX());
+        pose.set(1, pos.getY());
+        pose.set(2, pos.getZ());
         return pose;
     }
 
@@ -318,7 +318,7 @@ public class KfusionConfig {
         return iterations;
     }
 
-    public Float6 getLefttrans() {
+    public FloatArray getLefttrans() {
         return leftTrans;
     }
 
@@ -346,7 +346,7 @@ public class KfusionConfig {
         return offset;
     }
 
-    public Float6 getPoseParams() {
+    public FloatArray getPoseParams() {
         return pose;
     }
 
@@ -354,7 +354,7 @@ public class KfusionConfig {
         return preTrans;
     }
 
-    public Float6 getPreTransParams() {
+    public FloatArray getPreTransParams() {
         return preTransParams;
     }
 
@@ -370,7 +370,7 @@ public class KfusionConfig {
         return renderingRate;
     }
 
-    public Float6 getRighttrans() {
+    public FloatArray getRighttrans() {
         return rightTrans;
     }
 
@@ -378,7 +378,7 @@ public class KfusionConfig {
         return rot;
     }
 
-    public Float6 getRotParams() {
+    public FloatArray getRotParams() {
         return rotParams;
     }
 
@@ -398,11 +398,11 @@ public class KfusionConfig {
         return trans;
     }
 
-    public Float6 getTransParams() {
+    public FloatArray getTransParams() {
         return transParams;
     }
 
-    public Float6 getUptrans() {
+    public FloatArray getUptrans() {
         return upTrans;
     }
 
@@ -464,12 +464,12 @@ public class KfusionConfig {
         offset.setY(posY);
         offset.setZ(posZ);
 
-        pose.setS0(volumeDimensions.getX() / 2f);
-        pose.setS1(volumeDimensions.getY() / 2f);
-        pose.setS2(0f);
-        pose.setS3(0f);
-        pose.setS4(0f);
-        pose.setS5(0f);
+        pose.set(0, volumeDimensions.getX() / 2f);
+        pose.set(1, volumeDimensions.getY() / 2f);
+        pose.set(2, 0f);
+        pose.set(3, 0f);
+        pose.set(4, 0f);
+        pose.set(5, 0f);
 
         dumpData = false;
 
@@ -620,16 +620,20 @@ public class KfusionConfig {
         normalThreshold = value;
     }
 
-    public void setPoseParams(final Float6 value) {
-        pose.set(value);
+    public void setPoseParams(final FloatArray value) {
+        for (int i = 0; i < value.getSize(); i++) {
+            pose.set(i, value.get(i));
+        }
     }
 
     public void setPreTrans(final Matrix4x4Float value) {
         preTrans.set(value);
     }
 
-    public void setPreTransParams(final Float6 value) {
-        preTransParams.set(value);
+    public void setPreTransParams(final FloatArray value) {
+        for (int i = 0; i < value.getSize(); i++) {
+            preTransParams.set(i, value.get(i));
+        }
     }
 
     public void setQuit() {
@@ -652,8 +656,10 @@ public class KfusionConfig {
         rot.set(value);
     }
 
-    public void setRotParams(final Float6 value) {
-        rotParams.set(value);
+    public void setRotParams(final FloatArray value) {
+        for (int i = 0; i < value.getSize(); i++) {
+            rotParams.set(i, value.get(i));
+        }
     }
 
     public void setScale(final int value) {
@@ -668,8 +674,10 @@ public class KfusionConfig {
         trans.set(value);
     }
 
-    public void setTransParams(final Float6 value) {
-        transParams.set(value);
+    public void setTransParams(final FloatArray value) {
+        for (int i = 0; i < value.getSize(); i++) {
+            transParams.set(i, value.get(i));
+        }
     }
 
     public void setVideoInput(final VideoCamera value) {

@@ -36,8 +36,8 @@ import javax.swing.border.EtchedBorder;
 import kfusion.java.common.KfusionConfig;
 import kfusion.java.numerics.Helper;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.Int3;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class VolumeConfigPanel<T extends KfusionConfig> extends JPanel implements ActionListener {
 
@@ -162,13 +162,13 @@ public class VolumeConfigPanel<T extends KfusionConfig> extends JPanel implement
 		config.setVolumeDimensions(volumeDims);
 		config.setVolumeSize(volumeSize);
 		
-		final Float6 pose = config.getInitialPose();
-		pose.setS0(volumeDims.getX() / 2f);
-		pose.setS1(volumeDims.getY() / 2f);
-		pose.setS2(0f);
-		pose.setS3(0f);
-		pose.setS4(0f);
-		pose.setS5(0f);
+		final FloatArray pose = config.getInitialPose();
+		pose.set(0, volumeDims.getX() / 2f);
+		pose.set(1, volumeDims.getY() / 2f);
+		pose.set(2, 0f);
+		pose.set(3, 0f);
+		pose.set(4, 0f);
+		pose.set(5, 0f);
 		
 		config.setScale(Helper.parseIntValue(scaleText,config.getScale()));
 		config.setNearPlane(Helper.parseFloatValue(nearPlaneText,config.getNearPlane()));

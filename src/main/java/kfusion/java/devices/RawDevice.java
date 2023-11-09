@@ -49,10 +49,11 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class RawDevice extends AbstractLogger implements Device {
 	
-    final private static Float4 CAMERA = new Float4(new float[] { 481.2f, 480f, 320f, 240f });
+    final private static Float4 CAMERA = new Float4(481.2f, 480f, 320f, 240f);
     
     private String path;
     private boolean running;

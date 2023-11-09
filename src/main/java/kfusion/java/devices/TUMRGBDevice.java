@@ -44,10 +44,11 @@ import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class TUMRGBDevice extends AbstractLogger implements Device {
     final private static float DEPTH_SCALE_FACTOR = 1e-3f;
-    final private static Float4 CAMERA = new Float4(new float[] { 481.2f, 480f, 319.5f, 239.5f });
+    final private static Float4 CAMERA = new Float4(481.2f, 480f, 319.5f, 239.5f);
 
     private final static String INDEX_FILE = "associations.txt";
     private final String groundTruthFile;

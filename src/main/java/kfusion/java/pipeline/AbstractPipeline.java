@@ -39,7 +39,6 @@ import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.FloatSE3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
@@ -52,6 +51,7 @@ import uk.ac.manchester.tornado.api.collections.types.Int3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.Short2;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
 
@@ -59,7 +59,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
 
     protected static final float INVALID = -2f;
 
-    protected static final void updateRotation(final Matrix4x4Float m, final Float6 x) {
+    protected static final void updateRotation(final Matrix4x4Float m, final FloatArray x) {
         final Matrix4x4Float transform = new FloatSE3(x).toMatrix4();
         final Matrix4x4Float current = m.duplicate();
 
@@ -113,7 +113,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
     /**
      * bilateral filter
      */
-    protected float[] gaussian;
+    protected FloatArray gaussian;
     protected final Float3 integrateDelta;
     protected int integrationCount;
 
@@ -211,13 +211,22 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
     protected View sceneView;
     protected ImageFloat sceneDepths;
 
-    public AbstractPipeline(T config) {
+    // used to replace Float6.scale
+    private static FloatArray scale(FloatArray array, float value) {
+        final FloatArray result = new FloatArray(6);
+        for (int i = 0; i < result.getSize(); i++) {
+            result.set(i, array.get(i) * value);
+        }
+        return result;
+    }
+
+    protected AbstractPipeline(T config) {
         this.config = config;
 
         inputSize = new Int2();
         scaledInputSize = new Int2();
 
-        /**
+        /*
          * static camera parameters
          */
         camera = new Float4();
@@ -226,21 +235,21 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         invK = new Matrix4x4Float();
         scaledInvK = new Matrix4x4Float();
 
-        /**
+        /*
          * static volume parameters
          */
         volumeSize = new Int3();
         volumeDims = new Float3();
         referencePose = new Matrix4x4Float();
         invReferencePose = new Matrix4x4Float();
-        /**
+        /*
          * static rendering parameters
          */
         modelPose = new Matrix4x4Float();
         light = new Float3();
         ambient = new Float3();
 
-        /**
+        /*
          * misc parameters
          */
         invTrack = new Matrix4x4Float();
@@ -254,7 +263,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
 
     public void configure(final Device device) {
 
-        /**
+        /*
          * configure devices
          */
         info("Setting depth camera...");
@@ -263,7 +272,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         info("Setting video camera...");
         config.setVideoInput(device);
 
-        /**
+        /*
          * configure depth input
          */
         if (config.getDepthInput() != null) {
@@ -274,7 +283,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
             warn("No depth input available: disabling depth");
         }
 
-        /**
+        /*
          * configure video input
          */
         if (config.getVideoInput() != null) {
@@ -285,7 +294,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
             warn("No video input available: disabling video");
         }
 
-        /**
+        /*
          * configure scaling and filtering
          */
         info("depth camera: %s", depthCamera.toString());
@@ -301,7 +310,7 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         radius = config.getRadius();
         delta = config.getDelta();
 
-        gaussian = new float[(radius * 2) + 1];
+        gaussian = new FloatArray((radius * 2) + 1);
         generateGaussian();
 
         filteredDepthImage = new ImageFloat(scaledInputSize.getX(), scaledInputSize.getY());
@@ -384,7 +393,6 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         pyramidDepths = new ImageFloat[pyramidIterations.length];
         pyramidVerticies = new ImageFloat3[pyramidIterations.length];
         pyramidNormals = new ImageFloat3[pyramidIterations.length];
-
         pyramidTrackingResults = new ImageFloat8[pyramidIterations.length];
 
         info("image pyramid: number of levels = %d", pyramidIterations.length);
@@ -434,13 +442,17 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         /**
          * configure raycast (render model)
          */
-        preTrans = new FloatSE3(new Float6(0, 0, -volumeDims.getX(), 0, 0, 0)).toMatrix4();
-        Float6 value = new Float6(.5f, .5f, .5f, 0, 0, 0);
-        value = Float6.scale(value, volumeDims.getX());
+        FloatArray float6 = new FloatArray(0, 0, -volumeDims.getX(), 0, 0, 0);
+
+        preTrans = new FloatSE3(float6).toMatrix4();
+        FloatArray value = new FloatArray(.5f, .5f, .5f, 0, 0, 0);
+
+        value = scale(value, volumeDims.getX());
 
         trans = new FloatSE3(value).toMatrix4();
 
-        rot = new FloatSE3(new Float6()).toMatrix4();
+        FloatArray aux = new FloatArray(6);
+        rot = new FloatSE3(aux).toMatrix4();
 
         renderedScene = new ImageByte4(inputSize.getX(), inputSize.getY());
 
@@ -664,9 +676,9 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
     }
 
     private void generateGaussian() {
-        for (int i = 0; i < gaussian.length; i++) {
+        for (int i = 0; i < gaussian.getSize(); i++) {
             final int x = i - radius;
-            gaussian[i] = (float) Math.exp(-(x * x) / (2 * delta * delta));
+            gaussian.set(i, (float) Math.exp(-(x * x) / (2 * delta * delta)));
         }
     }
 

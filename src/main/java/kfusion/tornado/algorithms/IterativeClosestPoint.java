@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,9 +31,9 @@ import kfusion.java.numerics.EjmlSVD2;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.Float8;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.FloatSE3;
@@ -43,37 +43,38 @@ import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
 
 public class IterativeClosestPoint {
 
-    private static void makeJTJ(final Matrix2DFloat a, final float[] vals, final int offset) {
-        a.set(0, 0, vals[0 + offset]);
-        a.set(0, 1, vals[1 + offset]);
-        a.set(0, 2, vals[2 + offset]);
-        a.set(0, 3, vals[3 + offset]);
-        a.set(0, 4, vals[4 + offset]);
-        a.set(0, 5, vals[5 + offset]);
+    private static void makeJTJ(final Matrix2DFloat a, final FloatArray vals, final int offset) {
+        a.set(0, 0, vals.get(0 + offset));
+        a.set(0, 1, vals.get(1 + offset));
+        a.set(0, 2, vals.get(2 + offset));
+        a.set(0, 3, vals.get(3 + offset));
+        a.set(0, 4, vals.get(4 + offset));
+        a.set(0, 5, vals.get(5 + offset));
 
-        a.set(1, 1, vals[6 + offset]);
-        a.set(1, 2, vals[7 + offset]);
-        a.set(1, 3, vals[8 + offset]);
-        a.set(1, 4, vals[9 + offset]);
-        a.set(1, 5, vals[10 + offset]);
+        a.set(1, 1, vals.get(6 + offset));
+        a.set(1, 2, vals.get(7 + offset));
+        a.set(1, 3, vals.get(8 + offset));
+        a.set(1, 4, vals.get(9 + offset));
+        a.set(1, 5, vals.get(10 + offset));
 
-        a.set(2, 2, vals[11 + offset]);
-        a.set(2, 3, vals[12 + offset]);
-        a.set(2, 4, vals[13 + offset]);
-        a.set(2, 5, vals[14 + offset]);
+        a.set(2, 2, vals.get(11 + offset));
+        a.set(2, 3, vals.get(12 + offset));
+        a.set(2, 4, vals.get(13 + offset));
+        a.set(2, 5, vals.get(14 + offset));
 
-        a.set(3, 3, vals[15 + offset]);
-        a.set(3, 4, vals[16 + offset]);
-        a.set(3, 5, vals[17 + offset]);
+        a.set(3, 3, vals.get(15 + offset));
+        a.set(3, 4, vals.get(16 + offset));
+        a.set(3, 5, vals.get(17 + offset));
 
-        a.set(4, 4, vals[18 + offset]);
-        a.set(4, 5, vals[19 + offset]);
+        a.set(4, 4, vals.get(18 + offset));
+        a.set(4, 5, vals.get(19 + offset));
 
-        a.set(5, 5, vals[20 + offset]);
+        a.set(5, 5, vals.get(20 + offset));
 
         // assume that a is symmetric???
         for (int r = 1; r < 6; r++) {
@@ -83,21 +84,21 @@ public class IterativeClosestPoint {
         }
     }
 
-    public static void mapInitData(final float[] output, final ImageFloat8 input) {
-        final int numThreads = output.length / 32;
+    public static void mapInitData(final FloatArray output, final ImageFloat8 input) {
+        final int numThreads = output.getSize() / 32;
         for (@Parallel int i = 0; i < numThreads; i++) {
             final int startIndex = i * 32;
             for (int j = 0; j < 32; j++) {
-                output[startIndex + j] = 0.0f;
+                output.set(startIndex + j, 0.0f);
             }
         }
     }
 
-    public static void reduceData(final float[] output, final ImageFloat8 input) {
+    public static void reduceData(final FloatArray output, final ImageFloat8 input) {
 
         int offset = 32;
 
-        final int numThreads = output.length / offset;
+        final int numThreads = output.getSize() / offset;
         final int numElements = input.X() * input.Y();
 
         for (@Parallel int i = 0; i < numThreads; i++) {
@@ -109,14 +110,14 @@ public class IterativeClosestPoint {
         }
     }
 
-    public static void mapReduce(final float[] output, final ImageFloat8 input) {
-        final int numThreads = output.length / 32;
+    public static void mapReduce(final FloatArray output, final ImageFloat8 input) {
+        final int numThreads = output.getSize() / 32;
         final int numElements = input.X() * input.Y();
 
         for (@Parallel int i = 0; i < numThreads; i++) {
             final int startIndex = i * 32;
             for (int j = 0; j < 32; j++) {
-                output[startIndex + j] = 0f;
+                output.set(startIndex + j, 0f);
             }
 
             for (int j = i; j < numElements; j += numThreads) {
@@ -125,98 +126,92 @@ public class IterativeClosestPoint {
         }
     }
 
-    public static void reduceIntermediate(final float[] output, final float[] input) {
+    public static void reduceIntermediate(final FloatArray output, final FloatArray input) {
 
         final int elementSize = 32;
-        final int numDestElements = output.length / elementSize;
-        final int numSrcElements = input.length / elementSize;
+        final int numDestElements = output.getSize() / elementSize;
+        final int numSrcElements = input.getSize() / elementSize;
 
         for (@Parallel int i = 0; i < numDestElements; i++) {
             final int startIndex = i * elementSize;
-            final float[] result = new float[elementSize];
+            final FloatArray result = new FloatArray(elementSize);
 
             // copy first block of values
             for (int j = 0; j < elementSize; j++) {
-                result[j] = (i < numSrcElements) ? input[startIndex + j] : 0;
+                result.set(j, (i < numSrcElements) ? input.get(startIndex + j) : 0);
             }
 
             // reduce the remainder
             for (int j = i + numDestElements; j < numSrcElements; j += numDestElements) {
                 final int startElement = j * elementSize;
                 for (int k = 0; k < elementSize; k++) {
-                    result[k] += input[startElement + k];
+                    result.set(k, result.get(k) + input.get(startElement + k));
                 }
             }
 
             // copy out to main memory
             for (int j = 0; j < elementSize; j++) {
-                output[startIndex + j] = result[j];
+                output.set(startIndex + j, result.get(j));
             }
 
         }
     }
 
-    private static float[] getPlainArray(Float8 input) {
-        float[] value = new float[8];
-        value[0] = input.getS0();
-        value[1] = input.getS1();
-        value[2] = input.getS2();
-        value[3] = input.getS3();
-        value[4] = input.getS4();
-        value[5] = input.getS5();
-        value[6] = input.getS6();
-        value[7] = input.getS7();
+    private static FloatArray getPlainArray(Float8 input) {
+        FloatArray value = new FloatArray(8);
+        value.set(0, input.getS0());
+        value.set(1, input.getS1());
+        value.set(2, input.getS2());
+        value.set(3, input.getS3());
+        value.set(4, input.getS4());
+        value.set(5, input.getS5());
+        value.set(6, input.getS6());
+        value.set(7, input.getS7());
         return value;
     }
 
-    private static void reduceSumWithError(@Reduce final float[] sums, float error, int startIndex, int N, float[] value) {
-        sums[startIndex] += (error * error);
+    private static void reduceSumWithError(@Reduce final FloatArray sums, float error, int startIndex, int N, FloatArray value) {
+        sums.set(startIndex, sums.get(startIndex) + (error * error));
         for (@Parallel int i = 0; i < N; i++) {
-            sums[startIndex + i + 1] += (error * value[i]);
+            sums.set(startIndex + i + 1, sums.get(startIndex + i + 1) + (error * value.get(i)));
         }
     }
 
-    private static void reduceAllValues(final float[] sums, int N, float[] value, int base) {
+    private static void reduceAllValues(final FloatArray sums, int N, FloatArray value, int base) {
         for (int i = 0; i < N; i++) {
             int counter = 0;
             for (int j = i; j < N; j++) {
-                sums[base + counter] += (value[i] * value[j]);
+                sums.set(base + counter, sums.get(base + counter) + (value.get(i) * value.get(j)));
                 counter++;
             }
         }
     }
 
-    public static void reduceArrayValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
+    public static void reduceArrayValues(final FloatArray sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
 
         final int base = startIndex + 7;
         final int info = startIndex + 28;
+        final int N = 6;
 
-        int N = 6;
+        final FloatArray value = getPlainArray(trackingResults.get(resultIndex));
 
-        Float8 valueFloat8 = trackingResults.get(resultIndex);
-
-        // XXX: Due to a bug in Tornado, explicit copy does not currently work.
-        // float[] value = valueFloat8.getStorage();
-
-        final float[] value = getPlainArray(trackingResults.get(resultIndex));
-
-        final int result = (int) value[7];
-        final float error = value[6];
+        final int result = (int) value.get(7);
+        final float error = value.get(6);
 
         if (result < 1) {
-            sums[info + 1] += (result == -4) ? 1.0f : 0.0f;
-            sums[info + 2] += (result == -5) ? 1.0f : 0f;
-            sums[info + 3] += (result > -4) ? 1.0f : 0.0f;
+            sums.set(info + 1, sums.get(info + 1) + ((result == -4) ? 1.0f : 0.0f));
+            sums.set(info + 2, sums.get(info + 2) + ((result == -5) ? 1.0f : 0f));
+            sums.set(info + 3, sums.get(info + 3) + ((result > -4) ? 1.0f : 0.0f));
             return;
         }
 
         reduceSumWithError(sums, error, startIndex, N, value);
         reduceAllValues(sums, N, value, base);
 
-        sums[info]++;
+        sums.set(info, sums.get(info) + 1);
     }
 
-    public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
+    public static void reduceValues(final FloatArray sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
 
         final int jtj = startIndex + 7;
         final int info = startIndex + 28;
@@ -226,64 +221,61 @@ public class IterativeClosestPoint {
         final float error = value.getS6();
 
         if (result < 1) {
-            sums[info + 1] += (result == -4) ? 1 : 0;
-            sums[info + 2] += (result == -5) ? 1 : 0;
-            sums[info + 3] += (result > -4) ? 1 : 0;
+            int condA = ((result == -4) ? 1 : 0);
+            int condB = ((result == -5) ? 1 : 0);
+            int condC = ((result > -4) ? 1 : 0);
+            sums.set(info + 1, sums.get(info + 1) + condA);
+            sums.set(info + 2, sums.get(info + 2) + condB);
+            sums.set(info + 3, sums.get(info + 3) + condC);
             return;
         }
 
-        // float base[0] += error^2
-        sums[startIndex] += (error * error);
+        sums.set(startIndex, sums.get(startIndex) + (error * error));
 
-        // Float6 base(+1) += row.scale(error)
-        // for (int i = 0; i < 6; i++) {
-        // sums[startIndex + i + 1] += error * value.get(i);
-        // sums[startIndex + i + 1] = value.get(i);
-        // }
 
-        sums[startIndex + 0 + 1] += (error * value.getS0());
-        sums[startIndex + 1 + 1] += (error * value.getS1());
-        sums[startIndex + 2 + 1] += (error * value.getS2());
-        sums[startIndex + 3 + 1] += (error * value.getS3());
-        sums[startIndex + 4 + 1] += (error * value.getS4());
-        sums[startIndex + 5 + 1] += (error * value.getS5());
+        sums.set(startIndex + 0 + 1, sums.get(startIndex + 0 + 1) + (error * value.getS0()));
+        sums.set(startIndex + 1 + 1, sums.get(startIndex + 1 + 1) + (error * value.getS1()));
+        sums.set(startIndex + 2 + 1, sums.get(startIndex + 2 + 1) + (error * value.getS2()));
+        sums.set(startIndex + 3 + 1, sums.get(startIndex + 3 + 1) + (error * value.getS3()));
+        sums.set(startIndex + 4 + 1, sums.get(startIndex + 4 + 1) + (error * value.getS4()));
+        sums.set(startIndex + 5 + 1, sums.get(startIndex + 5 + 1) + (error * value.getS5()));
 
         // is this jacobian transpose jacobian?
-        sums[jtj + 0] += (value.getS0() * value.getS0());
-        sums[jtj + 1] += (value.getS0() * value.getS1());
-        sums[jtj + 2] += (value.getS0() * value.getS2());
-        sums[jtj + 3] += (value.getS0() * value.getS3());
-        sums[jtj + 4] += (value.getS0() * value.getS4());
-        sums[jtj + 5] += (value.getS0() * value.getS5());
+        sums.set(jtj + 0, sums.get(jtj + 0) + (value.getS0() * value.getS0()));
+        sums.set(jtj + 1, sums.get(jtj + 1) + (value.getS0() * value.getS1()));
+        sums.set(jtj + 2, sums.get(jtj + 2) + (value.getS0() * value.getS2()));
+        sums.set(jtj + 3, sums.get(jtj + 3) + (value.getS0() * value.getS3()));
+        sums.set(jtj + 4, sums.get(jtj + 4) + (value.getS0() * value.getS4()));
+        sums.set(jtj + 5, sums.get(jtj + 1) + (value.getS0() * value.getS5()));
 
-        sums[jtj + 6] += (value.getS1() * value.getS1());
-        sums[jtj + 7] += (value.getS1() * value.getS2());
-        sums[jtj + 8] += (value.getS1() * value.getS3());
-        sums[jtj + 9] += (value.getS1() * value.getS4());
-        sums[jtj + 10] += (value.getS1() * value.getS5());
+        sums.set(jtj + 6, sums.get(jtj + 6) + (value.getS1() * value.getS1()));
+        sums.set(jtj + 7, sums.get(jtj + 1) + (value.getS1() * value.getS2()));
+        sums.set(jtj + 8, sums.get(jtj + 8) + (value.getS1() * value.getS3()));
+        sums.set(jtj + 9, sums.get(jtj + 9) + (value.getS1() * value.getS4()));
+        sums.set(jtj + 10, sums.get(jtj + 10) + (value.getS1() * value.getS5()));
 
-        sums[jtj + 11] += (value.getS2() * value.getS2());
-        sums[jtj + 12] += (value.getS2() * value.getS3());
-        sums[jtj + 13] += (value.getS2() * value.getS4());
-        sums[jtj + 14] += (value.getS2() * value.getS5());
+        sums.set(jtj + 11, sums.get(jtj + 11) + (value.getS2() * value.getS2()));
+        sums.set(jtj + 12, sums.get(jtj + 12) + (value.getS2() * value.getS3()));
+        sums.set(jtj + 13, sums.get(jtj + 13) + (value.getS2() * value.getS4()));
+        sums.set(jtj + 14, sums.get(jtj + 1) + (value.getS2() * value.getS5()));
 
-        sums[jtj + 15] += (value.getS3() * value.getS3());
-        sums[jtj + 16] += (value.getS3() * value.getS4());
-        sums[jtj + 17] += (value.getS3() * value.getS5());
+        sums.set(jtj + 15, sums.get(jtj + 15) + (value.getS3() * value.getS3()));
+        sums.set(jtj + 16, sums.get(jtj + 16) + (value.getS3() * value.getS4()));
+        sums.set(jtj + 17, sums.get(jtj + 17) + (value.getS3() * value.getS5()));
 
-        sums[jtj + 18] += (value.getS4() * value.getS4());
-        sums[jtj + 19] += (value.getS4() * value.getS5());
+        sums.set(jtj + 18, sums.get(jtj + 18) + (value.getS4() * value.getS4()));
+        sums.set(jtj + 19, sums.get(jtj + 19) + (value.getS4() * value.getS5()));
 
-        sums[jtj + 20] += (value.getS5() * value.getS5());
+        sums.set(jtj + 20, sums.get(jtj + 20) + (value.getS5() * value.getS5()));
 
-        sums[info]++;
+        sums.set(info, sums.get(info) + 1);
     }
 
-    public static void reduce(final float[] globalSums, final ImageFloat8 trackingResults) {
+    public static void reduce(final FloatArray globalSums, final ImageFloat8 trackingResults) {
 
-        final float[] sums = new float[32];
-        for (int i = 0; i < sums.length; i++) {
-            sums[i] = 0f;
+        final FloatArray sums = new FloatArray(32);
+        for (int i = 0; i < sums.getSize(); i++) {
+            sums.set(i, 0f);
         }
 
         final int jtj = 7;
@@ -297,69 +289,64 @@ public class IterativeClosestPoint {
                 final float error = row.getS6();
 
                 if (result < 1) {
-                    sums[info + 1] += (result == -4) ? 1 : 0;
-                    sums[info + 2] += (result == -5) ? 1 : 0;
-                    sums[info + 3] += (result > -4) ? 1 : 0;
+                    sums.set(info + 1, sums.get(info + 1) + ((result == -4) ? 1 : 0));
+                    sums.set(info + 2, sums.get(info + 2) + ((result == -5) ? 1 : 0));
+                    sums.set(info + 3, sums.get(info + 3) + ((result > -4) ? 1 : 0));
                     continue;
                 }
 
-                // float base[0] += error^2
-                sums[0] += (error * error);
+                sums.set(0, sums.get(0) + (error * error));
 
-                // System.out.printf("row error: error=%.4e,
-                // acc=%.4e\n",error,base.get(0));
-                // Float6 base(+1) += row.scale(error)
                 for (int i = 0; i < 6; i++) {
-                    sums[i + 1] += error * row.get(i);
+                    sums.set(i + 1, (sums.get(i + 1) + error * row.get(i)));
                 }
 
                 // is this jacobian transpose jacobian?
-                sums[jtj + 0] += (row.get(0) * row.get(0));
-                sums[jtj + 1] += (row.get(0) * row.get(1));
-                sums[jtj + 2] += (row.get(0) * row.get(2));
-                sums[jtj + 3] += (row.get(0) * row.get(3));
+                sums.set(jtj, sums.get(jtj) + (row.get(0) * row.get(0)));
+                sums.set(jtj + 1, sums.get(jtj + 1) + (row.get(0) * row.get(1)));
+                sums.set(jtj + 2, sums.get(jtj + 2) + (row.get(0) * row.get(2)));
+                sums.set(jtj + 3, sums.get(jtj + 3) + (row.get(0) * row.get(3)));
 
-                sums[jtj + 4] += (row.get(0) * row.get(4));
-                sums[jtj + 5] += (row.get(0) * row.get(5));
+                sums.set(jtj + 4, sums.get(jtj + 4) + (row.get(0) * row.get(4)));
+                sums.set(jtj + 5, sums.get(jtj + 5) + (row.get(0) * row.get(5)));
 
-                sums[jtj + 6] += (row.get(1) * row.get(1));
-                sums[jtj + 7] += (row.get(1) * row.get(2));
-                sums[jtj + 8] += (row.get(1) * row.get(3));
-                sums[jtj + 9] += (row.get(1) * row.get(4));
+                sums.set(jtj + 6, sums.get(jtj + 6) + (row.get(1) * row.get(1)));
+                sums.set(jtj + 7, sums.get(jtj + 7) + (row.get(1) * row.get(2)));
+                sums.set(jtj + 8, sums.get(jtj + 8) + (row.get(1) * row.get(3)));
+                sums.set(jtj + 9, sums.get(jtj + 9) + (row.get(1) * row.get(4)));
 
-                sums[jtj + 10] += (row.get(1) * row.get(5));
+                sums.set(jtj + 10, sums.get(jtj + 10) + (row.get(1) * row.get(5)));
 
-                sums[jtj + 11] += (row.get(2) * row.get(2));
-                sums[jtj + 12] += (row.get(2) * row.get(3));
-                sums[jtj + 13] += (row.get(2) * row.get(4));
-                sums[jtj + 14] += (row.get(2) * row.get(5));
+                sums.set(jtj + 11, sums.get(jtj + 11) + (row.get(2) * row.get(2)));
+                sums.set(jtj + 12, sums.get(jtj + 12) + (row.get(2) * row.get(3)));
+                sums.set(jtj + 13, sums.get(jtj + 13) + (row.get(2) * row.get(4)));
+                sums.set(jtj + 14, sums.get(jtj + 14) + (row.get(2) * row.get(5)));
 
-                sums[jtj + 15] += (row.get(3) * row.get(3));
-                sums[jtj + 16] += (row.get(3) * row.get(4));
-                sums[jtj + 17] += (row.get(3) * row.get(5));
+                sums.set(jtj + 15, sums.get(jtj + 15) + (row.get(3) * row.get(3)));
+                sums.set(jtj + 16, sums.get(jtj + 16) + (row.get(3) * row.get(4)));
+                sums.set(jtj + 17, sums.get(jtj + 17) + (row.get(3) * row.get(5)));
 
-                sums[jtj + 18] += (row.get(4) * row.get(4));
-                sums[jtj + 19] += (row.get(4) * row.get(5));
+                sums.set(jtj + 18, sums.get(jtj + 18) + (row.get(4) * row.get(4)));
+                sums.set(jtj + 19, sums.get(jtj + 19) + (row.get(4) * row.get(5)));
 
-                sums[jtj + 20] += (row.get(5) * row.get(5));
+                sums.set(jtj + 20, sums.get(jtj + 20) + (row.get(5) * row.get(5)));
 
-                sums[info]++;
+                sums.set(info, sums.get(info) + 1);
             }
         }
 
         for (int i = 0; i < 32; i++) {
-            globalSums[i] += sums[i];
+            globalSums.set(i, globalSums.get(i) + sums.get(i));
         }
 
     }
 
-    public static void solve(final Float6 result, final float[] vals, int offset) {
+    public static void solve(final FloatArray result, final FloatArray vals, int offset) {
         final Matrix2DFloat C = new Matrix2DFloat(6, 6);
-        final Float6 b = new Float6();
+        final FloatArray b = new FloatArray(6);
 
         for (int i = 0; i < 6; i++) {
-            b.set(i, vals[i + offset]); // vals.subVector(0,
-                                        // 6).asBuffer().array());
+            b.set(i, vals.get(i + offset));
         }
         makeJTJ(C, vals, offset + 6);
 
@@ -372,9 +359,9 @@ public class IterativeClosestPoint {
             final Matrix2DFloat U = svd.getU();
             Matrix2DFloat.transpose(U);
             final Matrix2DFloat inv = svd.getSinv((float) 1e6);
-            final Float6 t1 = new Float6();
+            final FloatArray t1 = new FloatArray(6);
             MatrixMath.multiply(t1, U, b);
-            final Float6 t2 = new Float6();
+            final FloatArray t2 = new FloatArray(6);
             MatrixMath.multiply(t2, inv, t1);
             MatrixMath.multiply(result, V, t2);
         } else {
@@ -450,19 +437,19 @@ public class IterativeClosestPoint {
 
     public static <T extends KfusionConfig> boolean estimateNewPose(final T config, final TrackingResult result, final ImageFloat8 trackingResults, final Matrix4x4Float currentPose,
             final float icpThreshold) {
-        final float[] icpResults = new float[32];
+        final FloatArray icpResults = new FloatArray(32);
         reduce(icpResults, trackingResults);
         result.resultImage = trackingResults;
         return estimateNewPose(config, result, icpResults, currentPose, icpThreshold);
     }
 
-    public static <T extends KfusionConfig> boolean estimateNewPose(final T config, final TrackingResult result, final float[] icpResults, final Matrix4x4Float currentPose, final float icpThreshold) {
+    public static <T extends KfusionConfig> boolean estimateNewPose(final T config, final TrackingResult result, final FloatArray icpResults, final Matrix4x4Float currentPose, final float icpThreshold) {
 
-        result.error = icpResults[0];
-        result.tracked = icpResults[28];
-        result.tooFar = icpResults[29];
-        result.wrongNormal = icpResults[30];
-        result.other = icpResults[31];
+        result.error = icpResults.get(0);
+        result.tracked = icpResults.get(28);
+        result.tooFar = icpResults.get(29);
+        result.wrongNormal = icpResults.get(30);
+        result.other = icpResults.get(31);
 
         if (config.debug()) {
             System.out.printf("\tvalues: %s\n", new VectorFloat(icpResults).toString("%e "));
@@ -471,7 +458,7 @@ public class IterativeClosestPoint {
         solve(result.x, icpResults, 1);
 
         if (config.debug()) {
-            System.out.printf("\tx: %s\n", result.x.toString(FloatOps.FMT_6_E));
+            System.out.printf("\tx: %s\n", stringRepresentation(result.x));
         }
 
         final Matrix4x4Float delta = new FloatSE3(result.x).toMatrix4();
@@ -484,10 +471,39 @@ public class IterativeClosestPoint {
         MatrixMath.sgemm(delta, currentPose, result.pose);
 
         if (config.debug()) {
-            System.out.printf("*newPose:\n%s\n", result.pose.toString());
+            System.out.printf("*newPose:\n%s\n", result.pose);
         }
 
-        return (Float6.length(result.x) < icpThreshold);
+        return (length(result.x) < icpThreshold);
+    }
+
+    public static float length(FloatArray value) {
+        return TornadoMath.sqrt(dot(value, value));
+    }
+
+    public static float dot(FloatArray a, FloatArray b) {
+        float result = 0f;
+        final FloatArray m = mult(a, b);
+        for (int i = 0; i < a.getSize(); i++) {
+            result += m.get(i);
+        }
+        return result;
+    }
+
+    public static FloatArray mult(FloatArray a, FloatArray b) {
+        final FloatArray result = new FloatArray(a.getSize());
+        for (int i = 0; i < result.getSize(); i++) {
+            result.set(i, a.get(i) * b.get(i));
+        }
+        return result;
+    }
+
+    private static String stringRepresentation(FloatArray x) {
+        String values = "";
+        for (int i = 0; i < x.getSize(); i++) {
+            values = values + " " + x.get(i);
+        }
+        return values;
     }
 
 }

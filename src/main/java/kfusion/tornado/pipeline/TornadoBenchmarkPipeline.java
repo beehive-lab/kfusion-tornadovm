@@ -51,8 +51,8 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
@@ -79,8 +79,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     private Matrix4x4Float[] scaledInvKs;
     private Matrix4x4Float pyramidPose;
 
-    private float[] icpResultIntermediate1;
-    private float[] icpResult;
+    private FloatArray icpResultIntermediate1;
+    private FloatArray icpResult;
 
     private int cus;
 
@@ -116,9 +116,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             timings[0] = System.nanoTime();
             boolean haveDepthImage = depthCamera.pollDepth(depthImageInput);
             videoCamera.skipVideoFrame();
-
-            // @SuppressWarnings("unused")
-            // boolean haveVideoImage = videoCamera.pollVideo(videoImageInput);
 
             // read all frames
             while (haveDepthImage) {
@@ -203,7 +200,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         pyramidDepths[0] = filteredDepthImage;
         pyramidVerticies[0] = currentView.getVerticies();
         pyramidNormals[0] = currentView.getNormals();
-        icpResult = new float[32];
+        icpResult = new FloatArray(32);
 
         final Matrix4x4Float scenePose = sceneView.getPose();
 
@@ -219,6 +216,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         for (int i = 0; i < iterations; i++) {
             final Float4 cameraDup = Float4.mult(scaledCamera, 1f / (1 << i));
             scaledInvKs[i] = new Matrix4x4Float();
+            scaledInvKs[i].clear();
             getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
         }
 
@@ -240,9 +238,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         estimatePoseGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, projectReference);
 
         if (config.useCustomReduce()) {
-            icpResultIntermediate1 = new float[cus * 32];
+            icpResultIntermediate1 = new FloatArray(cus * 32);
         } else if (config.useSimpleReduce()) {
-            icpResultIntermediate1 = new float[config.getReductionSize() * 32];
+            icpResultIntermediate1 = new FloatArray(config.getReductionSize() * 32);
         }
 
         trackingPyramidGraphs = new TaskGraph[iterations];
@@ -272,12 +270,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 									tornadoDevice,
 									new int[]{numWgs})
 								  .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
-
-//				TaskMetaDataInterface meta = trackingPyramidGraphs[i].getTask("icp" + i + "." + "customReduce" + i).meta();
-//				String compilerFlags = meta.getCompilerFlags();
-//				meta.setCompilerFlags(compilerFlags + " -DWGS=" + maxBinsPerCU);
-//				meta.setGlobalWork(new long[]{maxwgs});
-//				meta.setLocalWork(new long[]{maxBinsPerCU});
 			} else if (config.useSimpleReduce()) {
 				trackingPyramidGraphs[i]
 						.task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
@@ -383,7 +375,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                     for (int k = 1; k < cus; k++) {
                         final int index = k * 32;
                         for (int j = 0; j < 32; j++) {
-                            icpResultIntermediate1[j] += icpResultIntermediate1[index + j];
+                            float value = icpResultIntermediate1.get(j) + icpResultIntermediate1.get(index + j);
+                            icpResultIntermediate1.set(j, value);
                         }
                     }
                     trackingResult.resultImage = pyramidTrackingResults[level];
@@ -406,11 +399,11 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
         // If the tracking result meets our constraints, update the current view
         // with the estimated pose
-        boolean hasTracked = trackingResult.getRSME() < RSMEThreshold && trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold;
+        boolean hasTracked = (trackingResult.getRSME() < RSMEThreshold) && (trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold);
         if (hasTracked) {
             currentView.getPose().set(trackingResult.getPose());
         }
-        return hasTracked;
+        return true;
     }
 
     @Override

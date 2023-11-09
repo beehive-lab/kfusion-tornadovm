@@ -29,10 +29,11 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class TestingDevice implements Device {
 
-    final private static Float4 CAMERA = new Float4(new float[] { 531.15f, 531.15f, 640f / 2f, 480f / 2f });
+    final private static Float4 CAMERA = new Float4(531.15f, 531.15f, 640f / 2f, 480f / 2f);
 
     private final int width = 640;
     private final int height = 480;
