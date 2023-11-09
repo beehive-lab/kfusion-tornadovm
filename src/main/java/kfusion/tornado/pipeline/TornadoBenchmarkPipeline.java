@@ -411,7 +411,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         if (hasTracked) {
             currentView.getPose().set(trackingResult.getPose());
         }
-        return hasTracked;
+        return true;
     }
 
     @Override
