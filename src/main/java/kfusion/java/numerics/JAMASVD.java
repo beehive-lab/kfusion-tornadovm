@@ -26,7 +26,7 @@ package kfusion.java.numerics;
 
 import Jama.Matrix;
 import Jama.SingularValueDecomposition;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 public class JAMASVD {
 

@@ -24,7 +24,7 @@
  */
 package kfusion.java.devices;
 
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 
 public interface DepthCamera {
 

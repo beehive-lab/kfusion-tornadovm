@@ -25,8 +25,7 @@
 package kfusion.java.numerics;
 
 import org.ejml.simple.SimpleMatrix;
-
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 public class EjmlUtil {
 

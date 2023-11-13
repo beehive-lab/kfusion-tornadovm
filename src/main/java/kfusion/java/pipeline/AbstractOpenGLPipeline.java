@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,10 +34,10 @@ import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
 
 import kfusion.java.common.KfusionConfig;
-import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
-import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
-import uk.ac.manchester.tornado.api.collections.types.ImageByte4;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import kfusion.tornado.algorithms.Renderer;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageByte4;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
 
 public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends AbstractPipeline<T> implements GLEventListener {

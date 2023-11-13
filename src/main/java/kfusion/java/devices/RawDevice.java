@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,16 +45,15 @@ import java.util.Scanner;
 
 import kfusion.java.common.AbstractLogger;
 import kfusion.java.common.KfusionConfig;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 public class RawDevice extends AbstractLogger implements Device {
-	
+
     final private static Float4 CAMERA = new Float4(481.2f, 480f, 320f, 240f);
-    
+
     private String path;
     private boolean running;
 
@@ -70,7 +69,7 @@ public class RawDevice extends AbstractLogger implements Device {
     private long bufferOffset;
     FileOutputStream outStream = null;
     BufferedWriter bw;
-    
+
 
     public RawDevice(final String path, int width, int height) {
         this.path = path;
@@ -103,13 +102,13 @@ public class RawDevice extends AbstractLogger implements Device {
         }
         return buffer == null;
     }
-    
+
     private void printHelpMessageForDataset(String sample) {
 		System.out.println("Please, download with the ./downloadDataSets.sh script");
 		System.out.println("Example: `" + sample + "`");
 		System.exit(-1);
     }
-    
+
     @SuppressWarnings("resource")
 	private void downloadDataSet() throws IOException, InterruptedException {
     	String home = System.getenv("HOME");
@@ -117,18 +116,18 @@ public class RawDevice extends AbstractLogger implements Device {
 		System.out.println("\t: Reading configuration file: " + fileName);
 		File f = new File(fileName);
 		String cmd = "./downloadDataSets.sh " + path.split(",")[0] + " " + path.split(",")[1];
-		
-		if (f.exists() && !f.isDirectory()) {	
+
+		if (f.exists() && !f.isDirectory()) {
 			file = new RandomAccessFile(fileName, "r");
 			fileSize = file.length();
 			channel = file.getChannel();
-			
+
 		} else {
 			System.out.println("Data Set file does not exist. Do you want to download it automatically? (~2GB) ");
 			System.out.print("Press [yes/no] (default: yes) : ");
-			
+
 			Scanner scanner = new Scanner(System.in);
-			String nextLine = null; 
+			String nextLine = null;
 			try {
 				nextLine = scanner.nextLine();
 			} catch (NoSuchElementException e){
@@ -151,7 +150,7 @@ public class RawDevice extends AbstractLogger implements Device {
 					System.out.println(line);
 					writer.write(line);
 				}
-				writer.close();				
+				writer.close();
 			} else {
 				printHelpMessageForDataset(cmd);
 			}
@@ -186,22 +185,22 @@ public class RawDevice extends AbstractLogger implements Device {
         if (running) {
             // buffer.getInt();
             // buffer.getInt();
-            buffer.position(buffer.position() + 8);            
+            buffer.position(buffer.position() + 8);
             final ByteBuffer bb = image.asBuffer();
             bb.position(bb.capacity());
 
             buffer.get(bb.array());
         }
     }
-    
+
     @SuppressWarnings("unused")
 	private void writeFrameToFile(ImageFloat image) {
 
         if (running) {
-        
+
             buffer.position(buffer.position() + 8);
             final ShortBuffer sb = buffer.asShortBuffer();
-            
+
             if (outStream == null)  {
             	try {
             		outStream = new FileOutputStream("/tmp/output.txt");
@@ -219,18 +218,18 @@ public class RawDevice extends AbstractLogger implements Device {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-                if (value < 1.0) { 
+                if (value < 1.0) {
                 	System.out.println("VALUE !!1: " + value);
                 }
                 image.set(i, (value > 0f) ? value : -value);
-            }   
+            }
             try {
 				bw.flush();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-            
+
             buffer.position(buffer.position() + (width * height * 2));
 
         }
@@ -240,11 +239,11 @@ public class RawDevice extends AbstractLogger implements Device {
         if (running) {
             buffer.position(buffer.position() + 8);
             final ShortBuffer sb = buffer.asShortBuffer();
-           
+
             for (int i = 0; i < width * height; i++) {
                 final float value = sb.get();
                 image.set(i, (value > 0f) ? value : -value);
-            }   
+            }
             buffer.position(buffer.position() + (width * height * 2));
         }
     }

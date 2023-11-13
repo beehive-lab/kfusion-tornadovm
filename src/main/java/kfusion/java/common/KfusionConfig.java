@@ -38,12 +38,12 @@ import kfusion.java.devices.Kinect;
 import kfusion.java.devices.RawDevice;
 import kfusion.java.devices.TUMRGBDevice;
 import kfusion.java.devices.VideoCamera;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Int2;
-import uk.ac.manchester.tornado.api.collections.types.Int3;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
 
 public class KfusionConfig {
     protected static final Properties settings = new Properties(System.getProperties());
