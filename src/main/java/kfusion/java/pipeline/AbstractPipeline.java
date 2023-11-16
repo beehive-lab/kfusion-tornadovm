@@ -442,10 +442,10 @@ public abstract class AbstractPipeline<T extends KfusionConfig> extends Abstract
         /**
          * configure raycast (render model)
          */
-        FloatArray float6 = new FloatArray(0, 0, -volumeDims.getX(), 0, 0, 0);
+        FloatArray float6 = FloatArray.fromElements(0, 0, -volumeDims.getX(), 0, 0, 0);
 
         preTrans = new FloatSE3(float6).toMatrix4();
-        FloatArray value = new FloatArray(.5f, .5f, .5f, 0, 0, 0);
+        FloatArray value = FloatArray.fromElements(.5f, .5f, .5f, 0, 0, 0);
 
         value = scale(value, volumeDims.getX());
 

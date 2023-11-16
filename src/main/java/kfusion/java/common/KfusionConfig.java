@@ -48,13 +48,13 @@ import uk.ac.manchester.tornado.api.types.vectors.Int3;
 public class KfusionConfig {
     protected static final Properties settings = new Properties(System.getProperties());
 
-    final private static FloatArray downTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0f, 0.1f);
+    final private static FloatArray downTrans = FloatArray.fromElements(0.0f, 0f, 0f, 0f, 0f, 0.1f);
 
-    final private static FloatArray leftTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0.1f, 0f );
+    final private static FloatArray leftTrans = FloatArray.fromElements(0.0f, 0f, 0f, 0f, 0.1f, 0f );
 
-    final private static FloatArray rightTrans = new FloatArray(0.0f, 0f, 0f, 0f, -0.1f, 0f);
+    final private static FloatArray rightTrans = FloatArray.fromElements(0.0f, 0f, 0f, 0f, -0.1f, 0f);
 
-    final private static FloatArray upTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0f, -0.1f);
+    final private static FloatArray upTrans = FloatArray.fromElements(0.0f, 0f, 0f, 0f, 0f, -0.1f);
 
     private boolean debug;
     private boolean printFPS;
