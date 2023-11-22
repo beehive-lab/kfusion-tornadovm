@@ -26,11 +26,11 @@ package kfusion.tornado.pipeline;
 
 import kfusion.java.devices.Device;
 import kfusion.java.pipeline.AbstractOpenGLPipeline;
+import kfusion.tornado.algorithms.ImagingOps;
+import kfusion.tornado.algorithms.Renderer;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
-import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 

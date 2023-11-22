@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,19 +36,15 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 public class GUI {
 
     public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
+        EventQueue.invokeLater( () -> {
                 final TornadoModel config = new TornadoModel();
                 if (System.getProperty("tornado.config") != null) {
                     TornadoRuntime.loadSettings(System.getProperty("tornado.config"));
                 }
-
                 final TornadoConfigPanel tornadoConfig = new TornadoConfigPanel(config);
                 final KfusionTornadoCanvas canvas = new KfusionTornadoCanvas(config, 660 * 2, 500, tornadoConfig);
                 TornadoWorkbenchFrame frame = new TornadoWorkbenchFrame(config, canvas, tornadoConfig);
                 frame.setVisible(true);
-            }
         });
     }
 }

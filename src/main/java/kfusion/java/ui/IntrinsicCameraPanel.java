@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,7 @@ import javax.swing.border.EtchedBorder;
 import kfusion.java.common.KfusionConfig;
 import kfusion.java.devices.Device;
 import kfusion.java.numerics.Helper;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 public class IntrinsicCameraPanel<T extends KfusionConfig> extends JPanel implements ActionListener {
 
@@ -55,11 +55,11 @@ public class IntrinsicCameraPanel<T extends KfusionConfig> extends JPanel implem
 		cameraConfig = new Float4();
 		this.inputDeviceComboBox = inputDeviceComboBox;
 		inputDeviceComboBox.addActionListener(this);
-		
+
 		((Device)inputDeviceComboBox.getSelectedItem()).updateModel(config);
-		
+
 		cameraConfig.set(config.getCamera());
-		
+
 		setBorder(BorderFactory.createTitledBorder(
 				BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
 				"Intrinsic Camera Parameters"));
@@ -79,10 +79,10 @@ public class IntrinsicCameraPanel<T extends KfusionConfig> extends JPanel implem
 		add(new JLabel("y0:"));
 		cameraY0Text.setColumns(5);
 		add(cameraY0Text);
-		
+
 		displayConfig();
 	}
-	
+
 	private void displayConfig(){
 		cameraConfig.set(config.getCamera());
 		cameraFxText.setText(String.format("%.2f",cameraConfig.getX()));
@@ -96,7 +96,7 @@ public class IntrinsicCameraPanel<T extends KfusionConfig> extends JPanel implem
 		((Device)inputDeviceComboBox.getSelectedItem()).updateModel(config);
 		displayConfig();
 	}
-	
+
 	public void updateModel(){
 		cameraConfig.setX(Helper.parseFloatValue(cameraFxText, cameraConfig.getX()));
 		cameraConfig.setY(Helper.parseFloatValue(cameraFyText, cameraConfig.getY()));
@@ -106,7 +106,7 @@ public class IntrinsicCameraPanel<T extends KfusionConfig> extends JPanel implem
 	}
 
 	public void resetConfig() {
-		displayConfig();	
+		displayConfig();
 	}
-	
+
 }

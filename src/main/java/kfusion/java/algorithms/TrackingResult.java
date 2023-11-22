@@ -24,11 +24,10 @@
  */
 package kfusion.java.algorithms;
 
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.collections.types.FloatOps;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat8;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 
 public class TrackingResult {
 
@@ -57,7 +56,7 @@ public class TrackingResult {
 	public float wrongNormal;
 	public float other;
 	public final Matrix4x4Float pose;
-	public  ImageFloat8	resultImage;
+	public ImageFloat8 resultImage;
 	public final FloatArray x;
 	public float error;
 

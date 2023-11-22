@@ -24,26 +24,23 @@
  */
 package kfusion.java.algorithms;
 
-import static uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat.transpose;
-
 import kfusion.java.common.KfusionConfig;
 import kfusion.java.numerics.Constants;
 import kfusion.java.numerics.EjmlSVD2;
-import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.collections.types.Float2;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float8;
-import uk.ac.manchester.tornado.api.collections.types.FloatOps;
-import uk.ac.manchester.tornado.api.collections.types.FloatSE3;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
-import uk.ac.manchester.tornado.api.collections.types.Int2;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import kfusion.tornado.algorithms.FloatSE3;
+import kfusion.tornado.algorithms.GraphicsMath;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat8;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.utils.FloatOps;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
 
 public class IterativeClosestPoint {
@@ -267,7 +264,7 @@ public class IterativeClosestPoint {
             // svd backsub
             final Matrix2DFloat V = svd.getV();
             final Matrix2DFloat U = svd.getU();
-            transpose(U);
+            Matrix2DFloat.transpose(U);
 
             final Matrix2DFloat inv = svd.getSinv((float) 1e6);
 

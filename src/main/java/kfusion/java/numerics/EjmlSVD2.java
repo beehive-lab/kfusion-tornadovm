@@ -24,13 +24,10 @@
  */
 package kfusion.java.numerics;
 
-import static uk.ac.manchester.tornado.api.collections.types.VectorFloat.max;
-
 import org.ejml.simple.SimpleMatrix;
 import org.ejml.simple.SimpleSVD;
-
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 /**
  * Singular Value Decomposition.
@@ -167,7 +164,7 @@ public strictfp class EjmlSVD2 {
     public float[] getPsuedoInverse(float condition) {
         // float[] s = getSingularValues();
         final VectorFloat s = EjmlUtil.toMatrixFloat(svd.getW()).diag();
-        final float dMax = max(s);
+        final float dMax = VectorFloat.max(s);
 
         final float[] result = new float[s.size()];
 

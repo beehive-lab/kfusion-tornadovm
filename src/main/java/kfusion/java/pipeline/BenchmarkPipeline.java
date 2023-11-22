@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,16 +24,14 @@
  */
 package kfusion.java.pipeline;
 
-import static uk.ac.manchester.tornado.api.collections.graphics.Renderer.renderDepth;
-import static uk.ac.manchester.tornado.api.collections.graphics.Renderer.renderTrack;
-import static uk.ac.manchester.tornado.api.collections.graphics.Renderer.renderVolume;
-import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.elapsedTimeInSeconds;
 import java.io.PrintStream;
 
 import kfusion.java.common.KfusionConfig;
 import kfusion.java.devices.Device;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import kfusion.tornado.algorithms.Renderer;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.utils.TornadoAPIUtils;
 
 public class BenchmarkPipeline<T extends KfusionConfig> extends AbstractPipeline<T> {
 
@@ -85,22 +83,22 @@ public class BenchmarkPipeline<T extends KfusionConfig> extends AbstractPipeline
 
                 if (frames % renderingRate == 0) {
 
-                    renderTrack(renderedTrackingImage, trackingResult.getResultImage());
+                    Renderer.renderTrack(renderedTrackingImage, trackingResult.getResultImage());
 
-                    renderDepth(renderedDepthImage, filteredDepthImage, nearPlane, farPlane);
+                    Renderer.renderDepth(renderedDepthImage, filteredDepthImage, nearPlane, farPlane);
 
                     final Matrix4x4Float scenePose = sceneView.getPose();
 
-                    renderVolume(renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient);
+                    Renderer.renderVolume(renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient);
                 }
 
                 timings[6] = System.nanoTime();
                 final Float3 currentPos = currentView.getPose().column(3).asFloat3();
                 final Float3 pos = Float3.sub(currentPos, initialPosition);
 
-                out.printf("%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\t%d\n", frames, elapsedTimeInSeconds(timings[0], timings[1]), elapsedTimeInSeconds(timings[1], timings[2]),
-                        elapsedTimeInSeconds(timings[2], timings[3]), elapsedTimeInSeconds(timings[3], timings[4]), elapsedTimeInSeconds(timings[4], timings[5]),
-                        elapsedTimeInSeconds(timings[5], timings[6]), elapsedTimeInSeconds(timings[1], timings[5]), elapsedTimeInSeconds(timings[0], timings[6]), pos.getX(), pos.getY(), pos.getZ(),
+                out.printf("%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\t%d\n", frames, TornadoAPIUtils.elapsedTimeInSeconds(timings[0], timings[1]), TornadoAPIUtils.elapsedTimeInSeconds(timings[1], timings[2]),
+                        TornadoAPIUtils.elapsedTimeInSeconds(timings[2], timings[3]), TornadoAPIUtils.elapsedTimeInSeconds(timings[3], timings[4]), TornadoAPIUtils.elapsedTimeInSeconds(timings[4], timings[5]),
+                        TornadoAPIUtils.elapsedTimeInSeconds(timings[5], timings[6]), TornadoAPIUtils.elapsedTimeInSeconds(timings[1], timings[5]), TornadoAPIUtils.elapsedTimeInSeconds(timings[0], timings[6]), pos.getX(), pos.getY(), pos.getZ(),
                         (hasTracked) ? 1 : 0, (doIntegrate) ? 1 : 0);
 
                 frames++;

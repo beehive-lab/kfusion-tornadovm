@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,9 +24,9 @@
  */
 package kfusion.java.numerics;
 
-import javax.swing.JTextField;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
-import uk.ac.manchester.tornado.api.collections.types.Float4;
+import javax.swing.JTextField;
 
 public class Helper {
 

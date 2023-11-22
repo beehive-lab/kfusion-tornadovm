@@ -6,7 +6,7 @@
  *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
  *  The University of Manchester
  *
- *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
+ *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
  *  PAMELA EP/K008730/1, and EU Horizon 2020 E2Data 780245.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,24 +24,24 @@
  */
 package kfusion.tornado.algorithms;
 
-import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.rigidTransform;
-import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.rotate;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.min;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sqrt;
-import static uk.ac.manchester.tornado.api.collections.types.Float2.mult;
-import static uk.ac.manchester.tornado.api.collections.types.Float3.add;
+import static kfusion.tornado.algorithms.GraphicsMath.rigidTransform;
+import static kfusion.tornado.algorithms.GraphicsMath.rotate;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.min;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.sqrt;
+import static uk.ac.manchester.tornado.api.types.vectors.Float2.mult;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.add;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.collections.types.Float2;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.FloatOps;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.api.collections.types.Int2;
-import uk.ac.manchester.tornado.api.collections.types.Int3;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.collections.types.Short2;
-import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.utils.FloatOps;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
+import uk.ac.manchester.tornado.api.types.vectors.Short2;
+import uk.ac.manchester.tornado.api.types.volumes.VolumeShort2;
 
 public class Integration {
 

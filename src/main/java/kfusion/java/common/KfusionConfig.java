@@ -38,23 +38,23 @@ import kfusion.java.devices.Kinect;
 import kfusion.java.devices.RawDevice;
 import kfusion.java.devices.TUMRGBDevice;
 import kfusion.java.devices.VideoCamera;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Int2;
-import uk.ac.manchester.tornado.api.collections.types.Int3;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
 
 public class KfusionConfig {
     protected static final Properties settings = new Properties(System.getProperties());
 
-    final private static FloatArray downTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0f, 0.1f);
+    final private static FloatArray downTrans = FloatArray.fromElements(0.0f, 0f, 0f, 0f, 0f, 0.1f);
 
-    final private static FloatArray leftTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0.1f, 0f );
+    final private static FloatArray leftTrans = FloatArray.fromElements(0.0f, 0f, 0f, 0f, 0.1f, 0f );
 
-    final private static FloatArray rightTrans = new FloatArray(0.0f, 0f, 0f, 0f, -0.1f, 0f);
+    final private static FloatArray rightTrans = FloatArray.fromElements(0.0f, 0f, 0f, 0f, -0.1f, 0f);
 
-    final private static FloatArray upTrans = new FloatArray(0.0f, 0f, 0f, 0f, 0f, -0.1f);
+    final private static FloatArray upTrans = FloatArray.fromElements(0.0f, 0f, 0f, 0f, 0f, -0.1f);
 
     private boolean debug;
     private boolean printFPS;

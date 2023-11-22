@@ -24,7 +24,7 @@
  */
 package kfusion.java.devices;
 
-import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
 
 public interface VideoCamera {
     boolean pollVideo(ImageByte3 buffer);

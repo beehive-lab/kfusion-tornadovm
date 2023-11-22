@@ -24,27 +24,27 @@
  */
 package kfusion.tornado.pipeline;
 
-import static uk.ac.manchester.tornado.matrix.MatrixMath.sgemm;
-
 import kfusion.java.devices.Device;
 import kfusion.java.pipeline.AbstractOpenGLPipeline;
+import kfusion.tornado.algorithms.GraphicsMath;
+import kfusion.tornado.algorithms.ImagingOps;
 import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
+import kfusion.tornado.algorithms.Renderer;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
-import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
-import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.matrix.MatrixFloatOps;
 import uk.ac.manchester.tornado.matrix.MatrixMath;
+
+import static uk.ac.manchester.tornado.matrix.MatrixMath.sgemm;
 
 public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenGLPipeline<T> {
 
