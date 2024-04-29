@@ -263,7 +263,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 				final int numWgs = Math.min(roundToWgs(numElements / cus, 128), maxwgs);
 
 				trackingPyramidGraphs[i].prebuiltTask("customReduce" + i,
-									tornadoDevice.getDeviceContext().needsBump() ? "optMapReduceBump" : "optMapReduce",
+									"optMapReduce",
 									"./opencl/optMapReduce.cl",
 									new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
 									new Access[]{Access.WRITE_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY},
