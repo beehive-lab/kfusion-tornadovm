@@ -61,7 +61,7 @@ public class TornadoBilateralFilterPipeline<T extends TornadoModel> extends Abst
         /*
          * Cleanup after previous configurations
          */
-        oclDevice.reset();
+        oclDevice.clean();
 
 
         preprocessingGraph = new TaskGraph("pp")

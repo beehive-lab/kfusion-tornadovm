@@ -37,7 +37,7 @@ import javax.swing.JPanel;
 import javax.swing.border.EtchedBorder;
 
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -53,7 +53,7 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 
     private TornadoDevice[] getAllTornadoDevices() {
         final TornadoDevice[] devices;
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(0);
         final List<TornadoDevice> tmpDevices = new ArrayList<>();
         if (driver != null) {
             for (int devIndex = 0; devIndex < driver.getDeviceCount(); devIndex++) {

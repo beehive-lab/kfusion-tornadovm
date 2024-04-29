@@ -90,7 +90,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         /*
          * Cleanup after previous configurations
          */
-        acceleratorDevice.reset();
+        acceleratorDevice.clean();
 
         pyramidPose = new Matrix4x4Float();
         pyramidDepths[0] = filteredDepthImage;
