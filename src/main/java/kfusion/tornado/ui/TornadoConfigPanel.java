@@ -56,7 +56,7 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
         TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(0);
         final List<TornadoDevice> tmpDevices = new ArrayList<>();
         if (driver != null) {
-            for (int devIndex = 0; devIndex < driver.getDeviceCount(); devIndex++) {
+            for (int devIndex = 0; devIndex < driver.getBackendCounter(); devIndex++) {
                 final TornadoDevice device = driver.getDevice(devIndex);
                 tmpDevices.add(device);
             }
