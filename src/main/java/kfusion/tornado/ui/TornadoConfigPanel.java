@@ -3,7 +3,7 @@
  *  algorithm running on TornadoVM.
  *  URL: https://github.com/beehive-lab/kfusion-tornadovm
  *
- *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
+ *  Copyright (c) 2013-2019, 2024, APT Group, Department of Computer Science,
  *  The University of Manchester
  *
  *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1, 
@@ -39,7 +39,7 @@ import javax.swing.border.EtchedBorder;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public class TornadoConfigPanel extends JPanel implements ActionListener {
 
@@ -53,10 +53,10 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 
     private TornadoDevice[] getAllTornadoDevices() {
         final TornadoDevice[] devices;
-        TornadoBackend driver = TornadoRuntime.getTornadoRuntime().getBackend(0);
+        TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0);
         final List<TornadoDevice> tmpDevices = new ArrayList<>();
         if (driver != null) {
-            for (int devIndex = 0; devIndex < driver.getBackendCounter(); devIndex++) {
+            for (int devIndex = 0; devIndex < driver.getNumDevices(); devIndex++) {
                 final TornadoDevice device = driver.getDevice(devIndex);
                 tmpDevices.add(device);
             }

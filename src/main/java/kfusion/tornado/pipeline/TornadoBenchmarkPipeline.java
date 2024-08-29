@@ -3,7 +3,7 @@
  *  algorithm running on TornadoVM.
  *  URL: https://github.com/beehive-lab/kfusion-tornadovm
  *
- *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
+ *  Copyright (c) 2013-2019, 2024, APT Group, Department of Computer Science,
  *  The University of Manchester
  *
  *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
@@ -39,15 +39,19 @@ import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
 import kfusion.tornado.algorithms.Renderer;
 import kfusion.tornado.common.TornadoModel;
+import uk.ac.manchester.tornado.api.AccessorParameters;
 import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat8;
@@ -185,7 +189,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         info("mapping onto %s\n", tornadoDevice.toString());
 
         final long localMemSize = tornadoDevice.getPhysicalDevice().getDeviceLocalMemorySize();
-        final float fraction = Float.parseFloat(TornadoRuntime.getProperty("kfusion.reduce.fraction", "1.0"));
+        final float fraction = Float.parseFloat(TornadoRuntimeProvider.getProperty("kfusion.reduce.fraction", "1.0"));
         cus = (int) (tornadoDevice.getPhysicalDevice().getDeviceMaxComputeUnits() * fraction);
         final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
         final int maxBinsPerCU = roundToWgs(maxBinsPerResource, 128);
@@ -245,6 +249,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
         trackingPyramidGraphs = new TaskGraph[iterations];
 
+        int numWgs = 0;
         for (int i = 0; i < iterations; i++) {
             //@formatter:off
 			trackingPyramidGraphs[i] = new TaskGraph("icp" + i)
@@ -259,16 +264,19 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
 			if (config.useCustomReduce()) {
 				final ImageFloat8 result = pyramidTrackingResults[i];
-				final int numElements = result.X() * result.Y();
-				final int numWgs = Math.min(roundToWgs(numElements / cus, 128), maxwgs);
+                final int numElements = result.X() * result.Y();
+                numWgs = Math.min(roundToWgs(numElements / cus, 128), maxwgs);
 
-				trackingPyramidGraphs[i].prebuiltTask("customReduce" + i,
+                AccessorParameters accessorParameters = new AccessorParameters(3);
+                accessorParameters.set(0, icpResultIntermediate1, Access.WRITE_ONLY);
+                accessorParameters.set(1, result, Access.READ_ONLY);
+                accessorParameters.set(2, result.X(), Access.READ_ONLY);
+                accessorParameters.set(3, result.Y(), Access.READ_ONLY);
+
+                trackingPyramidGraphs[i].prebuiltTask("customReduce" + i,
 									"optMapReduce",
 									"./opencl/optMapReduce.cl",
-									new Object[]{icpResultIntermediate1, result, result.X(), result.Y()},
-									new Access[]{Access.WRITE_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY},
-									tornadoDevice,
-									new int[]{numWgs})
+									accessorParameters)
 								  .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
 			} else if (config.useSimpleReduce()) {
 				trackingPyramidGraphs[i]
@@ -317,7 +325,13 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         trackingPyramidPlans = new TornadoExecutionPlan[trackingPyramidGraphs.length];
         for (TaskGraph trackingPyramid1 : trackingPyramidGraphs) {
             ImmutableTaskGraph itg = trackingPyramid1.snapshot();
-            trackingPyramidPlans[i++] = new TornadoExecutionPlan(itg).withDevice(tornadoDevice).withWarmUp();
+            TornadoExecutionPlan trackingPyramidPlan = new TornadoExecutionPlan(itg);
+            trackingPyramidPlans[i++] = trackingPyramidPlan.withDevice(tornadoDevice).withWarmUp();
+            if (config.useCustomReduce()) {
+                WorkerGrid workerGridNumWgs = new WorkerGrid1D(numWgs);
+                GridScheduler gridSchedulerNumWgs = new GridScheduler("icp" + i + "." + "customReduce" + i, workerGridNumWgs);
+                trackingPyramidPlan.withGridScheduler(gridSchedulerNumWgs);
+            }
         }
 
         ImmutableTaskGraph itgIntegrate = integrateGraph.snapshot();

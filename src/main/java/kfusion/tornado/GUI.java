@@ -3,7 +3,7 @@
  *  algorithm running on TornadoVM.
  *  URL: https://github.com/beehive-lab/kfusion-tornadovm
  *
- *  Copyright (c) 2013-2019 APT Group, School of Computer Science,
+ *  Copyright (c) 2013-2019, 2024, APT Group, Department of Computer Science,
  *  The University of Manchester
  *
  *  This work is partially supported by EPSRC grants Anyscale EP/L000725/1,
@@ -31,7 +31,7 @@ import kfusion.tornado.ui.KfusionTornadoCanvas;
 import kfusion.tornado.ui.TornadoConfigPanel;
 import kfusion.tornado.ui.TornadoFramesPanel;
 import kfusion.tornado.ui.TornadoWorkbenchFrame;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public class GUI {
 
@@ -39,7 +39,7 @@ public class GUI {
         EventQueue.invokeLater( () -> {
                 final TornadoModel config = new TornadoModel();
                 if (System.getProperty("tornado.config") != null) {
-                    TornadoRuntime.loadSettings(System.getProperty("tornado.config"));
+                    TornadoRuntimeProvider.loadSettings(System.getProperty("tornado.config"));
                 }
                 final TornadoConfigPanel tornadoConfig = new TornadoConfigPanel(config);
                 final KfusionTornadoCanvas canvas = new KfusionTornadoCanvas(config, 660 * 2, 500, tornadoConfig);
