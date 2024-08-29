@@ -94,7 +94,7 @@
      <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>1.0.6-dev</version>
+         <version>1.0.7-dev</version>
      </dependency>
    
      <dependency>
