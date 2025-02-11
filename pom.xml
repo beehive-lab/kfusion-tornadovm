@@ -94,13 +94,13 @@
      <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>1.0.8-dev</version>
+         <version>1.0.11-dev</version>
      </dependency>
    
      <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>1.0.8-dev</version>
+         <version>1.0.11-dev</version>
      </dependency>
 
         <dependency>
