@@ -181,14 +181,14 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         renderPlan = new TornadoExecutionPlan(renderGraph.snapshot()).withDevice(acceleratorDevice);
 
-        preprocessingPlan.withWarmUp();
-        estimatePosePlan.withWarmUp();
+        preprocessingPlan.withPreCompilation();
+        estimatePosePlan.withPreCompilation();
         for (TornadoExecutionPlan trackingPyramid1 : trackingPyramidPlans) {
-            trackingPyramid1.withWarmUp();
+            trackingPyramid1.withPreCompilation();
         }
-        integratePlan.withWarmUp();
-        raycastPlan.withWarmUp();
-        renderPlan.withWarmUp();
+        integratePlan.withPreCompilation();
+        raycastPlan.withPreCompilation();
+        renderPlan.withPreCompilation();
     }
 
     @Override

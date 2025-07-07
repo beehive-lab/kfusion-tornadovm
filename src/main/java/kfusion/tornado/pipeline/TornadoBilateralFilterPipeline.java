@@ -71,7 +71,7 @@ public class TornadoBilateralFilterPipeline<T extends TornadoModel> extends Abst
                 .task("bilateralFilter", ImagingOps::bilateralFilter, filteredDepthImage, scaledDepthImage, gaussian, eDelta, radius)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, filteredDepthImage);
         preprocessingPlan = new TornadoExecutionPlan(preprocessingGraph.snapshot()).withDevice(oclDevice);
-        preprocessingPlan.withWarmUp();
+        preprocessingPlan.withPreCompilation();
 
     }
 

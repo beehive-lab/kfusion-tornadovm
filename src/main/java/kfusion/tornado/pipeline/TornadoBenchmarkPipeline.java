@@ -315,18 +315,18 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         ImmutableTaskGraph itgProcessing = preprocessingGraph.snapshot();
         preprocessingPlan = new TornadoExecutionPlan(itgProcessing);
 
-        preprocessingPlan.withDevice(tornadoDevice).withWarmUp();
+        preprocessingPlan.withDevice(tornadoDevice).withPreCompilation();
 
         ImmutableTaskGraph itgEstimatePose = estimatePoseGraph.snapshot();
         estimatePosePlan = new TornadoExecutionPlan(itgEstimatePose);
-        estimatePosePlan.withWarmUp().withDevice(tornadoDevice);
+        estimatePosePlan.withPreCompilation().withDevice(tornadoDevice);
 
         int i = 0;
         trackingPyramidPlans = new TornadoExecutionPlan[trackingPyramidGraphs.length];
         for (TaskGraph trackingPyramid1 : trackingPyramidGraphs) {
             ImmutableTaskGraph itg = trackingPyramid1.snapshot();
             TornadoExecutionPlan trackingPyramidPlan = new TornadoExecutionPlan(itg);
-            trackingPyramidPlans[i++] = trackingPyramidPlan.withDevice(tornadoDevice).withWarmUp();
+            trackingPyramidPlans[i++] = trackingPyramidPlan.withDevice(tornadoDevice).withPreCompilation();
             if (config.useCustomReduce()) {
                 WorkerGrid workerGridNumWgs = new WorkerGrid1D(numWgs);
                 GridScheduler gridSchedulerNumWgs = new GridScheduler("icp" + i + "." + "customReduce" + i, workerGridNumWgs);
@@ -335,17 +335,17 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         }
 
         ImmutableTaskGraph itgIntegrate = integrateGraph.snapshot();
-        integratePlan = new TornadoExecutionPlan(itgIntegrate).withDevice(tornadoDevice).withWarmUp();
+        integratePlan = new TornadoExecutionPlan(itgIntegrate).withDevice(tornadoDevice).withPreCompilation();
 
         ImmutableTaskGraph itgRayCastGraph = raycastGraph.snapshot();
-        raycastPlan = new TornadoExecutionPlan(itgRayCastGraph).withDevice(tornadoDevice).withWarmUp();
+        raycastPlan = new TornadoExecutionPlan(itgRayCastGraph).withDevice(tornadoDevice).withPreCompilation();
 
 
         ImmutableTaskGraph itgRenderTrack = renderTrackGraph.snapshot();
-        renderTrackPlan = new TornadoExecutionPlan(itgRenderTrack).withDevice(tornadoDevice).withWarmUp();
+        renderTrackPlan = new TornadoExecutionPlan(itgRenderTrack).withDevice(tornadoDevice).withPreCompilation();
 
         ImmutableTaskGraph itgRender = renderGraph.snapshot();
-        renderPlan = new TornadoExecutionPlan(itgRender).withDevice(tornadoDevice).withWarmUp();
+        renderPlan = new TornadoExecutionPlan(itgRender).withDevice(tornadoDevice).withPreCompilation();
     }
 
     @Override
