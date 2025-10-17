@@ -40,10 +40,8 @@ import kfusion.tornado.algorithms.Raycast;
 import kfusion.tornado.algorithms.Renderer;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.AccessorParameters;
-import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
-import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -92,11 +90,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
     public static final float ICP_THRESHOLD = 1e-5f;
 
-    public static boolean EXECUTE_WITH_PROFILER = Boolean.parseBoolean(System.getProperty("slambench.profiler", "False"));
-
     private static final String HEAD_BENCHMARK = "frame\tacquisition\tpreprocessing\ttracking\tintegration\traycasting\trendering\tcomputation\ttotal    \tX          \tY          \tZ         \ttracked   \tintegrated";
-
-    private static final Policy policy = Policy.PERFORMANCE;
 
     public TornadoBenchmarkPipeline(TornadoModel config, PrintStream out) {
         super(config);
@@ -148,13 +142,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 timings[5] = System.nanoTime();
 
                 if (frames % renderingRate == 0) {
-                    if (EXECUTE_WITH_PROFILER) {
-                        renderTrackPlan.withDynamicReconfiguration(policy, DRMode.SERIAL).execute();
-                        renderPlan.withDynamicReconfiguration(policy, DRMode.SERIAL).execute();
-                    } else {
-                        renderTrackPlan.execute();
-                        renderPlan.execute();
-                    }
+                    renderTrackPlan.execute();
+                    renderPlan.execute();
                 }
 
                 timings[6] = System.nanoTime();
@@ -350,11 +339,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
     @Override
     protected void preprocessing() {
-        if (EXECUTE_WITH_PROFILER) {
-            preprocessingPlan.withDynamicReconfiguration(policy, DRMode.SERIAL).execute();
-        } else {
-            preprocessingPlan.execute();
-        }
+        preprocessingPlan.execute();
     }
 
     @Override
@@ -362,11 +347,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         invTrack.set(currentView.getPose());
         MatrixFloatOps.inverse(invTrack);
 
-        if (EXECUTE_WITH_PROFILER) {
-            integratePlan.withDynamicReconfiguration(policy, DRMode.SERIAL).execute();
-        } else {
-            integratePlan.execute();
-        }
+        integratePlan.execute();
     }
 
     @Override
@@ -426,11 +407,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         // convert the tracked pose into correct co-ordinate system for
         // raycasting which system (homogeneous co-ordinates? or virtual image?)
         MatrixMath.sgemm(currentView.getPose(), scaledInvK, referencePose);
-        if (EXECUTE_WITH_PROFILER) {
-            raycastPlan.withDynamicReconfiguration(policy, DRMode.SERIAL).execute();
-        } else {
-            raycastPlan.execute();
-        }
+        raycastPlan.execute();
     }
 
 }
