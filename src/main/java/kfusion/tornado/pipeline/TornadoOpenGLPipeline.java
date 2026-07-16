@@ -104,7 +104,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         preprocessingGraph = new TaskGraph("pp")
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, depthImageInput)
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, scaledDepthImage, scalingFactor, gaussian)
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, scaledDepthImage, scalingFactor, gaussian, pyramidDepths[0])
                 .task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor)
                 .task("bilateralFilter", ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian, eDelta, radius);
 
@@ -119,6 +119,8 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         }
 
         estimatePoseGraph = new TaskGraph("estimatePose");
+
+        estimatePoseGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, pyramidDepths[0], pyramidVerticies[0], pyramidNormals[0], scaledInvKs[0]);
 
         for (int i = 1; i < iterations; i++) {
             estimatePoseGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, projectReference, pyramidDepths[i], pyramidVerticies[i], scaledInvKs[i], pyramidNormals[i]);
@@ -155,7 +157,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         integrateGraph = new TaskGraph("integrate")
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, invTrack)
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, K, volumeDims, volume)
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, K, volumeDims, volume, scaledDepthImage)
                 .task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight);
 
         integratePlan = new TornadoExecutionPlan(integrateGraph.snapshot()).withDevice(acceleratorDevice);
@@ -165,7 +167,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         raycastGraph = new TaskGraph("raycast")
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, referencePose)
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, volume, volumeDims)
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, volume, volumeDims, verticies, normals)
                 .task("raycast", Raycast::raycast, verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep);
 
         raycastPlan = new TornadoExecutionPlan(raycastGraph.snapshot()).withDevice(acceleratorDevice);
