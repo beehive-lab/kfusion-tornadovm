@@ -15,7 +15,11 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tornado.version>0.1.0-SNAPSHOT</tornado.version>
+        <tornadovm.base.version>5.0.0</tornadovm.base.version>
+        <!-- Defaults (overridden by the JDK profiles below) -->
+        <jdk.version.suffix>-jdk25</jdk.version.suffix>
+        <tornadovm.version>${tornadovm.base.version}${jdk.version.suffix}</tornadovm.version>
+        <maven.compiler.release>25</maven.compiler.release>
     </properties>
 
     <build>
@@ -23,21 +27,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
-                    <compilerArgs>
-                        <arg>--enable-preview</arg>
-                    </compilerArgs>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
-                <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <release>${maven.compiler.release}</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -87,13 +79,13 @@
      <dependency>
          <groupId>io.github.beehive-lab</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>2.0.1-dev</version>
+         <version>${tornadovm.version}</version>
      </dependency>
-   
+
      <dependency>
          <groupId>io.github.beehive-lab</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>2.0.1-dev</version>
+         <version>${tornadovm.version}</version>
      </dependency>
 
         <dependency>
@@ -161,4 +153,50 @@
       <scope>test</scope>
     </dependency>
     </dependencies>
+
+    <profiles>
+        <!-- ─── JDK 21 ───────────────────────────────────────────────────────────
+             Auto-activates for JDK 21.x builds.
+             TornadoVM: ${tornadovm.base.version}-jdk21-dev
+        ─────────────────────────────────────────────────────────────────────── -->
+        <profile>
+            <id>jdk21</id>
+            <activation><jdk>[21,25)</jdk></activation>
+            <properties>
+                <maven.compiler.release>21</maven.compiler.release>
+                <jdk.version.suffix>-jdk21</jdk.version.suffix>
+                <tornadovm.version>${tornadovm.base.version}${jdk.version.suffix}</tornadovm.version>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <!-- The FFM API backing TornadoVM's native arrays is a preview API in
+                                 Java 21 (final since Java 22), so the jdk21 TornadoVM jars are
+                                 compiled with enable-preview and consumers must compile with it too. -->
+                            <compilerArgs>
+                                <arg>--enable-preview</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ─── JDK 25 ───────────────────────────────────────────────────────────
+             Auto-activates for JDK 25.0.2+ builds (minimum required version).
+             TornadoVM: ${tornadovm.base.version}-jdk25-dev
+        ─────────────────────────────────────────────────────────────────────── -->
+        <profile>
+            <id>jdk25</id>
+            <activation><jdk>[25.0.2,)</jdk></activation>
+            <properties>
+                <maven.compiler.release>25</maven.compiler.release>
+                <jdk.version.suffix>-jdk25</jdk.version.suffix>
+                <tornadovm.version>${tornadovm.base.version}${jdk.version.suffix}</tornadovm.version>
+            </properties>
+        </profile>
+    </profiles>
 </project>
