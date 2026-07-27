@@ -66,12 +66,16 @@ public class TornadoModelConfigPanel extends JPanel implements ActionListener {
             }
             config.setDevice(null);
             config.setReset();
+            // Reset invalidates the device even if Stop was never clicked, but
+            // left the button showing "Stop"; the next click would then take
+            // the "stop the running device" branch below with a null device.
+            startButton.setText("Start");
         });
 
         startButton.addActionListener((e) -> {
             if (startButton.getText().equals("Stop")) {
                 final Device currentDevice = config.getDevice();
-                if (currentDevice.isRunning()) {
+                if (currentDevice != null && currentDevice.isRunning()) {
                     currentDevice.stop();
                 }
                 startButton.setText("Start");
