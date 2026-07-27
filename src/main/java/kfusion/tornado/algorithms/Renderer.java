@@ -64,6 +64,14 @@ public class Renderer {
 
     private static final float INVALID = -2f;
 
+    // Named to avoid Float3.dot(): reached (via raycastPoint) from renderVolume,
+    // where TornadoVM's OpenCL sketcher emits it as a standalone generated
+    // function instead of inlining it, and "dot" collides with OpenCL C's
+    // builtin dot() function.
+    private static float dotProduct(Float3 a, Float3 b) {
+        return a.getX() * b.getX() + a.getY() * b.getY() + a.getZ() * b.getZ();
+    }
+
     public static void renderLight(ImageByte4 output, ImageFloat3 verticies, ImageFloat3 normals, Float3 light, Float3 ambient) {
         for (@Parallel int y = 0; y < output.Y(); y++) {
             for (@Parallel int x = 0; x < output.X(); x++) {
@@ -94,7 +102,7 @@ public class Renderer {
                     if (Float3.length(surfNorm) > 0) {
                         final Float3 diff = Float3.normalise(Float3.sub(light, test));
                         final Float3 normalizedSurfNorm = Float3.normalise(surfNorm);
-                        final float dir = Math.max(Float3.dot(normalizedSurfNorm, diff), 0f);
+                        final float dir = Math.max(dotProduct(normalizedSurfNorm, diff), 0f);
                         Float3 col = add(new Float3(dir, dir, dir), ambient);
                         col = Float3.clamp(col, 0f, 1f);
                         col = Float3.mult(col, 255f);

@@ -55,7 +55,6 @@ import static uk.ac.manchester.tornado.api.types.utils.VolumeOps.interp;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.add;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.cross;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.div;
-import static uk.ac.manchester.tornado.api.types.vectors.Float3.dot;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.mult;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.normalise;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.sub;
@@ -98,8 +97,15 @@ public class GraphicsMath {
         }
     }
 
+    // Named to avoid Float3.dot(): TornadoVM's OpenCL sketcher can emit a
+    // standalone generated function using the Java method's simple name, and
+    // "dot" collides with OpenCL C's builtin dot() function.
+    private static float dotProduct(Float3 a, Float3 b) {
+        return a.getX() * b.getX() + a.getY() * b.getY() + a.getZ() * b.getZ();
+    }
+
     public static Float3 rotate(Matrix4x4Float m, Float3 x) {
-        return new Float3(dot(m.row(0).asFloat3(), x), dot(m.row(1).asFloat3(), x), dot(m.row(2).asFloat3(), x));
+        return new Float3(dotProduct(m.row(0).asFloat3(), x), dotProduct(m.row(1).asFloat3(), x), dotProduct(m.row(2).asFloat3(), x));
     }
 
     public static float clamp(float val, float min, float max) {
@@ -155,7 +161,7 @@ public class GraphicsMath {
      */
     public static Float3 rigidTransform(Matrix4x4Float matrix, Float3 point) {
         final Float3 translation = matrix.column(3).asFloat3();
-        final Float3 rotation = new Float3(dot(matrix.row(0).asFloat3(), point), dot(matrix.row(1).asFloat3(), point), dot(matrix.row(2).asFloat3(), point));
+        final Float3 rotation = new Float3(dotProduct(matrix.row(0).asFloat3(), point), dotProduct(matrix.row(1).asFloat3(), point), dotProduct(matrix.row(2).asFloat3(), point));
         return add(rotation, translation);
     }
 
