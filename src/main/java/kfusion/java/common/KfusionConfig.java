@@ -450,7 +450,24 @@ public class KfusionConfig {
         return printFPS;
     }
 
+    /**
+     * Latest frames-per-second measurement, published by the rendering
+     * pipeline and read by the UI. Volatile: written on the GL animator
+     * thread, read on the AWT event dispatch thread.
+     */
+    private volatile float currentFPS;
+
+    public float getCurrentFPS() {
+        return currentFPS;
+    }
+
+    public void setCurrentFPS(float value) {
+        currentFPS = value;
+    }
+
     public void reset() {
+
+        currentFPS = 0;
 
         final float posX = Float.parseFloat(settings.getProperty("kfusion.model.offset.x", "0.5"));
         final float posY = Float.parseFloat(settings.getProperty("kfusion.model.offset.y", "0.5"));

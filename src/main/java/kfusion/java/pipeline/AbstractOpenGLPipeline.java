@@ -91,12 +91,24 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
         accumulatedTime += (stop - start);
         frames++;
 
-        if (config.printFPS() && frames % statsRate == 0) {
-            double fps = ((double) statsRate) / (((double) accumulatedTime) * 1e-9);
-            System.out.printf("fps: %f\n", fps);
-            accumulatedTime = 0;
+        // Wall-clock FPS over a ~500ms sliding window, published to the config
+        // so the UI can display it (for both the Java and Tornado pipelines).
+        fpsWindowFrames++;
+        final long elapsed = stop - fpsWindowStart;
+        if (elapsed >= FPS_WINDOW_NANOS) {
+            final float fps = (float) (fpsWindowFrames / (elapsed * 1e-9));
+            config.setCurrentFPS(fps);
+            if (config.printFPS()) {
+                System.out.printf("fps: %f\n", fps);
+            }
+            fpsWindowStart = stop;
+            fpsWindowFrames = 0;
         }
     }
+
+    private static final long FPS_WINDOW_NANOS = 500_000_000L;
+    private long fpsWindowStart = System.nanoTime();
+    private long fpsWindowFrames = 0;
 
     private void drawImageRGB(ImageByte3 image, final GL2 gl, int x, int y) {
         final ByteBuffer bb = image.asBuffer();
