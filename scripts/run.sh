@@ -4,7 +4,7 @@ echo "kfusion  kfusion.tornado.Benchmark conf/bm-traj2.settings "
 
 JARS=$(echo ${KFUSION_ROOT}/target/*.jar | tr ' ' ':')
 
-JFLAGS="-Xms4G -Xmx4G -Dtornado.kernels.coarsener=False -Dtornado.enable.fix.reads=False -Dtornado.compiler.fullInlining=True -Dlog4j.configurationFile=${KFUSION_ROOT}/conf/log4j2.xml -Dtornado.benchmarking=False -Dtornado.profiler=False -Dtornado.log.profiler=False"
+JFLAGS="-Xms8G -Xmx8G -Dtornado.kernels.coarsener=False -Dtornado.enable.fix.reads=False -Dtornado.compiler.fullInlining=True -Dlog4j.configurationFile=${KFUSION_ROOT}/conf/log4j2.xml -Dtornado.benchmarking=False -Dtornado.profiler=False -Dtornado.log.profiler=False"
 
 CLASSPATH=${CLASSPATH}:${JARS} tornado --jvm="${JFLAGS}" kfusion.tornado.Benchmark --params="conf/bm-traj2.settings" 
 
