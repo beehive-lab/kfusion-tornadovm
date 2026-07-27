@@ -129,7 +129,7 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
         gl.glMatrixMode(GL_MODELVIEW);
         gl.glLoadIdentity();
 
-        gl.glViewport(0, 0, height, width);
+        gl.glViewport(0, 0, width, height);
         gl.glMatrixMode(GL_PROJECTION);
         gl.glLoadIdentity();
 
