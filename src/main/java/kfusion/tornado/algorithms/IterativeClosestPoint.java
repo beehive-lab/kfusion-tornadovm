@@ -230,7 +230,6 @@ public class IterativeClosestPoint {
 
         sums.set(startIndex, sums.get(startIndex) + (error * error));
 
-
         sums.set(startIndex + 0 + 1, sums.get(startIndex + 0 + 1) + (error * value.getS0()));
         sums.set(startIndex + 1 + 1, sums.get(startIndex + 1 + 1) + (error * value.getS1()));
         sums.set(startIndex + 2 + 1, sums.get(startIndex + 2 + 1) + (error * value.getS2()));
@@ -238,16 +237,33 @@ public class IterativeClosestPoint {
         sums.set(startIndex + 4 + 1, sums.get(startIndex + 4 + 1) + (error * value.getS4()));
         sums.set(startIndex + 5 + 1, sums.get(startIndex + 5 + 1) + (error * value.getS5()));
 
+        accumulateJtJ(sums, jtj, value);
+
+        sums.set(info, sums.get(info) + 1);
+    }
+
+    // Split out of reduceValues() purely for readability. Deliberately kept as
+    // unrolled getS0()..getS5() accesses, not a loop over value.get(i): Float8
+    // is a fixed-lane vector type, and TornadoVM's sketcher requires constant
+    // lane indices - a runtime loop variable there crashes the sketch compiler
+    // ("Invalid lane: ...ValuePhi..."), it's not just a size/style issue.
+    //
+    // The accumulator reads at jtj+5, jtj+7, jtj+14 must read their own index
+    // (matching the CPU reference in kfusion.java.algorithms.IterativeClosestPoint):
+    // an earlier version of this method read jtj+1 at all three positions,
+    // corrupting the J^T*J matrix used for the Gauss-Newton pose solve and
+    // visibly degrading tracking/reconstruction quality.
+    private static void accumulateJtJ(final FloatArray sums, final int jtj, final Float8 value) {
         // is this jacobian transpose jacobian?
         sums.set(jtj + 0, sums.get(jtj + 0) + (value.getS0() * value.getS0()));
         sums.set(jtj + 1, sums.get(jtj + 1) + (value.getS0() * value.getS1()));
         sums.set(jtj + 2, sums.get(jtj + 2) + (value.getS0() * value.getS2()));
         sums.set(jtj + 3, sums.get(jtj + 3) + (value.getS0() * value.getS3()));
         sums.set(jtj + 4, sums.get(jtj + 4) + (value.getS0() * value.getS4()));
-        sums.set(jtj + 5, sums.get(jtj + 1) + (value.getS0() * value.getS5()));
+        sums.set(jtj + 5, sums.get(jtj + 5) + (value.getS0() * value.getS5()));
 
         sums.set(jtj + 6, sums.get(jtj + 6) + (value.getS1() * value.getS1()));
-        sums.set(jtj + 7, sums.get(jtj + 1) + (value.getS1() * value.getS2()));
+        sums.set(jtj + 7, sums.get(jtj + 7) + (value.getS1() * value.getS2()));
         sums.set(jtj + 8, sums.get(jtj + 8) + (value.getS1() * value.getS3()));
         sums.set(jtj + 9, sums.get(jtj + 9) + (value.getS1() * value.getS4()));
         sums.set(jtj + 10, sums.get(jtj + 10) + (value.getS1() * value.getS5()));
@@ -255,7 +271,7 @@ public class IterativeClosestPoint {
         sums.set(jtj + 11, sums.get(jtj + 11) + (value.getS2() * value.getS2()));
         sums.set(jtj + 12, sums.get(jtj + 12) + (value.getS2() * value.getS3()));
         sums.set(jtj + 13, sums.get(jtj + 13) + (value.getS2() * value.getS4()));
-        sums.set(jtj + 14, sums.get(jtj + 1) + (value.getS2() * value.getS5()));
+        sums.set(jtj + 14, sums.get(jtj + 14) + (value.getS2() * value.getS5()));
 
         sums.set(jtj + 15, sums.get(jtj + 15) + (value.getS3() * value.getS3()));
         sums.set(jtj + 16, sums.get(jtj + 16) + (value.getS3() * value.getS4()));
@@ -265,8 +281,6 @@ public class IterativeClosestPoint {
         sums.set(jtj + 19, sums.get(jtj + 19) + (value.getS4() * value.getS5()));
 
         sums.set(jtj + 20, sums.get(jtj + 20) + (value.getS5() * value.getS5()));
-
-        sums.set(info, sums.get(info) + 1);
     }
 
     public static void reduce(final FloatArray globalSums, final ImageFloat8 trackingResults) {
