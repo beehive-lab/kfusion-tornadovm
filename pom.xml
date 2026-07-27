@@ -15,7 +15,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tornadovm.base.version>5.0.0</tornadovm.base.version>
+        <tornadovm.base.version>5.2.0</tornadovm.base.version>
         <!-- Defaults (overridden by the JDK profiles below) -->
         <jdk.version.suffix>-jdk25</jdk.version.suffix>
         <tornadovm.version>${tornadovm.base.version}${jdk.version.suffix}</tornadovm.version>
