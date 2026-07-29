@@ -24,6 +24,7 @@
  */
 package kfusion.tornado.ui;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridBagLayout;
@@ -96,8 +97,20 @@ public class TornadoWorkbenchFrame extends JFrame implements WindowListener {
 
         // Center the (now size-capped) canvas within whatever the scroll
         // pane's viewport ends up being, instead of leaving it pinned to the
-        // viewport's top-left corner with blank space to its right/below.
+        // viewport's top-left corner with blank space to its right/below. The
+        // config panels above (Input/Tornado/Model Configuration) are wider
+        // than the canvas, and JSplitPane gives both halves of a vertical
+        // split the same width - so the canvas area is routinely wider than
+        // the canvas itself. Without an explicit max size, ViewportLayout
+        // stretches this wrapper (not just the canvas) to fill that extra
+        // width, and its default background rendered as black under macOS's
+        // dark mode - indistinguishable from the GL canvas's own black,
+        // which is what actually looked like unfixed dead space. Capping the
+        // wrapper's size and forcing a light background makes any leftover
+        // margin read as ordinary UI chrome instead.
         final JPanel centeringWrapper = new JPanel(new GridBagLayout());
+        centeringWrapper.setBackground(Color.LIGHT_GRAY);
+        centeringWrapper.setMaximumSize(canvas.getPreferredSize());
         centeringWrapper.add(canvas);
 
         // The canvas can need more screen space than fits on a small display
@@ -107,6 +120,7 @@ public class TornadoWorkbenchFrame extends JFrame implements WindowListener {
         // is clamped to the screen, and whatever doesn't fit is reachable by
         // scrolling or by zooming back out (-key) instead.
         final JScrollPane canvasScrollPane = new JScrollPane(centeringWrapper);
+        canvasScrollPane.getViewport().setBackground(Color.LIGHT_GRAY);
         final Rectangle screenBounds = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
         canvasScrollPane.setPreferredSize(new Dimension(Math.min(canvas.getPreferredSize().width, screenBounds.width - RESERVED_SCREEN_WIDTH),
                 Math.min(canvas.getPreferredSize().height, Math.max(150, screenBounds.height - RESERVED_SCREEN_HEIGHT))));
@@ -182,6 +196,7 @@ public class TornadoWorkbenchFrame extends JFrame implements WindowListener {
         canvas.setPreferredSize(zoomed);
         canvas.setMaximumSize(zoomed);
         canvas.setSize(zoomed);
+        centeringWrapper.setMaximumSize(zoomed);
         centeringWrapper.revalidate();
     }
 
