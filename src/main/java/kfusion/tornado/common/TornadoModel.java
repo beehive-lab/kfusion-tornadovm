@@ -118,6 +118,13 @@ public class TornadoModel extends KfusionConfig {
 		return Boolean.parseBoolean(value);
 	}
 
+	/** Whether every task-graph is executed once before the frame loop, to force its allocations. */
+	public boolean useWarmUp() {
+		final String property = System.getProperty("kfusion.warmup");
+		final String value = (property != null) ? property : settings.getProperty("kfusion.warmup", "True");
+		return Boolean.parseBoolean(value);
+	}
+
 	/**
 	 * Which task-graphs capture and replay a CUDA graph: {@code none}, {@code icp} (the graphs replayed
 	 * many times per frame) or {@code all}.

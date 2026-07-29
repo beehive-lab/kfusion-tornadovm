@@ -70,6 +70,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     private TornadoExecutionPlan plan;
 
     private GridScheduler gridScheduler;
+    private boolean captureCUDAGraphs;
 
     private static final int GRAPH_PREPROC = 0;
     private int graphIcpFirst;
@@ -406,22 +407,37 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             plan.withGridScheduler(gridScheduler);
             info("grid scheduler   : enabled\n");
         }
+        // Capture has to be requested BEFORE a graph's first execution: TornadoVM generates the
+        // bytecode - including the capture region - once and caches it per device, so a later request is
+        // silently ignored. Allocation and copy-in bytecodes are emitted outside the region by the graph
+        // compiler, so the warm-up below is what performs the capture.
         final String cudaGraphScope = config.getCUDAGraphScope();
         if ("all".equalsIgnoreCase(cudaGraphScope)) {
-            // capture every graph once and replay it as a single cuGraphLaunch afterwards
             plan.withAllGraphs().withCUDAGraph();
-            info("CUDA graphs      : all graphs\n");
-        } else if ("icp".equalsIgnoreCase(cudaGraphScope)) {
-            // the ICP graphs are the ones replayed many times per frame
-            for (int i = 0; i < iterations; i++) {
-                plan.withGraph(graphIcpFirst + i).withCUDAGraph();
-            }
-            plan.withAllGraphs();
-            info("CUDA graphs      : icp graphs only\n");
+            captureCUDAGraphs = true;
+            info("CUDA graphs      : enabled\n");
         }
         // NOTE: withPreCompilation() must NOT be used here. It runs every graph in isolation, which
         // leaves each graph with its own device buffers, so the pyramid/reference images produced by
         // one graph are invisible to the next and tracking silently degenerates.
+        // Execute every graph once before the frame loop. This is what captures the CUDA graphs when
+        // capture is enabled, and it also gets JIT compilation and the first-execution allocations out
+        // of the timed loop. GPULlama3 does the same thing through forceCopyInReadOnlyData().
+        // Integration is a no-op here because depthImageInput is still zero and integrate() skips pixels
+        // with zero depth. Raycasting is deliberately left out: it would overwrite the reference view
+        // with INVALID before the first frame, which perturbs the first tracked frames and shifts the
+        // whole trajectory. Its one-off first execution happens in-loop at frame 3 instead.
+        if (config.useWarmUp()) {
+            runGraph(GRAPH_PREPROC);
+            for (int i = 0; i < iterations; i++) {
+                runGraph(graphIcpFirst + i);
+            }
+            runGraph(graphIntegrate);
+            runGraph(graphRenderTrack);
+            runGraph(graphRender);
+            info("warm-up          : every graph executed once\n");
+        }
+
     }
 
     private void addWorkerGrid2D(String taskName, int globalX, int globalY, int localX, int localY) {
@@ -440,7 +456,13 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     private void runGraph(int graphIndex) {
         // The grid scheduler is registered once, at plan construction: re-registering it on every
         // execute() walks every task of every graph again, which is pure host overhead in the ICP loop.
-        plan.withGraph(graphIndex).execute();
+        final TornadoExecutionPlan graphPlan = plan.withGraph(graphIndex);
+        if (captureCUDAGraphs) {
+            // withGraph() re-selects the graph, so the capture request has to be restated for the
+            // selected graph on every execution - the same way GPULlama3's master plans do it.
+            graphPlan.withCUDAGraph();
+        }
+        graphPlan.execute();
     }
 
     @Override
