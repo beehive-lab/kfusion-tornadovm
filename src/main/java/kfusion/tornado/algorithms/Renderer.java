@@ -42,11 +42,11 @@
 package kfusion.tornado.algorithms;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.images.ImageByte3;
 import uk.ac.manchester.tornado.api.types.images.ImageByte4;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
-import uk.ac.manchester.tornado.api.types.images.ImageFloat8;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte4;
@@ -146,11 +146,25 @@ public class Renderer {
         }
     }
 
-    public static void renderTrack(ImageByte3 output, ImageFloat8 track) {
-        for (@Parallel int y = 0; y < track.Y(); y++) {
-            for (@Parallel int x = 0; x < track.X(); x++) {
+    /**
+     * Host-only variant kept for the pure-Java pipelines, which still hold their ICP result as an
+     * {@code ImageFloat8}. Never used as a GPU task.
+     */
+    public static void renderTrack(ImageByte3 output, uk.ac.manchester.tornado.api.types.images.ImageFloat8 track) {
+        final FloatArray flat = new FloatArray(track.X() * track.Y() * IterativeClosestPoint.TRACK_STRIDE);
+        for (int y = 0; y < track.Y(); y++) {
+            for (int x = 0; x < track.X(); x++) {
+                flat.set((((x + (y * track.X())) * IterativeClosestPoint.TRACK_STRIDE) + 7), track.get(x, y).getS7());
+            }
+        }
+        renderTrack(output, flat, track.X(), track.Y());
+    }
+
+    public static void renderTrack(ImageByte3 output, FloatArray track, int trackWidth, int trackHeight) {
+        for (@Parallel int y = 0; y < trackHeight; y++) {
+            for (@Parallel int x = 0; x < trackWidth; x++) {
                 Byte3 pixel = null;
-                final int result = (int) track.get(x, y).getS7();
+                final int result = (int) track.get((((x + (y * trackWidth)) * IterativeClosestPoint.TRACK_STRIDE) + 7));
                 switch (result) {
                     case 1: // ok GREY
                         pixel = new Byte3((byte) 128, (byte) 128, (byte) 128);

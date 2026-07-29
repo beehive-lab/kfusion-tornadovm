@@ -59,6 +59,10 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
      */
     private TaskGraph preprocessingGraph;
     private TaskGraph estimatePoseGraph;
+    private FloatArray[] trackingResults;
+    private int[] trackingWidth;
+    private int[] trackingHeight;
+
     private TaskGraph trackingPyramidGraphs[];
     private TaskGraph integrateGraph;
     private TaskGraph raycastGraph;
@@ -135,19 +139,28 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         estimatePosePlan = new TornadoExecutionPlan(estimatePoseGraph.snapshot()).withDevice(acceleratorDevice);
 
+        trackingResults = new FloatArray[iterations];
+        trackingWidth = new int[iterations];
+        trackingHeight = new int[iterations];
+        for (int i = 0; i < iterations; i++) {
+            trackingWidth[i] = pyramidTrackingResults[i].X();
+            trackingHeight[i] = pyramidTrackingResults[i].Y();
+            trackingResults[i] = new FloatArray(trackingWidth[i] * trackingHeight[i] * IterativeClosestPoint.TRACK_STRIDE);
+        }
+
         trackingPyramidGraphs = new TaskGraph[iterations];
         trackingPyramidPlans = new TornadoExecutionPlan[trackingPyramidGraphs.length];
         for (int i = 0; i < iterations; i++) {
 
             trackingPyramidGraphs[i] = new TaskGraph("icp" + i)
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidPose)
-                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, trackingResults[i], pyramidVerticies[i], pyramidNormals[i],
                             referenceView.getVerticies(), referenceView.getNormals(), projectReference)
                     .task("track" + i, IterativeClosestPoint::trackPose,
-                            pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
+                            trackingResults[i], trackingWidth[i], trackingHeight[i], pyramidVerticies[i], pyramidNormals[i],
                             referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
                             projectReference, distanceThreshold, normalThreshold)
-                    .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
+                    .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, trackingResults[i], trackingWidth[i] * trackingHeight[i])
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
 
             trackingPyramidPlans[i] = new TornadoExecutionPlan(trackingPyramidGraphs[i].snapshot()).withDevice(acceleratorDevice);
@@ -172,10 +185,10 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         renderGraph = new TaskGraph("render")
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, scenePose)
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, renderedScene, volume, volumeDims, light, ambient, pyramidVerticies[0], pyramidNormals[0], verticies, normals, pyramidTrackingResults[0])
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, renderedScene, volume, volumeDims, light, ambient, pyramidVerticies[0], pyramidNormals[0], verticies, normals, trackingResults[0])
                 .task("renderCurrentView", Renderer::renderLight, renderedCurrentViewImage, pyramidVerticies[0], pyramidNormals[0], light, ambient)
                 .task("renderReferenceView", Renderer::renderLight, renderedReferenceViewImage, verticies, normals, light, ambient)
-                .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
+                .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, trackingResults[0], trackingWidth[0], trackingHeight[0])
                 .task("renderVolume", Renderer::renderVolume, renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, renderedCurrentViewImage, renderedReferenceViewImage, renderedTrackingImage, renderedDepthImage, renderedScene);
 
@@ -215,6 +228,7 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         for (int level = pyramidIterations.length - 1; level >= 0; level--) {
             for (int i = 0; i < pyramidIterations[level]; i++) {
                 trackingPyramidPlans[level].execute();
+                trackingResult.points = trackingWidth[level] * trackingHeight[level];
                 IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
 
                 trackingResult.resultImage = pyramidTrackingResults[level];

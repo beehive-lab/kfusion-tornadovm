@@ -78,6 +78,14 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     private FloatArray icpResultIntermediate1;
     private FloatArray icpResult;
 
+    /**
+     * ICP correspondences, {@link IterativeClosestPoint#TRACK_STRIDE} floats per pixel and one array
+     * per pyramid level. Flat arrays rather than ImageFloat8: the CUDA backend has no float8.
+     */
+    private FloatArray[] trackingResults;
+    private int[] trackingWidth;
+    private int[] trackingHeight;
+
     private int cus;
     private int pyramidLevels;
     private boolean preprocMapped;
@@ -205,6 +213,15 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         pyramidNormals[0] = currentView.getNormals();
         icpResult = new FloatArray(32);
 
+        trackingResults = new FloatArray[pyramidIterations.length];
+        trackingWidth = new int[pyramidIterations.length];
+        trackingHeight = new int[pyramidIterations.length];
+        for (int i = 0; i < pyramidIterations.length; i++) {
+            trackingWidth[i] = pyramidTrackingResults[i].X();
+            trackingHeight[i] = pyramidTrackingResults[i].Y();
+            trackingResults[i] = new FloatArray(trackingWidth[i] * trackingHeight[i] * IterativeClosestPoint.TRACK_STRIDE);
+        }
+
         final Matrix4x4Float scenePose = sceneView.getPose();
 
         // ---------------------------------------------------------------------------------------
@@ -262,23 +279,23 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         for (int i = 0; i < iterations; i++) {
             icpGraphs[i] = new TaskGraph("icp" + i) //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidPose, projectReference) //
-                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, pyramidTrackingResults[i]) //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, trackingResults[i]) //
                     .consumeFromDevice("preproc", pyramidVerticies[i], pyramidNormals[i]) //
                     .consumeFromDevice("raycast", referenceVerticies, referenceNormals) //
                     .task("track" + i, IterativeClosestPoint::trackPose, //
-                            pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i], //
+                            trackingResults[i], trackingWidth[i], trackingHeight[i], pyramidVerticies[i], pyramidNormals[i], //
                             referenceVerticies, referenceNormals, pyramidPose, //
                             projectReference, distanceThreshold, normalThreshold);
 
             if (config.useSimpleReduce()) {
                 icpGraphs[i].transferToDevice(DataTransferMode.FIRST_EXECUTION, icpResultIntermediate1) //
-                        .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i]) //
+                        .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, trackingResults[i], trackingWidth[i] * trackingHeight[i]) //
                         .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
             } else {
-                icpGraphs[i].transferToHost(DataTransferMode.EVERY_EXECUTION, pyramidTrackingResults[i]);
+                icpGraphs[i].transferToHost(DataTransferMode.EVERY_EXECUTION, trackingResults[i]);
             }
             // renderTrack reads the finest level; never copy the tracking image back to the host
-            icpGraphs[i].persistOnDevice(pyramidTrackingResults[i]);
+            icpGraphs[i].persistOnDevice(trackingResults[i]);
         }
 
         // ---------------------------------------------------------------------------------------
@@ -306,8 +323,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
         final TaskGraph renderTrackGraph = new TaskGraph("renderTrack") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, renderedTrackingImage) //
-                .consumeFromDevice("icp0", pyramidTrackingResults[0]) //
-                .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0]) //
+                .consumeFromDevice("icp0", trackingResults[0]) //
+                .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, trackingResults[0], trackingWidth[0], trackingHeight[0]) //
                 .persistOnDevice(renderedTrackingImage);
 
         final TaskGraph renderGraph = new TaskGraph("render") //
@@ -412,46 +429,18 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 runGraph(graphIcpFirst + level);
 
                 final boolean updated;
+                trackingResult.points = trackingWidth[level] * trackingHeight[level];
                 if (config.useSimpleReduce()) {
                     IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
-                    trackingResult.resultImage = pyramidTrackingResults[level];
                     updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, ICP_THRESHOLD);
                 } else {
-                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, pyramidTrackingResults[level], pyramidPose, ICP_THRESHOLD);
-                }
-
-                if (Boolean.getBoolean("kfusion.debug.cpu")) {
-                    final uk.ac.manchester.tornado.api.types.images.ImageFloat8 host = new uk.ac.manchester.tornado.api.types.images.ImageFloat8(pyramidTrackingResults[level].X(), pyramidTrackingResults[level].Y());
-                    kfusion.java.algorithms.IterativeClosestPoint.trackPose(host, pyramidVerticies[level], pyramidNormals[level], referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
-                            projectReference, distanceThreshold, normalThreshold);
-                    final java.util.Map<Integer, Integer> cpuHistogram = new java.util.TreeMap<>();
-                    for (int y = 0; y < host.Y(); y++) {
-                        for (int x = 0; x < host.X(); x++) {
-                            cpuHistogram.merge((int) host.get(x, y).getS7(), 1, Integer::sum);
-                        }
-                    }
-                    out.printf("[dbg] frame %d level %d CPU(java-impl) histogram %s%n", frames, level, cpuHistogram);
-
-                    final uk.ac.manchester.tornado.api.types.images.ImageFloat8 host2 = new uk.ac.manchester.tornado.api.types.images.ImageFloat8(pyramidTrackingResults[level].X(), pyramidTrackingResults[level].Y());
-                    IterativeClosestPoint.trackPose(host2, pyramidVerticies[level], pyramidNormals[level], referenceView.getVerticies(), referenceView.getNormals(), pyramidPose, projectReference,
-                            distanceThreshold, normalThreshold);
-                    final java.util.Map<Integer, Integer> tornadoOnHost = new java.util.TreeMap<>();
-                    for (int y = 0; y < host2.Y(); y++) {
-                        for (int x = 0; x < host2.X(); x++) {
-                            tornadoOnHost.merge((int) host2.get(x, y).getS7(), 1, Integer::sum);
-                        }
-                    }
-                    out.printf("[dbg] frame %d level %d CPU(tornado-impl) histogram %s%n", frames, level, tornadoOnHost);
+                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, trackingResults[level], trackingWidth[level] * trackingHeight[level], pyramidPose, ICP_THRESHOLD);
                 }
 
                 if (Boolean.getBoolean("kfusion.debug.images") && !config.useSimpleReduce()) {
-                    final uk.ac.manchester.tornado.api.types.images.ImageFloat8 res = pyramidTrackingResults[level];
                     final java.util.Map<Integer, Integer> histogram = new java.util.TreeMap<>();
-                    for (int y = 0; y < res.Y(); y++) {
-                        for (int x = 0; x < res.X(); x++) {
-                            final int status = (int) res.get(x, y).getS7();
-                            histogram.merge(status, 1, Integer::sum);
-                        }
+                    for (int element = 0; element < trackingWidth[level] * trackingHeight[level]; element++) {
+                        histogram.merge((int) trackingResults[level].get((element * IterativeClosestPoint.TRACK_STRIDE) + 7), 1, Integer::sum);
                     }
                     out.printf("[dbg] frame %d level %d status histogram %s%n", frames, level, histogram);
                 }
