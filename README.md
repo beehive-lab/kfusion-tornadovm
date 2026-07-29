@@ -25,6 +25,51 @@ Summary: time=6.50, frames=882, FPS=135.79
   
 ## How to start? ##
 
+**Requirements:** JDK 21, an NVIDIA GPU with CUDA, and TornadoVM 5.2.1+ built with the CUDA backend.
+This branch targets the **CUDA backend only** (see `RESULTS.md` and `docs/PROFILE.md` for numbers and
+profiling detail). The GUI (`kfusion.tornado.GUI`) still compiles but is untested on JDK 21; the
+benchmark path is what is maintained here.
+
+```bash
+# 1. TornadoVM with the CUDA backend
+cd <tornadovm> && make BACKEND=cuda
+export TORNADOVM_HOME=<tornadovm>/dist/tornadovm-*-cuda-linux-amd64/tornadovm-*-cuda
+
+# 2. KFusion
+export KFUSION_ROOT="${PWD}"
+./compile.sh
+
+# 3. Dataset: downloads living_room_traj2_loop (~2GB) and the ground truth, then converts it to the
+#    flat .raw format with kfusion.tools.Scene2Raw. slambench is NOT needed any more.
+./downloadDataSets.sh
+
+# 4. Benchmark (prints the per-frame table, then the ATE against the ground truth)
+scripts/runBenchmark.sh CUDA conf/bm-traj2.settings my-run
+
+# 5. Profile with Nsight Systems + NVTX phase ranges (40 frames)
+scripts/profileNsys.sh conf/bm-traj2.settings 40
+
+# 6. Compare two runs frame by frame (e.g. CUDA against the OpenCL reference)
+python3 bin/compareRuns.py var/logs/ref-OpenCL.table var/logs/my-run.table
+```
+
+Useful switches (JVM properties, or via `KFUSION_JFLAGS`):
+
+| property | default | meaning |
+|---|---|---|
+| `kfusion.tornado.backend` | `CUDA` | `CUDA` or `OpenCL` (OpenCL is the validation reference) |
+| `kfusion.gridscheduler` | `true` | explicit thread-block shapes instead of the backend default |
+| `kfusion.icp.reduce` | `twostage` | `twostage` finishes the ICP reduction on the device; `legacy` copies partials back |
+| `kfusion.model.reduce` | `8192` | threads in the first ICP reduction stage |
+| `kfusion.cuda.graphs` | `none` | `none` / `icp` / `all` — CUDA graph capture (currently broken, see RESULTS.md) |
+| `kfusion.max.frames` | all | stop after N frames (keeps nsys traces small) |
+| `kfusion.nvtx` | `false` | emit NVTX ranges per pipeline phase |
+
+Note: runs need `-Dgraal.MaximumInliningSize=1000` (the launcher scripts set it) because
+`IterativeClosestPoint.reduceValues` exceeds the sketcher's default inlining budget.
+
+## Legacy instructions (TornadoVM 0.x, JDK 8) ##
+
 This implementation runs on TornadoVM to achieve GPU acceleration and real-time performance.
 Hence, you need to install [Tornado](https://github.com/beehive-lab/Tornado) following the instructions from [Tornado-INSTALL](https://github.com/beehive-lab/Tornado/blob/master/INSTALL.md)
 
