@@ -97,6 +97,40 @@ public class IterativeClosestPoint {
         }
     }
 
+    /**
+     * Middle stage of the on-device ICP reduction: collapses {@code chunk} consecutive per-thread
+     * blocks into one, in parallel over (group, slot). This is what lets stage one run with enough
+     * threads to fill the GPU - with only 1024 threads (32 warps on 128 SMs) mapReduce was 87% of all
+     * GPU time.
+     */
+    public static void reducePartials(final FloatArray output, final FloatArray input, final int chunk) {
+        final int groups = output.getSize() / 32;
+        for (@Parallel int index = 0; index < groups * 32; index++) {
+            final int group = index / 32;
+            final int slot = index - (group * 32);
+            float sum = 0f;
+            for (int k = 0; k < chunk; k++) {
+                sum += input.get((((group * chunk) + k) * 32) + slot);
+            }
+            output.set((group * 32) + slot, sum);
+        }
+    }
+
+    /**
+     * Second stage of the on-device ICP reduction: sums the per-thread partial blocks written by
+     * {@link #mapReduce} so that only the final 32 floats have to be copied back to the host, instead
+     * of {@code reductionSize * 32} floats plus a serial host-side sum.
+     */
+    public static void reduceFinal(final FloatArray output, final FloatArray partials, final int numThreads) {
+        for (@Parallel int slot = 0; slot < 32; slot++) {
+            float sum = 0f;
+            for (int thread = 0; thread < numThreads; thread++) {
+                sum += partials.get((thread * 32) + slot);
+            }
+            output.set(slot, sum);
+        }
+    }
+
     public static void reduceIntermediate(final FloatArray output, final FloatArray input) {
 
         final int elementSize = 32;

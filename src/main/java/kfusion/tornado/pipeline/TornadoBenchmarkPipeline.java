@@ -82,7 +82,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     private Matrix4x4Float pyramidPose;
 
     private FloatArray icpResultIntermediate1;
+    private FloatArray icpGroupPartials;
     private FloatArray icpResult;
+    private int icpReduceGroups;
+    private int icpReduceChunk;
 
     /**
      * ICP correspondences, {@link IterativeClosestPoint#TRACK_STRIDE} floats per pixel and one array
@@ -276,6 +279,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         // ---------------------------------------------------------------------------------------
         if (config.useSimpleReduce()) {
             icpResultIntermediate1 = new FloatArray(config.getReductionSize() * 32);
+            icpReduceChunk = Math.max(1, config.getReductionSize() / config.getReduceGroups());
+            icpReduceGroups = Math.max(1, config.getReductionSize() / icpReduceChunk);
+            icpGroupPartials = new FloatArray(icpReduceGroups * 32);
         }
 
         final ImageFloat3 referenceVerticies = referenceView.getVerticies();
@@ -294,9 +300,17 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                             projectReference, distanceThreshold, normalThreshold);
 
             if (config.useSimpleReduce()) {
-                icpGraphs[i].transferToDevice(DataTransferMode.FIRST_EXECUTION, icpResultIntermediate1) //
-                        .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, trackingResults[i], trackingWidth[i] * trackingHeight[i]) //
-                        .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
+                icpGraphs[i].transferToDevice(DataTransferMode.FIRST_EXECUTION, icpResultIntermediate1, icpResult) //
+                        .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, trackingResults[i], trackingWidth[i] * trackingHeight[i]);
+                if (config.useTwoStageReduce()) {
+                    // finish the reduction on the device: 32 floats come back instead of reductionSize * 32
+                    icpGraphs[i].transferToDevice(DataTransferMode.FIRST_EXECUTION, icpGroupPartials) //
+                            .task("reducepartials" + i, IterativeClosestPoint::reducePartials, icpGroupPartials, icpResultIntermediate1, icpReduceChunk) //
+                            .task("reducefinal" + i, IterativeClosestPoint::reduceFinal, icpResult, icpGroupPartials, icpReduceGroups) //
+                            .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResult);
+                } else {
+                    icpGraphs[i].transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
+                }
             } else {
                 icpGraphs[i].transferToHost(DataTransferMode.EVERY_EXECUTION, trackingResults[i]);
             }
@@ -376,6 +390,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             addWorkerGrid2D("icp" + i + ".track" + i, trackingWidth[i], trackingHeight[i], 32, 8);
             if (config.useSimpleReduce()) {
                 addWorkerGrid1D("icp" + i + ".mapreduce" + i, config.getReductionSize(), 128);
+                if (config.useTwoStageReduce()) {
+                    addWorkerGrid1D("icp" + i + ".reducepartials" + i, icpReduceGroups * 32, 128);
+                    addWorkerGrid1D("icp" + i + ".reducefinal" + i, 32, 32);
+                }
             }
         }
         addWorkerGrid2D("integrate.integrate", volume.X(), volume.Y(), 32, 8);
@@ -491,7 +509,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 final boolean updated;
                 trackingResult.points = trackingWidth[level] * trackingHeight[level];
                 if (config.useSimpleReduce()) {
-                    IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
+                    if (!config.useTwoStageReduce()) {
+                        IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
+                    }
                     updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, ICP_THRESHOLD);
                 } else {
                     updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, trackingResults[level], trackingWidth[level] * trackingHeight[level], pyramidPose, ICP_THRESHOLD);
