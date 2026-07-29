@@ -11,6 +11,16 @@ If you enable the GUI while running KFusion you will see a real-time 3D space re
 
 ![KFusion GUI output](doc/images/kfusion-gui-output.png)
 
+The GUI is split into five labeled panes:
+
+* **Camera Input**: the raw RGB/video frame from the sensor (or dataset), unprocessed. Shown for visual context only - it isn't used by the tracking/reconstruction algorithm.
+* **Current View**: the *live* depth frame's surface, converted to 3D points and shaded - i.e. what the sensor sees right now, from the sensor's current pose.
+* **Reference View**: the surface predicted by raycasting the accumulated 3D map (the fused volume built from all prior frames) from the estimated camera pose - i.e. what the model expects you to see if the pose estimate is correct.
+* **Tracking**: a diagnostic overlay showing, per pixel, *why* ICP did or didn't use that pixel when aligning Current View against Reference View (grey = matched fine; colored codes for no-input/out-of-image/no-correspondence/too-far/wrong-normal).
+* **3D Reconstruction**: the actual result - a direct raycast render of the fused TSDF volume from an independently rotatable virtual camera (controlled by the GUI's rotation buttons), not tied to the sensor's pose.
+
+Each frame, tracking nudges the camera pose until Current View lines up with Reference View; Tracking shows the correspondence quality behind that alignment. Neither Current View, Reference View, nor Tracking is "the result" - they're per-frame internal state. 3D Reconstruction is the accumulated map you'd actually care about/export.
+
 In addition, you will see output text with performance metrics across the frames that KFusion processes:
 ```bash
 frame	acquisition	preprocessing	tracking	integration	raycasting	rendering	computation	total    	X          	Y          	Z         	tracked   	integrated
@@ -25,39 +35,54 @@ Summary: time=6.50, frames=882, FPS=135.79
   
 ## How to start? ##
 
-This implementation runs on TornadoVM to achieve GPU acceleration and real-time performance.
-Hence, you need to install [Tornado](https://github.com/beehive-lab/Tornado) following the instructions from [Tornado-INSTALL](https://github.com/beehive-lab/Tornado/blob/master/INSTALL.md)
+This implementation runs on [TornadoVM](https://github.com/beehive-lab/TornadoVM) to achieve GPU acceleration and real-time performance. TornadoVM supports three backends - **Metal**, **OpenCL**, and **CUDA** - and KFusion-TornadoVM runs on any of them; pick whichever matches your hardware (Metal on Apple Silicon/macOS, OpenCL for most GPUs/CPUs, CUDA for NVIDIA GPUs).
 
-After you successfully build Tornado, you can install KFusion-TornadoVM by issuing the following commands:
+##### 1. Install a TornadoVM SDK with a backend
 
+The easiest way is via [SDKMAN!](https://sdkman.io/):
 
-##### Dependencies:
+```bash
+sdk install tornadovm <version>-metal   # e.g. on macOS/Apple Silicon
+sdk install tornadovm <version>-opencl  # or, for OpenCL
+sdk install tornadovm <version>-cuda    # or, for CUDA
+
+sdk use tornadovm <version>-<backend>
+source "$(sdk home tornadovm <version>-<backend>)/setvars.sh"
+```
+
+Alternatively, build TornadoVM from source with the backend(s) you need - see [TornadoVM's install guide](https://github.com/beehive-lab/TornadoVM/blob/develop/INSTALL_FROM_SOURCE.md) - then `source setvars.sh` from your build's SDK directory.
+
+Either way, once set up, `$TORNADOVM_HOME` should be set and `tornado` should be on your `PATH`:
+
+```bash
+tornado --devices
+```
+
+should list at least one accelerator.
+
+##### 2. Dependencies:
 
 ```bash
 sudo dnf install -y yaml-cpp-devel gtk2-devel mesa-libEGL-devel vtk-devel cmake make git mercurial wget unzip gcc gcc-c++ lapack blas lapack-devel blas-devel findutils cvs glut-devel glew-devel boost-devel glog-devel gflags-devel libXmu-devel
 ```
 
-
-Then install KFUSION-TornadoVM
+##### 3. Build and run KFusion-TornadoVM
 
 ```bash
-# Setup:
 export KFUSION_ROOT="${PWD}"
 export PATH="${PATH}:${KFUSION_ROOT}/bin"
-export JAVA_HOME=/path/to/graal/jdk1.8.0_131
-export TORNADO_ROOT=/path/to/tornado
-export PATH="${PATH}:${TORNADO_ROOT}/bin/bin/"
-export TORNADO_SDK=${TORNADO_ROOT}/bin/sdk
 
-## Compile and run KFusion-TornadoVM
+## Compile KFusion-TornadoVM (auto-selects the tornado-api version matching your active JDK)
 $ mvn clean install -DskipTests
 
-## Run KFusion-TornadoVM GUI 
-$ kfusion kfusion.tornado.GUI
+## Run the KFusion-TornadoVM GUI
+$ ./scripts/runGUI.sh
 
-## Run Benchmarking mode
-$ kfusion kfusion.tornado.Benchmark <config file>
+## Run in console/Benchmark mode
+$ ./scripts/run.sh
 ```
+
+`runGUI.sh` and `run.sh` work unchanged across Metal, OpenCL, and CUDA - they pick up whichever backend the active TornadoVM SDK provides via its generated [argfile](https://github.com/beehive-lab/TornadoVM/blob/develop/docs/source/simple-start.rst) (`tornado --generate-argfile`), which is created automatically on first run if it doesn't already exist under `$TORNADOVM_HOME`. If your SDK has more than one backend installed together, pass the backend name as the first argument to prioritize its devices, e.g. `./scripts/runGUI.sh opencl` or `./scripts/run.sh cuda`.
 
 ## How to get the datasets? 
 
@@ -92,18 +117,18 @@ KFusion can run in two modes receiving input from:
 1) RGB-d camera where you select the input source from the drop-down menu:
 ```bash
 ## Run KFusion-Tornado GUI 
-$ kfusion kfusion.tornado.GUI
+$ ./scripts/runGUI.sh
 ```
 
 2) Pre-defined datasets again through the GUI selection or:
 ```bash
-## Run KFusion-Tornado GUI 
-$ kfusion kfusion.tornado.Benchmark <config file>
+## Run KFusion-Tornado in console/Benchmark mode
+$ ./scripts/run.sh [backend] <config file>
 ```
 In our examples, we use images from the [ICL-NUIM](https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html) dataset which will be downloaded automatically when issuing the following command:
 
 ```bash
-$ kfusion kfusion.tornado.Benchmark conf/bm-traj2.settings 
+$ ./scripts/run.sh "" conf/bm-traj2.settings
 ```
 
 Note: 
