@@ -15,7 +15,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tornado.version>0.1.0-SNAPSHOT</tornado.version>
+        <tornado.version>5.2.1-jdk21-dev</tornado.version>
+        <log4j.version>2.25.3</log4j.version>
     </properties>
 
     <build>
@@ -23,21 +24,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <release>21</release>
                     <compilerArgs>
                         <arg>--enable-preview</arg>
+                        <arg>--add-modules</arg>
+                        <arg>jdk.incubator.vector</arg>
                     </compilerArgs>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
-                <configuration>
-                    <source>21</source>
-                    <target>21</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -87,13 +81,21 @@
      <dependency>
          <groupId>io.github.beehive-lab</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>2.0.1-dev</version>
+         <version>${tornado.version}</version>
      </dependency>
    
      <dependency>
          <groupId>io.github.beehive-lab</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>2.0.1-dev</version>
+         <version>${tornado.version}</version>
+     </dependency>
+
+     <!-- Only for the NVTX range API (TornadoNativeStreamSupport); provided by the TornadoVM SDK at runtime -->
+     <dependency>
+         <groupId>io.github.beehive-lab</groupId>
+         <artifactId>tornado-runtime</artifactId>
+         <version>${tornado.version}</version>
+         <scope>provided</scope>
      </dependency>
 
         <dependency>
@@ -127,12 +129,12 @@
     <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-api</artifactId>
-        <version>2.17.1</version>
+        <version>${log4j.version}</version>
     </dependency>
     <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-core</artifactId>
-        <version>2.25.3</version>
+        <version>${log4j.version}</version>
     </dependency>
     <dependency>
       <groupId>ar.com.hjg</groupId>

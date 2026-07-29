@@ -39,20 +39,13 @@ import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
 import kfusion.tornado.algorithms.Renderer;
 import kfusion.tornado.common.TornadoModel;
-import uk.ac.manchester.tornado.api.AccessorParameters;
-import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
-import uk.ac.manchester.tornado.api.types.images.ImageFloat8;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
@@ -96,11 +89,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         super(config);
         this.out = out;
         initialPosition = new Float3();
-    }
-
-    private static int roundToWgs(int value, int wgs) {
-        final int numWgs = value / wgs;
-        return numWgs * wgs;
     }
 
     @Override
@@ -178,16 +166,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         info("mapping onto %s\n", tornadoDevice.toString());
 
         final long localMemSize = tornadoDevice.getPhysicalDevice().getDeviceLocalMemorySize();
-        final float fraction = Float.parseFloat(TornadoRuntimeProvider.getProperty("kfusion.reduce.fraction", "1.0"));
-        cus = (int) (tornadoDevice.getPhysicalDevice().getDeviceMaxComputeUnits() * fraction);
-        final int maxBinsPerResource = (int) localMemSize / ((32 * 4) + 24);
-        final int maxBinsPerCU = roundToWgs(maxBinsPerResource, 128);
-
-        final int maxwgs = maxBinsPerCU * cus;
+        cus = tornadoDevice.getPhysicalDevice().getDeviceMaxComputeUnits();
 
         info("local mem size   : %s\n", humanReadableByteCount(localMemSize, false));
         info("num compute units: %d\n", cus);
-        info("max bins per cu  : %d\n", maxBinsPerCU);
 
         pyramidPose = new Matrix4x4Float();
         pyramidDepths[0] = filteredDepthImage;
@@ -230,15 +212,12 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
         estimatePoseGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, projectReference);
 
-        if (config.useCustomReduce()) {
-            icpResultIntermediate1 = new FloatArray(cus * 32);
-        } else if (config.useSimpleReduce()) {
+        if (config.useSimpleReduce()) {
             icpResultIntermediate1 = new FloatArray(config.getReductionSize() * 32);
         }
 
         trackingPyramidGraphs = new TaskGraph[iterations];
 
-        int numWgs = 0;
         for (int i = 0; i < iterations; i++) {
             //@formatter:off
 			trackingPyramidGraphs[i] = new TaskGraph("icp" + i)
@@ -251,23 +230,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 							referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
 							projectReference, distanceThreshold, normalThreshold);
 
-			if (config.useCustomReduce()) {
-				final ImageFloat8 result = pyramidTrackingResults[i];
-                final int numElements = result.X() * result.Y();
-                numWgs = Math.min(roundToWgs(numElements / cus, 128), maxwgs);
-
-                AccessorParameters accessorParameters = new AccessorParameters(3);
-                accessorParameters.set(0, icpResultIntermediate1, Access.WRITE_ONLY);
-                accessorParameters.set(1, result, Access.READ_ONLY);
-                accessorParameters.set(2, result.X(), Access.READ_ONLY);
-                accessorParameters.set(3, result.Y(), Access.READ_ONLY);
-
-                trackingPyramidGraphs[i].prebuiltTask("customReduce" + i,
-									"optMapReduce",
-									"./opencl/optMapReduce.cl",
-									accessorParameters)
-								  .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
-			} else if (config.useSimpleReduce()) {
+			if (config.useSimpleReduce()) {
 				trackingPyramidGraphs[i]
 						.task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
 						.transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
@@ -316,11 +279,6 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             ImmutableTaskGraph itg = trackingPyramid1.snapshot();
             TornadoExecutionPlan trackingPyramidPlan = new TornadoExecutionPlan(itg);
             trackingPyramidPlans[i++] = trackingPyramidPlan.withDevice(tornadoDevice).withPreCompilation();
-            if (config.useCustomReduce()) {
-                WorkerGrid workerGridNumWgs = new WorkerGrid1D(numWgs);
-                GridScheduler gridSchedulerNumWgs = new GridScheduler("icp" + i + "." + "customReduce" + i, workerGridNumWgs);
-                trackingPyramidPlan.withGridScheduler(gridSchedulerNumWgs);
-            }
         }
 
         ImmutableTaskGraph itgIntegrate = integrateGraph.snapshot();
@@ -366,17 +324,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 trackingPyramidPlans[level].execute();
 
                 final boolean updated;
-                if (config.useCustomReduce()) {
-                    for (int k = 1; k < cus; k++) {
-                        final int index = k * 32;
-                        for (int j = 0; j < 32; j++) {
-                            float value = icpResultIntermediate1.get(j) + icpResultIntermediate1.get(index + j);
-                            icpResultIntermediate1.set(j, value);
-                        }
-                    }
-                    trackingResult.resultImage = pyramidTrackingResults[level];
-                    updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResultIntermediate1, pyramidPose, ICP_THRESHOLD);
-                } else if (config.useSimpleReduce()) {
+                if (config.useSimpleReduce()) {
                     IterativeClosestPoint.reduceIntermediate(icpResult, icpResultIntermediate1);
                     trackingResult.resultImage = pyramidTrackingResults[level];
                     updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, ICP_THRESHOLD);

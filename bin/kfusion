@@ -1,7 +1,19 @@
 #!/bin/bash
+#
+# Launches a KFusion main class on TornadoVM (CUDA backend).
+#
+# Requires KFUSION_ROOT, TORNADOVM_HOME and JAVA_HOME to be set, e.g.
+#   export KFUSION_ROOT=$PWD
+#   export TORNADOVM_HOME=<tornadovm>/dist/tornadovm-<version>-cuda-linux-amd64/tornadovm-<version>-cuda
+#   export PATH=$TORNADOVM_HOME/bin:$PATH
+
+if [ -z "${KFUSION_ROOT}" ]; then
+    echo "KFUSION_ROOT is not set" >&2
+    exit 1
+fi
 
 JARS=$(echo ${KFUSION_ROOT}/target/*.jar | tr ' ' ':')
 
-JFLAGS="-Xms28G -Xmx28G -Dtornado.kernels.coarsener=False -Dtornado.enable.fix.reads=False -Dlog4j.configurationFile=${KFUSION_ROOT}/conf/log4j2.xml"
+JFLAGS="-Xms8G -Xmx8G -Dlog4j.configurationFile=${KFUSION_ROOT}/conf/log4j2.xml"
 
-CLASSPATH=${CLASSPATH}:${JARS} tornado --jvm="${JFLAGS}" $@
+CLASSPATH=${CLASSPATH}:${JARS} tornado --jvm="${JFLAGS}" "$@"

@@ -1,4 +1,4 @@
-kfusion.tornado.backend=OpenCL
+kfusion.tornado.backend=CUDA
 
 kfusion.debug = false
 tornado.debug = false
