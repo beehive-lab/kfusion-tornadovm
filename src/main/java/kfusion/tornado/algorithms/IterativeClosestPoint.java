@@ -244,10 +244,10 @@ public class IterativeClosestPoint {
         sums.set(jtj + 2, sums.get(jtj + 2) + (value.getS0() * value.getS2()));
         sums.set(jtj + 3, sums.get(jtj + 3) + (value.getS0() * value.getS3()));
         sums.set(jtj + 4, sums.get(jtj + 4) + (value.getS0() * value.getS4()));
-        sums.set(jtj + 5, sums.get(jtj + 1) + (value.getS0() * value.getS5()));
+        sums.set(jtj + 5, sums.get(jtj + 5) + (value.getS0() * value.getS5()));
 
         sums.set(jtj + 6, sums.get(jtj + 6) + (value.getS1() * value.getS1()));
-        sums.set(jtj + 7, sums.get(jtj + 1) + (value.getS1() * value.getS2()));
+        sums.set(jtj + 7, sums.get(jtj + 7) + (value.getS1() * value.getS2()));
         sums.set(jtj + 8, sums.get(jtj + 8) + (value.getS1() * value.getS3()));
         sums.set(jtj + 9, sums.get(jtj + 9) + (value.getS1() * value.getS4()));
         sums.set(jtj + 10, sums.get(jtj + 10) + (value.getS1() * value.getS5()));
@@ -255,7 +255,7 @@ public class IterativeClosestPoint {
         sums.set(jtj + 11, sums.get(jtj + 11) + (value.getS2() * value.getS2()));
         sums.set(jtj + 12, sums.get(jtj + 12) + (value.getS2() * value.getS3()));
         sums.set(jtj + 13, sums.get(jtj + 13) + (value.getS2() * value.getS4()));
-        sums.set(jtj + 14, sums.get(jtj + 1) + (value.getS2() * value.getS5()));
+        sums.set(jtj + 14, sums.get(jtj + 14) + (value.getS2() * value.getS5()));
 
         sums.set(jtj + 15, sums.get(jtj + 15) + (value.getS3() * value.getS3()));
         sums.set(jtj + 16, sums.get(jtj + 16) + (value.getS3() * value.getS4()));
