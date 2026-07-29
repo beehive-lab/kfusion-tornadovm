@@ -5,3 +5,8 @@ conf/kfusion.env
 .settings
 lib/slambench-java-0.0.2.jar
 *.swp
+var/
+dataset.log
+*.nsys-rep
+*.sqlite
+*.jfr
