@@ -83,13 +83,7 @@ public class TornadoModel extends KfusionConfig {
 
 	public int getReductionSize() {
 		final String property = System.getProperty("kfusion.model.reduce");
-		return Integer.parseInt((property != null) ? property : settings.getProperty("kfusion.model.reduce", "8192"));
-	}
-
-	/** Number of second-stage groups in the on-device ICP reduction. */
-	public int getReduceGroups() {
-		final String property = System.getProperty("kfusion.model.reduce.groups");
-		return Integer.parseInt((property != null) ? property : settings.getProperty("kfusion.model.reduce.groups", "64"));
+		return Integer.parseInt((property != null) ? property : settings.getProperty("kfusion.model.reduce", "1024"));
 	}
 
 	public boolean useSimpleReduce() {

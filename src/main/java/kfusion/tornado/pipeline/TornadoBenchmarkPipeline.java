@@ -40,9 +40,13 @@ import kfusion.tornado.algorithms.Raycast;
 import kfusion.tornado.algorithms.Renderer;
 import kfusion.tornado.common.Nvtx;
 import kfusion.tornado.common.TornadoModel;
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -64,6 +68,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
      * silently produced a zero trajectory.
      */
     private TornadoExecutionPlan plan;
+
+    private GridScheduler gridScheduler;
 
     private static final int GRAPH_PREPROC = 0;
     private int graphIcpFirst;
@@ -354,14 +360,68 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         graphs[index++] = renderGraph.snapshot();
 
         pyramidLevels = iterations;
+
+        // Explicit thread-block shapes. The CUDA default is 16x16 for a 2D domain, which splits every
+        // warp across two image rows; (32, y) keeps a warp on one contiguous row. Ray-marching kernels
+        // get shorter blocks so the divergent tail load-balances.
+        gridScheduler = new GridScheduler();
+        addWorkerGrid2D("preproc.mm2meters", scaledDepthImage.X(), scaledDepthImage.Y(), 32, 8);
+        addWorkerGrid2D("preproc.bilateralFilter", pyramidDepths[0].X(), pyramidDepths[0].Y(), 32, 16);
+        for (int i = 1; i < iterations; i++) {
+            addWorkerGrid2D("preproc.resizeImage" + i, pyramidDepths[i].X(), pyramidDepths[i].Y(), 32, 8);
+        }
+        for (int i = 0; i < iterations; i++) {
+            addWorkerGrid2D("preproc.d2v" + i, pyramidVerticies[i].X(), pyramidVerticies[i].Y(), 32, 8);
+            addWorkerGrid2D("preproc.v2n" + i, pyramidNormals[i].X(), pyramidNormals[i].Y(), 32, 8);
+            addWorkerGrid2D("icp" + i + ".track" + i, trackingWidth[i], trackingHeight[i], 32, 8);
+            if (config.useSimpleReduce()) {
+                addWorkerGrid1D("icp" + i + ".mapreduce" + i, config.getReductionSize(), 128);
+            }
+        }
+        addWorkerGrid2D("integrate.integrate", volume.X(), volume.Y(), 32, 8);
+        addWorkerGrid2D("raycast.raycast", referenceVerticies.X(), referenceVerticies.Y(), 32, 4);
+        addWorkerGrid2D("renderTrack.renderTrack", trackingWidth[0], trackingHeight[0], 32, 8);
+        addWorkerGrid2D("render.renderVolume", renderedScene.X(), renderedScene.Y(), 32, 4);
+
         plan = new TornadoExecutionPlan(graphs);
+        if (config.useGridScheduler()) {
+            plan.withGridScheduler(gridScheduler);
+            info("grid scheduler   : enabled\n");
+        }
+        final String cudaGraphScope = config.getCUDAGraphScope();
+        if ("all".equalsIgnoreCase(cudaGraphScope)) {
+            // capture every graph once and replay it as a single cuGraphLaunch afterwards
+            plan.withAllGraphs().withCUDAGraph();
+            info("CUDA graphs      : all graphs\n");
+        } else if ("icp".equalsIgnoreCase(cudaGraphScope)) {
+            // the ICP graphs are the ones replayed many times per frame
+            for (int i = 0; i < iterations; i++) {
+                plan.withGraph(graphIcpFirst + i).withCUDAGraph();
+            }
+            plan.withAllGraphs();
+            info("CUDA graphs      : icp graphs only\n");
+        }
         // NOTE: withPreCompilation() must NOT be used here. It runs every graph in isolation, which
         // leaves each graph with its own device buffers, so the pyramid/reference images produced by
         // one graph are invisible to the next and tracking silently degenerates.
     }
 
+    private void addWorkerGrid2D(String taskName, int globalX, int globalY, int localX, int localY) {
+        final WorkerGrid grid = new WorkerGrid2D(globalX, globalY);
+        grid.setLocalWork(Math.min(localX, globalX), Math.min(localY, globalY), 1);
+        gridScheduler.addWorkerGrid(taskName, grid);
+    }
+
+    private void addWorkerGrid1D(String taskName, int globalX, int localX) {
+        final WorkerGrid grid = new WorkerGrid1D(globalX);
+        grid.setLocalWork(Math.min(localX, globalX), 1, 1);
+        gridScheduler.addWorkerGrid(taskName, grid);
+    }
+
     /** Runs a single task-graph of the shared execution plan. */
     private void runGraph(int graphIndex) {
+        // The grid scheduler is registered once, at plan construction: re-registering it on every
+        // execute() walks every task of every graph again, which is pure host overhead in the ICP loop.
         plan.withGraph(graphIndex).execute();
     }
 
