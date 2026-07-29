@@ -235,16 +235,25 @@ public class RawDevice extends AbstractLogger implements Device {
         }
     }
 
+    private short[] depthScratch;
+
     private void extractDepthFrame(ImageFloat image) {
         if (running) {
             buffer.position(buffer.position() + 8);
             final ShortBuffer sb = buffer.asShortBuffer();
 
-            for (int i = 0; i < width * height; i++) {
-                final float value = sb.get();
-                image.set(i, (value > 0f) ? value : -value);
+            // Bulk-copy the frame instead of reading the mapped buffer element by element: the
+            // per-element path spent most of its time in MappedByteBuffer.position (29% of JVM samples).
+            final int pixels = width * height;
+            if (depthScratch == null) {
+                depthScratch = new short[pixels];
             }
-            buffer.position(buffer.position() + (width * height * 2));
+            sb.get(depthScratch, 0, pixels);
+            for (int i = 0; i < pixels; i++) {
+                final short raw = depthScratch[i];
+                image.set(i, (raw > 0) ? raw : -raw);
+            }
+            buffer.position(buffer.position() + (pixels * 2));
         }
     }
 
