@@ -57,6 +57,12 @@ public class TrackingResult {
 	public float other;
 	public final Matrix4x4Float pose;
 	public ImageFloat8 resultImage;
+	/**
+	 * Number of correspondences considered. Set this when the ICP result is held in a flat
+	 * {@link FloatArray} instead of an {@code ImageFloat8} (the CUDA-friendly layout), otherwise
+	 * {@link #getPoints()} would report 0 and RSME would come out as infinity.
+	 */
+	public int points;
 	public final FloatArray x;
 	public float error;
 
@@ -112,6 +118,9 @@ public class TrackingResult {
 	}
 
 	public double getPoints(){
+		if (points > 0) {
+			return points;
+		}
 		if(resultImage == null)
 			return 0;
 
