@@ -38,6 +38,7 @@ import kfusion.tornado.algorithms.Integration;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
 import kfusion.tornado.algorithms.Renderer;
+import kfusion.tornado.common.Nvtx;
 import kfusion.tornado.common.TornadoModel;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -56,20 +57,20 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
     private Float3 initialPosition;
 
-    private TaskGraph preprocessingGraph;
-    private TornadoExecutionPlan preprocessingPlan;
-    private TaskGraph estimatePoseGraph;
-    private TornadoExecutionPlan estimatePosePlan;
-    private TaskGraph trackingPyramidGraphs[];
-    private TornadoExecutionPlan trackingPyramidPlans[];
-    private TaskGraph integrateGraph;
-    private TornadoExecutionPlan integratePlan;
-    private TaskGraph raycastGraph;
-    private TornadoExecutionPlan raycastPlan;
-    private TaskGraph renderTrackGraph;
-    private TornadoExecutionPlan renderTrackPlan;
-    private TaskGraph renderGraph;
-    private TornadoExecutionPlan renderPlan;
+    /**
+     * All task-graphs live in ONE execution plan: a plan owns the device buffer pool, so objects
+     * produced by one graph are only visible to another graph of the SAME plan. With one plan per
+     * graph (as this pipeline used to do) every consumer re-uploaded stale host data and tracking
+     * silently produced a zero trajectory.
+     */
+    private TornadoExecutionPlan plan;
+
+    private static final int GRAPH_PREPROC = 0;
+    private int graphIcpFirst;
+    private int graphIntegrate;
+    private int graphRaycast;
+    private int graphRenderTrack;
+    private int graphRender;
 
     private Matrix4x4Float[] scaledInvKs;
     private Matrix4x4Float pyramidPose;
@@ -78,6 +79,11 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     private FloatArray icpResult;
 
     private int cus;
+    private int pyramidLevels;
+    private boolean preprocMapped;
+    private boolean integrateMapped;
+    private boolean raycastMapped;
+    private boolean trackMapped;
 
     private final PrintStream out;
 
@@ -99,24 +105,34 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
             final long[] timings = new long[7];
 
+            final int maxFrames = config.getMaxFrames();
+
             timings[0] = System.nanoTime();
             boolean haveDepthImage = depthCamera.pollDepth(depthImageInput);
             videoCamera.skipVideoFrame();
 
             // read all frames
-            while (haveDepthImage) {
+            while (haveDepthImage && frames < maxFrames) {
+
+                Nvtx.push("frame " + frames);
 
                 timings[1] = System.nanoTime();
+                Nvtx.push("preprocessing");
                 preprocessing();
+                Nvtx.pop();
                 timings[2] = System.nanoTime();
 
+                Nvtx.push("tracking");
                 boolean hasTracked = estimatePose();
+                Nvtx.pop();
 
                 timings[3] = System.nanoTime();
 
                 final boolean doIntegrate = (hasTracked && frames % integrationRate == 0) || frames <= 3;
                 if (doIntegrate) {
+                    Nvtx.push("integration");
                     integrate();
+                    Nvtx.pop();
                 }
 
                 timings[4] = System.nanoTime();
@@ -124,17 +140,22 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                 final boolean doUpdate = frames > 2;
 
                 if (doUpdate) {
+                    Nvtx.push("raycasting");
                     updateReferenceView();
+                    Nvtx.pop();
                 }
 
                 timings[5] = System.nanoTime();
 
                 if (frames % renderingRate == 0) {
-                    renderTrackPlan.execute();
-                    renderPlan.execute();
+                    Nvtx.push("rendering");
+                    runGraph(graphRenderTrack);
+                    runGraph(graphRender);
+                    Nvtx.pop();
                 }
 
                 timings[6] = System.nanoTime();
+                Nvtx.pop(); // frame
                 final Float3 currentPos = currentView.getPose().column(3).asFloat3();
                 final Float3 pos = Float3.sub(currentPos, initialPosition);
 
@@ -144,8 +165,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                         (hasTracked) ? 1 : 0, (doIntegrate) ? 1 : 0);
                 frames++;
                 timings[0] = System.nanoTime();
+                Nvtx.push("acquisition");
                 haveDepthImage = depthCamera.pollDepth(depthImageInput);
                 videoCamera.skipVideoFrame();
+                Nvtx.pop();
             }
         }
     }
@@ -165,6 +188,11 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         final TornadoDevice tornadoDevice = config.getTornadoDevice();
         info("mapping onto %s\n", tornadoDevice.toString());
 
+        if (config.useNvtx()) {
+            Nvtx.enable(tornadoDevice);
+            info("NVTX ranges      : %s\n", Nvtx.isEnabled() ? "enabled" : "unsupported on this device");
+        }
+
         final long localMemSize = tornadoDevice.getPhysicalDevice().getDeviceLocalMemorySize();
         cus = tornadoDevice.getPhysicalDevice().getDeviceMaxComputeUnits();
 
@@ -179,13 +207,11 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
         final Matrix4x4Float scenePose = sceneView.getPose();
 
-		preprocessingGraph = new TaskGraph("pp") //
-				.transferToDevice(DataTransferMode.EVERY_EXECUTION, depthImageInput) //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, scaledDepthImage, pyramidDepths[0], gaussian) //
-				.task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor) //
-				.task("bilateralFilter", ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian,  eDelta, radius);
-
-
+        // ---------------------------------------------------------------------------------------
+        // Graph 0: preprocessing + the whole depth/vertex/normal pyramid.
+        // Merged from the old "pp" and "estimatePose" graphs: the pyramid images are produced and
+        // consumed here, so they never need to cross a graph boundary.
+        // ---------------------------------------------------------------------------------------
         final int iterations = pyramidIterations.length;
         scaledInvKs = new Matrix4x4Float[iterations];
         for (int i = 0; i < iterations; i++) {
@@ -195,109 +221,156 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             getInverseCameraMatrix(cameraDup, scaledInvKs[i]);
         }
 
-        estimatePoseGraph = new TaskGraph("estimatePose");
+        final TaskGraph preprocGraph = new TaskGraph("preproc") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, depthImageInput) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, scaledDepthImage, pyramidDepths[0], gaussian) //
+                .task("mm2meters", ImagingOps::mm2metersKernel, scaledDepthImage, depthImageInput, scalingFactor) //
+                .task("bilateralFilter", ImagingOps::bilateralFilter, pyramidDepths[0], scaledDepthImage, gaussian, eDelta, radius);
+
         for (int i = 1; i < iterations; i++) {
-            estimatePoseGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, projectReference, pyramidDepths[i], pyramidDepths[i - 1], pyramidVerticies[i], scaledInvKs[i], pyramidNormals[i]);
-            estimatePoseGraph.task("resizeImage" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2);
+            preprocGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, pyramidDepths[i]) //
+                    .task("resizeImage" + i, ImagingOps::resizeImage6, pyramidDepths[i], pyramidDepths[i - 1], 2, eDelta * 3, 2);
         }
 
         for (int i = 0; i < iterations; i++) {
-            //@formatter:off
-			estimatePoseGraph
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, pyramidDepths[i], pyramidVerticies[i], scaledInvKs[i], pyramidNormals[i])
-				.task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i])
-				.task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]);
-			//@formatter:on
+            preprocGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, pyramidVerticies[i], pyramidNormals[i], scaledInvKs[i]) //
+                    .task("d2v" + i, GraphicsMath::depth2vertex, pyramidVerticies[i], pyramidDepths[i], scaledInvKs[i]) //
+                    .task("v2n" + i, GraphicsMath::vertex2normal, pyramidNormals[i], pyramidVerticies[i]);
         }
 
-        estimatePoseGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, projectReference);
+        // keep the pyramid and the scaled depth image device-resident for the icp/integrate graphs
+        preprocGraph.persistOnDevice(scaledDepthImage);
+        for (int i = 0; i < iterations; i++) {
+            preprocGraph.persistOnDevice(pyramidVerticies[i], pyramidNormals[i]);
+        }
 
+        if (Boolean.getBoolean("kfusion.debug.images")) {
+            preprocGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, scaledDepthImage, pyramidDepths[0], pyramidVerticies[0], pyramidNormals[0]);
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // Graphs 1..n: one ICP graph per pyramid level, executed pyramidIterations[level] times.
+        // ---------------------------------------------------------------------------------------
         if (config.useSimpleReduce()) {
             icpResultIntermediate1 = new FloatArray(config.getReductionSize() * 32);
         }
 
-        trackingPyramidGraphs = new TaskGraph[iterations];
+        final ImageFloat3 referenceVerticies = referenceView.getVerticies();
+        final ImageFloat3 referenceNormals = referenceView.getNormals();
 
+        final TaskGraph[] icpGraphs = new TaskGraph[iterations];
         for (int i = 0; i < iterations; i++) {
-            //@formatter:off
-			trackingPyramidGraphs[i] = new TaskGraph("icp" + i)
-                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidPose)
-                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
-                            referenceView.getVerticies(), referenceView.getNormals(),
-                            projectReference, distanceThreshold, normalThreshold)
-					.task("track" + i, IterativeClosestPoint::trackPose,
-							pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i],
-							referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
-							projectReference, distanceThreshold, normalThreshold);
+            icpGraphs[i] = new TaskGraph("icp" + i) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidPose, projectReference) //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, pyramidTrackingResults[i]) //
+                    .consumeFromDevice("preproc", pyramidVerticies[i], pyramidNormals[i]) //
+                    .consumeFromDevice("raycast", referenceVerticies, referenceNormals) //
+                    .task("track" + i, IterativeClosestPoint::trackPose, //
+                            pyramidTrackingResults[i], pyramidVerticies[i], pyramidNormals[i], //
+                            referenceVerticies, referenceNormals, pyramidPose, //
+                            projectReference, distanceThreshold, normalThreshold);
 
-			if (config.useSimpleReduce()) {
-				trackingPyramidGraphs[i]
-						.task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i])
-						.transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
-
-			} else {
-				trackingPyramidGraphs[i].transferToHost(DataTransferMode.EVERY_EXECUTION, pyramidTrackingResults[i]);
-			}
+            if (config.useSimpleReduce()) {
+                icpGraphs[i].transferToDevice(DataTransferMode.FIRST_EXECUTION, icpResultIntermediate1) //
+                        .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, pyramidTrackingResults[i]) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
+            } else {
+                icpGraphs[i].transferToHost(DataTransferMode.EVERY_EXECUTION, pyramidTrackingResults[i]);
+            }
+            // renderTrack reads the finest level; never copy the tracking image back to the host
+            icpGraphs[i].persistOnDevice(pyramidTrackingResults[i]);
         }
 
-		integrateGraph = new TaskGraph("integrate")
-				.transferToDevice(DataTransferMode.EVERY_EXECUTION, invTrack)
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, scaledDepthImage, K, volumeDims, volume)
-                .task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight);
-
-        final ImageFloat3 verticies = referenceView.getVerticies();
-        final ImageFloat3 normals = referenceView.getNormals();
-
-		raycastGraph = new TaskGraph("raycast")
-				.transferToDevice(DataTransferMode.EVERY_EXECUTION, referencePose)
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, verticies, normals, volume, volumeDims)
-                .task("raycast", Raycast::raycast, verticies, normals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep);
-
-        renderTrackGraph = new TaskGraph("renderTrack")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, renderedTrackingImage, pyramidTrackingResults[0])
-                .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0]);
-
-
-        renderGraph = new TaskGraph("render")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, scenePose)
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, renderedScene, volume, volumeDims, light, ambient, pyramidVerticies[0], pyramidNormals[0], verticies, normals, pyramidTrackingResults[0])
-                .task("renderVolume", Renderer::renderVolume, renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient);
-
-
-        ImmutableTaskGraph itgProcessing = preprocessingGraph.snapshot();
-        preprocessingPlan = new TornadoExecutionPlan(itgProcessing);
-
-        preprocessingPlan.withDevice(tornadoDevice).withPreCompilation();
-
-        ImmutableTaskGraph itgEstimatePose = estimatePoseGraph.snapshot();
-        estimatePosePlan = new TornadoExecutionPlan(itgEstimatePose);
-        estimatePosePlan.withPreCompilation().withDevice(tornadoDevice);
-
-        int i = 0;
-        trackingPyramidPlans = new TornadoExecutionPlan[trackingPyramidGraphs.length];
-        for (TaskGraph trackingPyramid1 : trackingPyramidGraphs) {
-            ImmutableTaskGraph itg = trackingPyramid1.snapshot();
-            TornadoExecutionPlan trackingPyramidPlan = new TornadoExecutionPlan(itg);
-            trackingPyramidPlans[i++] = trackingPyramidPlan.withDevice(tornadoDevice).withPreCompilation();
+        // ---------------------------------------------------------------------------------------
+        // Graphs n+1..n+4: integrate, raycast and the two render graphs.
+        // ---------------------------------------------------------------------------------------
+        final TaskGraph integrateGraph = new TaskGraph("integrate") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, invTrack) //
+                .consumeFromDevice("preproc", scaledDepthImage) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, K, volumeDims, volume) //
+                .task("integrate", Integration::integrate, scaledDepthImage, invTrack, K, volumeDims, volume, mu, maxWeight) //
+                .persistOnDevice(volume);
+        if (Boolean.getBoolean("kfusion.debug.images")) {
+            integrateGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, volume);
         }
 
-        ImmutableTaskGraph itgIntegrate = integrateGraph.snapshot();
-        integratePlan = new TornadoExecutionPlan(itgIntegrate).withDevice(tornadoDevice).withPreCompilation();
+        final TaskGraph raycastGraph = new TaskGraph("raycast") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, referencePose) //
+                .consumeFromDevice("integrate", volume) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, referenceVerticies, referenceNormals, volumeDims) //
+                .task("raycast", Raycast::raycast, referenceVerticies, referenceNormals, volume, volumeDims, referencePose, nearPlane, farPlane, largeStep, smallStep) //
+                .persistOnDevice(referenceVerticies, referenceNormals);
+        if (Boolean.getBoolean("kfusion.debug.images")) {
+            raycastGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, referenceVerticies, referenceNormals);
+        }
 
-        ImmutableTaskGraph itgRayCastGraph = raycastGraph.snapshot();
-        raycastPlan = new TornadoExecutionPlan(itgRayCastGraph).withDevice(tornadoDevice).withPreCompilation();
+        final TaskGraph renderTrackGraph = new TaskGraph("renderTrack") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, renderedTrackingImage) //
+                .consumeFromDevice("icp0", pyramidTrackingResults[0]) //
+                .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0]) //
+                .persistOnDevice(renderedTrackingImage);
 
+        final TaskGraph renderGraph = new TaskGraph("render") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, scenePose) //
+                .consumeFromDevice("integrate", volume) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, renderedScene, volumeDims, light, ambient) //
+                .task("renderVolume", Renderer::renderVolume, renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient) //
+                .persistOnDevice(renderedScene);
 
-        ImmutableTaskGraph itgRenderTrack = renderTrackGraph.snapshot();
-        renderTrackPlan = new TornadoExecutionPlan(itgRenderTrack).withDevice(tornadoDevice).withPreCompilation();
+        // ---------------------------------------------------------------------------------------
+        // One execution plan over every graph; each phase runs with plan.withGraph(index).
+        // ---------------------------------------------------------------------------------------
+        final ImmutableTaskGraph[] graphs = new ImmutableTaskGraph[4 + iterations + 1];
+        int index = 0;
+        graphs[index++] = preprocGraph.snapshot();
+        graphIcpFirst = index;
+        for (int i = 0; i < iterations; i++) {
+            graphs[index++] = icpGraphs[i].snapshot();
+        }
+        graphIntegrate = index;
+        graphs[index++] = integrateGraph.snapshot();
+        graphRaycast = index;
+        graphs[index++] = raycastGraph.snapshot();
+        graphRenderTrack = index;
+        graphs[index++] = renderTrackGraph.snapshot();
+        graphRender = index;
+        graphs[index++] = renderGraph.snapshot();
 
-        ImmutableTaskGraph itgRender = renderGraph.snapshot();
-        renderPlan = new TornadoExecutionPlan(itgRender).withDevice(tornadoDevice).withPreCompilation();
+        pyramidLevels = iterations;
+        plan = new TornadoExecutionPlan(graphs);
+        // NOTE: withPreCompilation() must NOT be used here. It runs every graph in isolation, which
+        // leaves each graph with its own device buffers, so the pyramid/reference images produced by
+        // one graph are invisible to the next and tracking silently degenerates.
+    }
+
+    /** Runs a single task-graph of the shared execution plan. */
+    private void runGraph(int graphIndex) {
+        plan.withGraph(graphIndex).execute();
     }
 
     @Override
     protected void preprocessing() {
-        preprocessingPlan.execute();
+        runGraph(GRAPH_PREPROC);
+        if (Boolean.getBoolean("kfusion.debug.images")) {
+            out.printf("[dbg] frame %d depthIn %s | scaled %s | filtered %s%n", frames, stats(depthImageInput.getArray()), stats(scaledDepthImage.getArray()), stats(pyramidDepths[0].getArray()));
+        }
+    }
+
+    private static String stats(uk.ac.manchester.tornado.api.types.arrays.FloatArray array) {
+        float min = Float.MAX_VALUE;
+        float max = -Float.MAX_VALUE;
+        double sum = 0;
+        int nonZero = 0;
+        for (int i = 0; i < array.getSize(); i++) {
+            final float value = array.get(i);
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+            sum += value;
+            if (value != 0f) {
+                nonZero++;
+            }
+        }
+        return String.format("min=%.4f max=%.4f mean=%.4f nz=%d/%d", min, max, sum / array.getSize(), nonZero, array.getSize());
     }
 
     @Override
@@ -305,7 +378,20 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         invTrack.set(currentView.getPose());
         MatrixFloatOps.inverse(invTrack);
 
-        integratePlan.execute();
+        runGraph(graphIntegrate);
+        if (Boolean.getBoolean("kfusion.debug.images")) {
+            int nz = 0;
+            for (int z = 0; z < volume.Z(); z++) {
+                for (int y = 0; y < volume.Y(); y++) {
+                    for (int x = 0; x < volume.X(); x++) {
+                        if (volume.get(x, y, z).getX() != 0) {
+                            nz++;
+                        }
+                    }
+                }
+            }
+            out.printf("[dbg] frame %d volume non-zero voxels = %d%n", frames, nz);
+        }
     }
 
     @Override
@@ -315,13 +401,15 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         MatrixFloatOps.inverse(invReferencePose);
         MatrixMath.sgemm(K, invReferencePose, projectReference);
 
-        estimatePosePlan.execute();
+        if (Boolean.getBoolean("kfusion.debug.images")) {
+            out.printf("[dbg] frame %d depth1 %s | verts0 %s | normals0 %s%n", frames, stats(pyramidDepths[1].getArray()), stats(pyramidVerticies[0].getArray()), stats(pyramidNormals[0].getArray()));
+        }
 
         // perform ICP
         pyramidPose.set(currentView.getPose());
         for (int level = pyramidIterations.length - 1; level >= 0; level--) {
             for (int i = 0; i < pyramidIterations[level]; i++) {
-                trackingPyramidPlans[level].execute();
+                runGraph(graphIcpFirst + level);
 
                 final boolean updated;
                 if (config.useSimpleReduce()) {
@@ -330,6 +418,42 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
                     updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, ICP_THRESHOLD);
                 } else {
                     updated = IterativeClosestPoint.estimateNewPose(config, trackingResult, pyramidTrackingResults[level], pyramidPose, ICP_THRESHOLD);
+                }
+
+                if (Boolean.getBoolean("kfusion.debug.cpu")) {
+                    final uk.ac.manchester.tornado.api.types.images.ImageFloat8 host = new uk.ac.manchester.tornado.api.types.images.ImageFloat8(pyramidTrackingResults[level].X(), pyramidTrackingResults[level].Y());
+                    kfusion.java.algorithms.IterativeClosestPoint.trackPose(host, pyramidVerticies[level], pyramidNormals[level], referenceView.getVerticies(), referenceView.getNormals(), pyramidPose,
+                            projectReference, distanceThreshold, normalThreshold);
+                    final java.util.Map<Integer, Integer> cpuHistogram = new java.util.TreeMap<>();
+                    for (int y = 0; y < host.Y(); y++) {
+                        for (int x = 0; x < host.X(); x++) {
+                            cpuHistogram.merge((int) host.get(x, y).getS7(), 1, Integer::sum);
+                        }
+                    }
+                    out.printf("[dbg] frame %d level %d CPU(java-impl) histogram %s%n", frames, level, cpuHistogram);
+
+                    final uk.ac.manchester.tornado.api.types.images.ImageFloat8 host2 = new uk.ac.manchester.tornado.api.types.images.ImageFloat8(pyramidTrackingResults[level].X(), pyramidTrackingResults[level].Y());
+                    IterativeClosestPoint.trackPose(host2, pyramidVerticies[level], pyramidNormals[level], referenceView.getVerticies(), referenceView.getNormals(), pyramidPose, projectReference,
+                            distanceThreshold, normalThreshold);
+                    final java.util.Map<Integer, Integer> tornadoOnHost = new java.util.TreeMap<>();
+                    for (int y = 0; y < host2.Y(); y++) {
+                        for (int x = 0; x < host2.X(); x++) {
+                            tornadoOnHost.merge((int) host2.get(x, y).getS7(), 1, Integer::sum);
+                        }
+                    }
+                    out.printf("[dbg] frame %d level %d CPU(tornado-impl) histogram %s%n", frames, level, tornadoOnHost);
+                }
+
+                if (Boolean.getBoolean("kfusion.debug.images") && !config.useSimpleReduce()) {
+                    final uk.ac.manchester.tornado.api.types.images.ImageFloat8 res = pyramidTrackingResults[level];
+                    final java.util.Map<Integer, Integer> histogram = new java.util.TreeMap<>();
+                    for (int y = 0; y < res.Y(); y++) {
+                        for (int x = 0; x < res.X(); x++) {
+                            final int status = (int) res.get(x, y).getS7();
+                            histogram.merge(status, 1, Integer::sum);
+                        }
+                    }
+                    out.printf("[dbg] frame %d level %d status histogram %s%n", frames, level, histogram);
                 }
 
                 pyramidPose.set(trackingResult.getPose());
@@ -355,7 +479,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         // convert the tracked pose into correct co-ordinate system for
         // raycasting which system (homogeneous co-ordinates? or virtual image?)
         MatrixMath.sgemm(currentView.getPose(), scaledInvK, referencePose);
-        raycastPlan.execute();
+        runGraph(graphRaycast);
+        if (Boolean.getBoolean("kfusion.debug.images")) {
+            out.printf("[dbg] frame %d refVerts %s | refNormals %s%n", frames, stats(referenceView.getVerticies().getArray()), stats(referenceView.getNormals().getArray()));
+        }
     }
 
 }
