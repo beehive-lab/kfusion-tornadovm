@@ -11,18 +11,21 @@ Reproduce with `scripts/profileNsys.sh conf/bm-traj2.settings 40` (nsys + NVTX) 
 > the CUDA injection does not follow that exec — profiling the launcher yields a report with **no CUDA
 > data at all**. `scripts/profileNsys.sh` therefore runs `java @$TORNADOVM_HOME/tornado-argfile`.
 
-## 1. Frame budget (optimized build, 882 frames)
+## 1. Frame budget (882 frames)
 
-| phase | mean per frame |
-|---|---|
-| acquisition | 0.27 ms |
-| preprocessing (+ pyramid) | 0.96 ms |
-| tracking (ICP) | 2.66 ms |
-| integration | 0.14 ms |
-| raycasting | 0.18 ms |
-| rendering | 0.20 ms |
-| **computation** | **3.92 ms (255 FPS)** |
-| total (incl. acquisition/output) | 4.41 ms (227 FPS) |
+| phase | before warm-up | with warm-up |
+|---|---|---|
+| acquisition | 0.27 ms | 0.29 ms |
+| preprocessing (+ pyramid) | 0.96 ms | 0.32 ms |
+| tracking (ICP) | 2.66 ms | 2.22 ms |
+| integration | 0.14 ms | 0.08 ms |
+| raycasting | 0.18 ms | 0.09 ms |
+| rendering | 0.20 ms | 0.03 ms |
+| **computation** | **3.92 ms (255 FPS)** | **2.70–2.82 ms (355–370 FPS)** |
+| total | 4.41 ms (227 FPS) | 3.02 ms (316–331 FPS) |
+
+The warm-up (executing every graph once before the frame loop) is bit-identical on CUDA: comparing the
+two trajectory tables frame by frame gives a maximum deviation of exactly 0.
 
 ## 2. GPU kernels — `nsys` (40 frames)
 
@@ -100,17 +103,60 @@ attribution was misleading: those frames are cheap in wall-clock terms compared 
 synchronizations they sit next to. The changes are kept because they are strictly less work, but they
 are *not* the lever.
 
-## 5. Conclusions for further work, in order
+## 5. Second profiling round (after the warm-up), 200 frames
 
-1. **Make CUDA graph capture work with lazily allocated / cross-graph aliased buffers.** This is the
-   only change that attacks the dominant cost (~230 µs per execution against 75 µs of kernel time,
-   14.4 executions per frame).
-2. **Cut the number of plan executions per frame.** The 19 ICP iterations each cost a full execution
-   plus a blocking round trip for 32 floats. A device-side 6x6 solve with a device-side convergence
-   flag would collapse all iterations of a level into one execution.
-3. **Avoid `sync_after` on inputs that are not read back.** Several of the 68 syncs per frame are
-   after small H2D copies of pose matrices; they only need ordering on the stream, not host blocking.
-4. Only then kernels: `mapReduce` (35 µs) can go further with a `KernelContext` warp reduction
+Kernels are unchanged in shape; the reduction still dominates GPU time:
+
+| kernel | share | avg | instances |
+|---|---|---|---|
+| mapReduce | 55.0% | 34.1 µs | 2 537 |
+| integrate | 11.5% | 90.0 µs | 201 |
+| reduceFinal | 11.2% | 6.9 µs | 2 537 |
+| trackPose | 8.6% | 5.3 µs | 2 537 |
+| raycast | 5.8% | 46.0 µs | 197 |
+| reducePartials | 4.4% | 2.7 µs | 2 537 |
+
+CUDA API, per frame: **73.8 `cuStreamSynchronize`** (13.4 µs avg), **120.8 `cuMemcpyHtoDAsync`**,
+63.3 `cuLaunchKernel`, ~195 CUDA events.
+
+The NVTX ranges make the shape explicit — `:tracking` is 2.72 ms of the 2.82 ms frame, and the
+per-iteration ICP copy-out shows up as its own range:
+
+| NVTX range | share | avg | instances |
+|---|---|---|---|
+| `:tracking` | 28.7% | 2.72 ms | 200 |
+| `:D2H 144 B` | 7.7% | **57.6 µs** | 2 537 |
+| `:raycasting` | 5.8% | 0.56 ms | 197 |
+
+**A 144-byte device→host copy costing 57.6 µs** is the signature of the problem: it is not the transfer,
+it is the blocking wait for the whole graph to finish. 12.7 of those per frame is 0.73 ms.
+
+### JVM side, 1 ms sampling (3 386 samples: 1 116 Java + 2 270 native)
+
+| share | frame | context |
+|---|---|---|
+| 22.3% | `CUDAProgram.build` (native) | NVRTC compilation — one-off, now inside the warm-up |
+| 19.4% | `CUDACommandQueue.enqueueRead` (native) | `streamOutBlocking` → the per-iteration ICP result copy |
+| 11.7% | `DataObjectState.getDeviceBufferState` | under `TornadoVMInterpreter.executeDeAlloc` (11.5%) |
+| 6.9% | `CUDACommandQueue.enqueueWrite` (native) | small H2D transfers |
+| 4.5% | `CUDACommandQueue.flush` (native) | end-of-graph synchronization |
+| 2.7% | `MappedByteBuffer.position` | dataset frame reader |
+
+## 6. Conclusions for further work, in order
+
+1. **Remove the blocking per-iteration copy-out** (19.4% of samples, 0.73 ms/frame). The 144-byte ICP
+   result is copied back and waited on 12.7 times per frame. Doing the 6x6 solve and the convergence
+   test on the device would remove both the copy and the host-side EJML solve, and collapse each
+   level's iterations into a single plan execution.
+2. **Cache the resolved object state per bytecode index in the interpreter** (11.7% of samples). Even
+   after reducing `getDeviceBufferState` to one `computeIfAbsent`, the DEALLOC path re-resolves state
+   for every object of every execution. Needs care around `DataObjectState.clear()`.
+3. **Make CUDA graph capture survive this pipeline.** Capture now engages (see RESULTS.md for the two
+   ordering rules), but replay is wrong and 50x slower, so the dispatch overhead it is meant to remove
+   is still being paid.
+5. **Avoid `sync_after` on inputs that are not read back.** Many of the ~74 syncs per frame follow
+   small H2D copies of pose matrices; those need ordering on the stream, not host blocking.
+4. Only then kernels: `mapReduce` (34 µs) can go further with a `KernelContext` warp reduction
    (`simdSum`), or by replacing the JᵗJ accumulation with cuBLAS `SSYRK` + `SGEMV` — the Jacobian
    block genuinely is an N×6 matrix product, and invalid pixels already contribute zero rows. Upper
    bound on that whole family of changes is ~0.4 ms/frame.

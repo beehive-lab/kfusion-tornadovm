@@ -39,10 +39,12 @@ VERDICT: MATCH (tolerance 1.0e-03 m)
 | OpenCL, correct baseline | 162 | 5.79 ms | 4.76 ms | 0.019389 m | 0.044778 m |
 | **CUDA, correct baseline** | **165** | **5.60 ms** | 4.29 ms | 0.019370 m | 0.044736 m |
 | CUDA + explicit `GridScheduler` | 208 | 4.33 ms | — | 0.019370 m | 0.044736 m |
-| **CUDA + grid + wide on-device ICP reduction** | **226** | **3.94 ms** | 2.66 ms | 0.019406 m | 0.044764 m |
+| CUDA + grid + wide on-device ICP reduction | 229 | 3.91 ms | 2.66 ms | 0.019406 m | 0.044764 m |
+| **CUDA + all of the above + warm-up** | **316–331** | **2.70–2.82 ms** | 2.22 ms | 0.019406 m | 0.044764 m |
 
-Net: **1.42x on computation time (5.60 → 3.94 ms), 165 → 226 FPS**, with the trajectory unchanged
-(max per-frame deviation 0.68 mm vs the baseline, ATE within 4e-5 m).
+Net: **2.0x on computation time (5.60 → 2.82 ms), 165 → 316 FPS**, with the trajectory unchanged —
+the warm-up step is **bit-identical** to the run without it (max deviation 0.000e+00 over all 882
+frames), and the two optimization steps before it stay within 0.68 mm of the baseline.
 
 ### What each step did
 
@@ -75,6 +77,12 @@ bookkeeping, blocking sync) plus the 19 host-side 6x6 EJML solves.
 | raycast | 5.4% | 43.0 µs | 37 |
 | reducePartials | 4.3% | 2.7 µs | 458 |
 
+3. **Warm-up: execute every task-graph once before the frame loop** (further 1.39x, bit-identical).
+   Takes JIT compilation and the first-execution allocations out of the timed loop. Raycasting is
+   deliberately excluded from the warm-up: it would overwrite the reference view with INVALID before
+   the first frame, which perturbs the first tracked frames and shifts the whole trajectory (visible
+   as OpenCL's ATE moving from 0.019389 m to 0.014887 m when it *is* included).
+
 ### Root cause of the remaining overhead
 
 `nsys` CUDA API summary (40 frames) pins it down — per **plan execution**: ~4.7
@@ -97,18 +105,23 @@ the 14.4 plan executions per frame at ~230 µs each against 75 µs of kernel tim
 
 ### CUDA graphs
 
-`withCUDAGraph()` is the intended answer to exactly that dispatch overhead, but it does not currently
-work for this pipeline:
+`withCUDAGraph()` is the intended answer to exactly that dispatch overhead. Getting it to engage at
+all took two discoveries:
 
-- capturing every graph (`plan.withAllGraphs().withCUDAGraph()`) dies with
-  `TornadoOutOfMemoryException: Unable to allocate 900.0 KiB on the CUDA device (cuMemAlloc status=700)`
-  (illegal address) a few frames in;
-- capturing only the ICP graphs survives but is ~4x *slower* (18.7 ms/frame), i.e. the graph is
-  re-captured instead of replayed.
+1. **Capture must be requested before a graph's first execution.** TornadoVM generates the bytecode —
+   including the `CUDA_GRAPH_BEGIN_CAPTURE` … `END_CAPTURE` region — once and caches it per device
+   (`TornadoTaskGraph.compileComputeGraphToTornadoVMBytecode` → `vmTable`). A `withCUDAGraph()` after
+   that is silently ignored: `nsys` shows **zero `cuGraphLaunch` calls**, which is what happened in
+   every configuration where capture was requested after the warm-up.
+2. **The capture request must be restated for the selected graph on every execution**, because
+   `withGraph(i)` re-selects it — the same pattern GPULlama3's `TornadoVMMasterPlan*` classes use.
 
-Both are consistent with capture assuming stable device allocations, while this plan allocates lazily
-per execution and aliases buffers across graphs. Left off by default
-(`-Dkfusion.cuda.graphs=none|icp|all`).
+With capture genuinely engaged (requested at construction, before the warm-up), replay is both wrong
+and far slower: **4.5 FPS (218 ms/frame) and ATE 1.54 m**. Without the warm-up it instead dies with
+`cuMemAlloc status=700` (illegal address) after a few frames. This pipeline has per-execution changing
+inputs (pose matrices), a per-iteration device→host copy and cross-graph buffer aliasing, and the
+capture path does not currently survive that combination. Left off by default
+(`-Dkfusion.cuda.graphs=none|all`).
 
 ## TornadoVM runtime changes required
 
