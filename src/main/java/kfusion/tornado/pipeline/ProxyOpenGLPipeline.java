@@ -27,7 +27,7 @@ package kfusion.tornado.pipeline;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.media.opengl.awt.GLCanvas;
+import com.jogamp.opengl.awt.GLCanvas;
 
 import kfusion.java.pipeline.AbstractOpenGLPipeline;
 import kfusion.java.pipeline.JavaOpenGLPipeline;

@@ -26,9 +26,10 @@ package kfusion.tornado.ui;
 
 import java.awt.Dimension;
 
-import javax.media.opengl.GLCapabilities;
-import javax.media.opengl.GLProfile;
-import javax.media.opengl.awt.GLCanvas;
+import com.jogamp.nativewindow.ScalableSurface;
+import com.jogamp.opengl.GLCapabilities;
+import com.jogamp.opengl.GLProfile;
+import com.jogamp.opengl.awt.GLCanvas;
 
 import kfusion.tornado.common.TornadoModel;
 import kfusion.tornado.pipeline.ProxyOpenGLPipeline;
@@ -44,6 +45,9 @@ public class KfusionTornadoCanvas extends GLCanvas {
         GLCapabilities caps = new GLCapabilities(glp);
         caps.setDoubleBuffered(true);
         caps.setHardwareAccelerated(true);
+        // This pipeline draws images using hardcoded pixel positions/sizes,
+        // so force a 1:1 point-to-pixel mapping (disable Retina/HiDPI scaling).
+        setSurfaceScale(new float[] { ScalableSurface.IDENTITY_PIXELSCALE, ScalableSurface.IDENTITY_PIXELSCALE });
         setPreferredSize(new Dimension(width, height));
         setSize(width, height);
         pipeline = new ProxyOpenGLPipeline<TornadoModel>(config, this, tornadoPanel);

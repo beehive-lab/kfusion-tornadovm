@@ -26,26 +26,30 @@ package kfusion.java.ui;
 
 import java.awt.Dimension;
 
-import javax.media.opengl.GLCapabilities;
-import javax.media.opengl.GLProfile;
-import javax.media.opengl.awt.GLCanvas;
+import com.jogamp.nativewindow.ScalableSurface;
+import com.jogamp.opengl.GLCapabilities;
+import com.jogamp.opengl.GLProfile;
+import com.jogamp.opengl.awt.GLCanvas;
 
 import kfusion.java.common.KfusionConfig;
 import kfusion.java.pipeline.JavaOpenGLPipeline;
 
 public class KfusionJavaCanvas<T extends KfusionConfig> extends GLCanvas {
-	
+
 	private static final long	serialVersionUID	= 2058056651997252912L;
-	
+
 	private final JavaOpenGLPipeline<T> pipeline;
-	
+
 	public KfusionJavaCanvas(T config, int width, int height){
 		GLProfile glp =  GLProfile.getDefault();
 		GLCapabilities caps = new GLCapabilities(glp);
 		caps.setDoubleBuffered(true);
 		caps.setHardwareAccelerated(true);
-		
-		
+
+		// This pipeline draws images using hardcoded pixel positions/sizes,
+		// so force a 1:1 point-to-pixel mapping (disable Retina/HiDPI scaling).
+		setSurfaceScale(new float[] { ScalableSurface.IDENTITY_PIXELSCALE, ScalableSurface.IDENTITY_PIXELSCALE });
+
 		setPreferredSize(new Dimension(width,height));
 		setSize(width,height);
 		pipeline = new JavaOpenGLPipeline<T>(config);

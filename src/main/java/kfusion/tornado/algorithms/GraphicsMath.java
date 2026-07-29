@@ -45,17 +45,19 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.utils.VolumeOps;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
 import uk.ac.manchester.tornado.api.types.volumes.VolumeShort2;
 
 import static uk.ac.manchester.tornado.api.math.TornadoMath.max;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.min;
 import static uk.ac.manchester.tornado.api.types.utils.VolumeOps.interp;
+import static uk.ac.manchester.tornado.api.types.utils.VolumeOps.vs;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.add;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.cross;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.div;
-import static uk.ac.manchester.tornado.api.types.vectors.Float3.dot;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.mult;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.normalise;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.sub;
@@ -98,8 +100,15 @@ public class GraphicsMath {
         }
     }
 
+    // Named to avoid Float3.dot(): TornadoVM's OpenCL sketcher can emit a
+    // standalone generated function using the Java method's simple name, and
+    // "dot" collides with OpenCL C's builtin dot() function.
+    private static float dotProduct(Float3 a, Float3 b) {
+        return a.getX() * b.getX() + a.getY() * b.getY() + a.getZ() * b.getZ();
+    }
+
     public static Float3 rotate(Matrix4x4Float m, Float3 x) {
-        return new Float3(dot(m.row(0).asFloat3(), x), dot(m.row(1).asFloat3(), x), dot(m.row(2).asFloat3(), x));
+        return new Float3(dotProduct(m.row(0).asFloat3(), x), dotProduct(m.row(1).asFloat3(), x), dotProduct(m.row(2).asFloat3(), x));
     }
 
     public static float clamp(float val, float min, float max) {
@@ -155,8 +164,161 @@ public class GraphicsMath {
      */
     public static Float3 rigidTransform(Matrix4x4Float matrix, Float3 point) {
         final Float3 translation = matrix.column(3).asFloat3();
-        final Float3 rotation = new Float3(dot(matrix.row(0).asFloat3(), point), dot(matrix.row(1).asFloat3(), point), dot(matrix.row(2).asFloat3(), point));
+        final Float3 rotation = new Float3(dotProduct(matrix.row(0).asFloat3(), point), dotProduct(matrix.row(1).asFloat3(), point), dotProduct(matrix.row(2).asFloat3(), point));
         return add(rotation, translation);
+    }
+
+    // Local replacement for uk.ac.manchester.tornado.api.types.utils.VolumeOps.grad():
+    // that library method is ~946 Graal IR nodes as a single unit, well over
+    // TornadoVM's default ~600-node per-callee inlining cap, and since it lives
+    // in TornadoVM's own jar it can't be edited/split there directly. Its three
+    // gradient components (gx, gy, gz) are independent, so each is reproduced
+    // here as its own small method (each redoes the shared trilinear-interpolation
+    // setup locally, rather than sharing it via another method, to keep every
+    // call self-contained and small - a few hundred nodes each).
+    //
+    // Callers must call gradX()/gradY()/gradZ() directly from their own root
+    // task method and do the final scale-and-combine themselves (see raycast()
+    // in Raycast.java) - NOT through a single combining "gradient()" wrapper:
+    // a wrapper's own checked size is the sum of everything it calls, which
+    // would recreate the same ~950-node-over-cap failure one level up.
+    public static float gradX(final VolumeShort2 volume, final Float3 dim, final Float3 point) {
+        final Float3 scaledPos = new Float3(((point.getX() * volume.X()) / dim.getX()) - 0.5f, ((point.getY() * volume.Y()) / dim.getY()) - 0.5f, ((point.getZ() * volume.Z()) / dim.getZ()) - 0.5f);
+        final Float3 tmp = Float3.floor(scaledPos);
+        final Float3 factor = Float3.fract(scaledPos);
+        final Int3 base = new Int3((int) tmp.getX(), (int) tmp.getY(), (int) tmp.getZ());
+        final Int3 zeros = new Int3();
+        final Int3 limits = Int3.sub(new Int3(volume.X(), volume.Y(), volume.Z()), 1);
+        final Int3 lowerLower = Int3.max(zeros, Int3.sub(base, 1));
+        final Int3 lowerUpper = Int3.max(zeros, base);
+        final Int3 upperLower = Int3.min(limits, Int3.add(base, 1));
+        final Int3 upperUpper = Int3.min(limits, Int3.add(base, 2));
+        final Int3 lower = lowerUpper;
+        final Int3 upper = upperLower;
+
+        // @formatter:off
+        return ((((((vs(volume, upperLower.getX(), lower.getY(), lower.getZ())) - vs(volume, lowerLower.getX(), lower.getY(), lower.getZ())) * (1 - factor.getX())
+                + ((vs(volume, upperUpper.getX(), lower.getY(), lower.getZ())) - vs(volume, lowerUpper.getX(), lower.getY(), lower.getZ())) * factor.getX())
+                * (1 - factor.getY()))
+                + ((((vs(volume, upperLower.getX(), upper.getY(), lower.getZ())) - vs(volume, lowerLower.getX(), upper.getY(), lower.getZ())) * (1 - factor.getX())
+                + ((vs(volume, upperUpper.getX(), upper.getY(), lower.getZ())) - vs(volume, lowerUpper.getX(), upper.getY(), lower.getZ())) * factor.getX())
+                * factor.getY())) * (1 - factor.getZ()))
+                + ((((((vs(volume, upperLower.getX(), lower.getY(), upper.getZ())
+                - vs(volume, lowerLower.getX(), lower.getY(), upper.getZ()))
+                * (1 - factor.getX()))
+                + ((vs(volume, upperUpper.getX(), lower.getY(), upper.getZ())
+                - vs(volume, lowerUpper.getX(), lower.getY(), upper.getZ()))
+                * factor.getX()))
+                * (1 - factor.getY()))
+                + ((((vs(volume, upperLower.getX(), upper.getY(), upper.getZ())
+                - vs(volume, lowerLower.getX(), upper.getY(), upper.getZ()))
+                * (1 - factor.getX()))
+                + ((vs(volume, upperUpper.getX(), upper.getY(), upper.getZ())
+                - vs(volume, lowerUpper.getX(), upper.getY(), upper.getZ()))
+                * factor.getX()))
+                * factor.getY()))
+                * factor.getZ());
+        // @formatter:on
+    }
+
+    public static float gradY(final VolumeShort2 volume, final Float3 dim, final Float3 point) {
+        final Float3 scaledPos = new Float3(((point.getX() * volume.X()) / dim.getX()) - 0.5f, ((point.getY() * volume.Y()) / dim.getY()) - 0.5f, ((point.getZ() * volume.Z()) / dim.getZ()) - 0.5f);
+        final Float3 tmp = Float3.floor(scaledPos);
+        final Float3 factor = Float3.fract(scaledPos);
+        final Int3 base = new Int3((int) tmp.getX(), (int) tmp.getY(), (int) tmp.getZ());
+        final Int3 zeros = new Int3();
+        final Int3 limits = Int3.sub(new Int3(volume.X(), volume.Y(), volume.Z()), 1);
+        final Int3 lowerLower = Int3.max(zeros, Int3.sub(base, 1));
+        final Int3 lowerUpper = Int3.max(zeros, base);
+        final Int3 upperLower = Int3.min(limits, Int3.add(base, 1));
+        final Int3 upperUpper = Int3.min(limits, Int3.add(base, 2));
+        final Int3 lower = lowerUpper;
+        final Int3 upper = upperLower;
+
+        // @formatter:off
+        return ((((((vs(volume, lower.getX(), upperLower.getY(), lower.getZ())
+                - vs(volume, lower.getX(), lowerLower.getY(), lower.getZ()))
+                * (1 - factor.getX()))
+                + ((vs(volume, upper.getX(), upperLower.getY(), lower.getZ())
+                - vs(volume, upper.getX(), lowerLower.getY(), lower.getZ()))
+                * factor.getX()))
+                * (1 - factor.getY()))
+                + ((((vs(volume, lower.getX(), upperUpper.getY(), lower.getZ())
+                - vs(volume, lower.getX(), lowerUpper.getY(), lower.getZ()))
+                * (1 - factor.getX()))
+                + ((vs(volume, upper.getX(), upperUpper.getY(), lower.getZ())
+                - vs(volume, upper.getX(), lowerUpper.getY(), lower.getZ()))
+                * factor.getX()))
+                * factor.getY()))
+                * (1 - factor.getZ()))
+                + ((((((vs(volume, lower.getX(), upperLower.getY(), upper.getZ())
+                - vs(volume, lower.getX(), lowerLower.getY(), upper.getZ()))
+                * (1 - factor.getX()))
+                + ((vs(volume, upper.getX(), upperLower.getY(), upper.getZ())
+                - vs(volume, upper.getX(), lowerLower.getY(), upper.getZ()))
+                * factor.getX()))
+                * (1 - factor.getY()))
+                + ((((vs(volume, lower.getX(), upperUpper.getY(), upper.getZ())
+                - vs(volume, lower.getX(), lowerUpper.getY(), upper.getZ()))
+                * (1 - factor.getX()))
+                + ((vs(volume, upper.getX(), upperUpper.getY(), upper.getZ())
+                - vs(volume, upper.getX(), lowerUpper.getY(), upper.getZ()))
+                * factor.getX()))
+                * factor.getY()))
+                * factor.getZ());
+        // @formatter:on
+    }
+
+    public static float gradZ(final VolumeShort2 volume, final Float3 dim, final Float3 point) {
+        final Float3 scaledPos = new Float3(((point.getX() * volume.X()) / dim.getX()) - 0.5f, ((point.getY() * volume.Y()) / dim.getY()) - 0.5f, ((point.getZ() * volume.Z()) / dim.getZ()) - 0.5f);
+        final Float3 tmp = Float3.floor(scaledPos);
+        final Float3 factor = Float3.fract(scaledPos);
+        final Int3 base = new Int3((int) tmp.getX(), (int) tmp.getY(), (int) tmp.getZ());
+        final Int3 zeros = new Int3();
+        final Int3 limits = Int3.sub(new Int3(volume.X(), volume.Y(), volume.Z()), 1);
+        final Int3 lowerLower = Int3.max(zeros, Int3.sub(base, 1));
+        final Int3 lowerUpper = Int3.max(zeros, base);
+        final Int3 upperLower = Int3.min(limits, Int3.add(base, 1));
+        final Int3 upperUpper = Int3.min(limits, Int3.add(base, 2));
+        final Int3 lower = lowerUpper;
+        final Int3 upper = upperLower;
+
+        // @formatter:off
+        return ((((((vs(volume, lower.getX(), lower.getY(), upperLower.getZ()))
+                - vs(volume, lower.getX(), lower.getY(), lowerLower.getZ()))
+                * (1 - factor.getX()))
+                + ((vs(volume, upper.getX(), lower.getY(), upperLower.getZ())
+                - vs(volume, upper.getX(), lower.getY(), lowerLower.getZ()))
+                * factor.getX())) * (1 - factor.getY()))
+                + ((((vs(volume, lower.getX(), upper.getY(), upperLower.getZ())
+                - vs(volume, lower.getX(), upper.getY(), lowerLower.getZ()))
+                * (1 - factor.getX()))
+                + ((vs(volume, upper.getX(), upper.getY(), upperLower.getZ())
+                - vs(volume, upper.getX(), upper.getY(), lowerLower.getZ())) * factor
+                .getX())) * factor.getY())) * (1 - factor.getZ())
+                + ((((((vs(volume, lower.getX(), lower.getY(), upperUpper.getZ())
+                - vs(volume, lower.getX(), lower.getY(), lowerUpper.getZ()))
+                * (1 - factor.getX()))
+                + ((vs(volume, upper.getX(), lower.getY(), upperUpper.getZ())
+                - vs(volume, upper.getX(), lower.getY(), lowerUpper.getZ()))
+                * factor.getX()))
+                * (1 - factor.getY()))
+                + ((((vs(volume, lower.getX(), upper.getY(), upperUpper.getZ())
+                - vs(volume, lower.getX(), upper.getY(), lowerUpper.getZ()))
+                * (1 - factor.getX()))
+                + ((vs(volume, upper.getX(), upper.getY(), upperUpper.getZ())
+                - vs(volume, upper.getX(), upper.getY(), lowerUpper.getZ()))
+                * factor.getX()))
+                * factor.getY())) * factor.getZ());
+        // @formatter:on
+    }
+
+    // Scale factor applied to (gradX, gradY, gradZ) to match
+    // VolumeOps.grad()'s final combine step - callers must do this themselves
+    // (see the class-level comment above gradX()) rather than through a
+    // combining wrapper method.
+    public static Float3 gradScale(final VolumeShort2 volume, final Float3 dim) {
+        return mult(new Float3(dim.getX() / volume.X(), dim.getY() / volume.Y(), dim.getZ() / volume.Z()), (0.5f * 0.00003051944088f));
     }
 
     public static Float4 raycastPoint(final VolumeShort2 volume, final Float3 dim, final int x, final int y, final Matrix4x4Float view, float nearPlane, float farPlane, float smallStep,

@@ -34,7 +34,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
@@ -47,6 +46,7 @@ import kfusion.java.common.AbstractLogger;
 import kfusion.java.common.KfusionConfig;
 import uk.ac.manchester.tornado.api.types.images.ImageByte3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
@@ -186,10 +186,20 @@ public class RawDevice extends AbstractLogger implements Device {
             // buffer.getInt();
             // buffer.getInt();
             buffer.position(buffer.position() + 8);
-            final ByteBuffer bb = image.asBuffer();
-            bb.position(bb.capacity());
 
-            buffer.get(bb.array());
+            // Not image.asBuffer().array(): on TornadoVM's current (off-heap,
+            // MemorySegment-backed) ImageByte3, asBuffer() wraps a *copy*
+            // (storage.toHeapArray()), so writes through it never reach the
+            // image's real backing storage - the video pane stayed black.
+            // set(x, y, ...) writes into the actual storage directly.
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    final byte r = buffer.get();
+                    final byte g = buffer.get();
+                    final byte b = buffer.get();
+                    image.set(x, y, new Byte3(r, g, b));
+                }
+            }
         }
     }
 

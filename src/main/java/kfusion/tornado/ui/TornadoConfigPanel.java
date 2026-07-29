@@ -29,11 +29,15 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.awt.Dimension;
+import java.awt.Font;
+
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 import javax.swing.border.EtchedBorder;
 
 import kfusion.tornado.common.TornadoModel;
@@ -48,6 +52,8 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 
     final JComboBox<TornadoDevice> deviceComboBox;
     public final JCheckBox enableTornadoCheckBox;
+    private final JLabel fpsLabel;
+    private final Timer fpsTimer;
 
     private final TornadoModel config;
 
@@ -81,10 +87,21 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
         enableTornadoCheckBox.setSelected(false);
         enableTornadoCheckBox.addActionListener(this);
 
+        fpsLabel = new JLabel("FPS: --");
+        fpsLabel.setFont(fpsLabel.getFont().deriveFont(Font.BOLD));
+        fpsLabel.setPreferredSize(new Dimension(90, fpsLabel.getPreferredSize().height));
+
         setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), PANEL_NAME));
         add(enableTornadoCheckBox);
         add(new JLabel("  Tornado Device:"));
         add(deviceComboBox);
+        add(new JLabel("  "));
+        add(fpsLabel);
+
+        // Both the Java and Tornado pipelines publish to config.getCurrentFPS();
+        // poll it on the EDT so the label works regardless of which one is active.
+        fpsTimer = new Timer(300, e -> fpsLabel.setText(String.format("FPS: %.1f", config.getCurrentFPS())));
+        fpsTimer.start();
     }
 
     public void updateModel() {

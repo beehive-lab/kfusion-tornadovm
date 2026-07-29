@@ -107,6 +107,10 @@ public class KfusionConfig {
     private boolean rotatePositiveY;
     private final FloatArray rotParams;
 
+    private static final float MIN_ZOOM = 0.25f;
+    private static final float MAX_ZOOM = 4f;
+    private float zoom = 1f;
+
     private boolean drawDepth;
     private double RSMEThreshold;
     private int scale;
@@ -450,7 +454,24 @@ public class KfusionConfig {
         return printFPS;
     }
 
+    /**
+     * Latest frames-per-second measurement, published by the rendering
+     * pipeline and read by the UI. Volatile: written on the GL animator
+     * thread, read on the AWT event dispatch thread.
+     */
+    private volatile float currentFPS;
+
+    public float getCurrentFPS() {
+        return currentFPS;
+    }
+
+    public void setCurrentFPS(float value) {
+        currentFPS = value;
+    }
+
     public void reset() {
+
+        currentFPS = 0;
 
         final float posX = Float.parseFloat(settings.getProperty("kfusion.model.offset.x", "0.5"));
         final float posY = Float.parseFloat(settings.getProperty("kfusion.model.offset.y", "0.5"));
@@ -535,6 +556,22 @@ public class KfusionConfig {
 
     public void rotatePositiveY() {
         rotatePositiveY = true;
+    }
+
+    public float getZoom() {
+        return zoom;
+    }
+
+    public void setZoom(final float value) {
+        zoom = Math.max(MIN_ZOOM, Math.min(value, MAX_ZOOM));
+    }
+
+    public void zoomIn() {
+        zoom = Math.min(zoom * 1.1f, MAX_ZOOM);
+    }
+
+    public void zoomOut() {
+        zoom = Math.max(zoom / 1.1f, MIN_ZOOM);
     }
 
     public void setAmbient(final Float3 value) {

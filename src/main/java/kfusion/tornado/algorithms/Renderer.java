@@ -51,18 +51,28 @@ import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte4;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Short3;
 import uk.ac.manchester.tornado.api.types.volumes.VolumeShort2;
 
-import static kfusion.tornado.algorithms.GraphicsMath.raycastPoint;
-import static uk.ac.manchester.tornado.api.types.utils.VolumeOps.grad;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.max;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.min;
+import static uk.ac.manchester.tornado.api.types.utils.VolumeOps.interp;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.div;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.mult;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.sub;
 
 public class Renderer {
 
     private static final float INVALID = -2f;
+
+    // Named to avoid Float3.dot(): reached (via raycastPoint) from renderVolume,
+    // where TornadoVM's OpenCL sketcher emits it as a standalone generated
+    // function instead of inlining it, and "dot" collides with OpenCL C's
+    // builtin dot() function.
+    private static float dotProduct(Float3 a, Float3 b) {
+        return a.getX() * b.getX() + a.getY() * b.getY() + a.getZ() * b.getZ();
+    }
 
     public static void renderLight(ImageByte4 output, ImageFloat3 verticies, ImageFloat3 normals, Float3 light, Float3 ambient) {
         for (@Parallel int y = 0; y < output.Y(); y++) {
@@ -82,30 +92,120 @@ public class Renderer {
         }
     }
 
+    // GraphicsMath.raycastPoint() and VolumeOps.grad()'s bodies are inlined /
+    // reproduced directly here (rather than called as helpers), for the same
+    // reason as Raycast.raycast() and GraphicsMath.gradX(): renderVolume() is
+    // itself a TornadoVM task entry method, and each of raycastPoint() (~749
+    // Graal IR nodes) and grad() (~946 nodes) individually exceeds the default
+    // ~600-node per-callee inlining cap - calling them directly from the root
+    // (as this method previously did) doesn't exempt them, only the root
+    // invocation itself is exempt.
     public static void renderVolume(ImageByte4 output, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane, float smallStep, float largeStep, Float3 light,
             Float3 ambient) {
         for (@Parallel int y = 0; y < output.Y(); y++) {
             for (@Parallel int x = 0; x < output.X(); x++) {
-                final Float4 hit = raycastPoint(volume, volumeDims, x, y, view, nearPlane, farPlane, smallStep, largeStep);
-                final Byte4 pixel;
-                if (hit.getW() > 0) {
-                    final Float3 test = hit.asFloat3();
-                    final Float3 surfNorm = grad(volume, volumeDims, test);
+
+                final Float3 pixelPos = new Float3(x, y, 1f);
+                final Float3 origin = view.column(3).asFloat3();
+                final Float3 direction = GraphicsMath.rotate(view, pixelPos);
+                final Float3 invR = div(new Float3(1f, 1f, 1f), direction);
+
+                final Float3 tbot = mult(mult(invR, origin), -1f);
+                final Float3 ttop = mult(invR, sub(volumeDims, origin));
+
+                final Float3 tminVec = Float3.min(ttop, tbot);
+                final Float3 tmaxVec = Float3.max(ttop, tbot);
+
+                final float largestTmin = Float3.max(tminVec);
+                final float smallestTmax = Float3.min(tmaxVec);
+
+                final float tnear = max(largestTmin, nearPlane);
+                final float tfar = min(smallestTmax, farPlane);
+
+                // Hit result as separate scalar floats, not a Float4 - see the
+                // comment on the equivalent code in Raycast.raycast() for why
+                // (a vector-typed Phi merging a constant zero vector with a
+                // computed one trips a TornadoVM Metal backend code-gen bug).
+                float hitX = 0f, hitY = 0f, hitZ = 0f, hitW = 0f;
+                if (tnear < tfar) {
+                    float t = tnear;
+                    float stepsize = largeStep;
+
+                    Float3 pos = add(mult(direction, t), origin);
+                    float interpValue = interp(volume, volumeDims, pos);
+                    float interpChanged = 0f;
+
+                    if (interpValue > 0) {
+                        // No `break` - see the equivalent comment in Raycast.raycast(): on
+                        // TornadoVM's jdk25 Metal/OpenCL backends, a value conditionally
+                        // reassigned inside a loop via break and then read after the loop
+                        // isn't reliably propagated. A boolean folded into the loop condition
+                        // gives the loop a single exit edge instead of two (natural + break)
+                        // merging downstream, which sidesteps the bug entirely.
+                        boolean crossed = false;
+                        while (t < tfar && !crossed) {
+                            pos = add(mult(direction, t), origin);
+                            interpChanged = interp(volume, volumeDims, pos);
+
+                            if (interpChanged < 0f) {
+                                crossed = true;
+                            } else {
+                                if (interpChanged < 0.8f) {
+                                    stepsize = smallStep;
+                                }
+
+                                interpValue = interpChanged;
+                                t += stepsize;
+                            }
+                        }
+
+                        if (crossed) {
+                            t = t + ((stepsize * interpChanged) / (interpValue - interpChanged));
+                            pos = add(mult(direction, t), origin);
+                            hitX = pos.getX();
+                            hitY = pos.getY();
+                            hitZ = pos.getZ();
+                            hitW = t;
+                        }
+                    }
+                }
+
+                // pixel is kept as scalar bytes (not Byte4) until the final
+                // .set() call, for the same reason as hitX/Y/Z/W and
+                // posX/Y/Z/normX/Y/Z in Raycast.raycast(): a TornadoVM Metal
+                // backend bug crashes when a value stored into a vector array
+                // element could be a compile-time constant, which new Byte4() is.
+                final byte pixelR, pixelG, pixelB, pixelA;
+                if (hitW > 0) {
+                    final Float3 test = new Float3(hitX, hitY, hitZ);
+                    final float gx = GraphicsMath.gradX(volume, volumeDims, test);
+                    final float gy = GraphicsMath.gradY(volume, volumeDims, test);
+                    final float gz = GraphicsMath.gradZ(volume, volumeDims, test);
+                    final Float3 surfNorm = mult(new Float3(gx, gy, gz), GraphicsMath.gradScale(volume, volumeDims));
                     if (Float3.length(surfNorm) > 0) {
                         final Float3 diff = Float3.normalise(Float3.sub(light, test));
                         final Float3 normalizedSurfNorm = Float3.normalise(surfNorm);
-                        final float dir = Math.max(Float3.dot(normalizedSurfNorm, diff), 0f);
+                        final float dir = Math.max(dotProduct(normalizedSurfNorm, diff), 0f);
                         Float3 col = add(new Float3(dir, dir, dir), ambient);
                         col = Float3.clamp(col, 0f, 1f);
                         col = Float3.mult(col, 255f);
-                        pixel = new Byte4((byte) col.getX(), (byte) col.getY(), (byte) col.getZ(), (byte) 0);
+                        pixelR = (byte) col.getX();
+                        pixelG = (byte) col.getY();
+                        pixelB = (byte) col.getZ();
+                        pixelA = (byte) 0;
                     } else {
-                        pixel = new Byte4();
+                        pixelR = 0;
+                        pixelG = 0;
+                        pixelB = 0;
+                        pixelA = 0;
                     }
                 } else {
-                    pixel = new Byte4();
+                    pixelR = 0;
+                    pixelG = 0;
+                    pixelB = 0;
+                    pixelA = 0;
                 }
-                output.set(x, y, pixel);
+                output.set(x, y, new Byte4(pixelR, pixelG, pixelB, pixelA));
             }
         }
     }

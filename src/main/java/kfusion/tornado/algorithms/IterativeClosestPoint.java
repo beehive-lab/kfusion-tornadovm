@@ -108,6 +108,21 @@ public class IterativeClosestPoint {
         }
     }
 
+    // reduceValues() used to be a separate method called once per element from
+    // the loop below. Its body is inlined directly here (rather than called as
+    // a helper) because mapReduce() is the actual TornadoVM task entry method:
+    // TornadoVM's inlining-cap check only exempts the root invocation itself,
+    // not nested calls made from it - so a helper method that (once its own
+    // nested calls are resolved) exceeds ~600 Graal IR nodes still fails this
+    // check even when called directly from the root. Splitting the JtJ
+    // accumulation into accumulateJtJRows01()/accumulateJtJRows2345() (each
+    // individually well under the cap, with no further nested calls of their
+    // own) and calling both directly here - with everything else inlined as
+    // plain code in the root method, which has no such cap - is what lets this
+    // task compile under TornadoVM's default inlining policy, without
+    // -Dtornado.compiler.fullInlining=True (which was needed on every prior
+    // approach, and which overflows an internal counter compiling other,
+    // larger kernels - e.g. renderVolume - on jdk25).
     public static void mapReduce(final FloatArray output, final ImageFloat8 input) {
         final int numThreads = output.getSize() / 32;
         final int numElements = input.X() * input.Y();
@@ -118,8 +133,38 @@ public class IterativeClosestPoint {
                 output.set(startIndex + j, 0f);
             }
 
+            final int jtj = startIndex + 7;
+            final int info = startIndex + 28;
+
             for (int j = i; j < numElements; j += numThreads) {
-                reduceValues(output, startIndex, input, j);
+                final Float8 value = input.get(j);
+                final int result = (int) value.getS7();
+
+                if (result < 1) {
+                    final int condA = ((result == -4) ? 1 : 0);
+                    final int condB = ((result == -5) ? 1 : 0);
+                    final int condC = ((result > -4) ? 1 : 0);
+                    output.set(info + 1, output.get(info + 1) + condA);
+                    output.set(info + 2, output.get(info + 2) + condB);
+                    output.set(info + 3, output.get(info + 3) + condC);
+                    continue;
+                }
+
+                final float error = value.getS6();
+
+                output.set(startIndex, output.get(startIndex) + (error * error));
+
+                output.set(startIndex + 0 + 1, output.get(startIndex + 0 + 1) + (error * value.getS0()));
+                output.set(startIndex + 1 + 1, output.get(startIndex + 1 + 1) + (error * value.getS1()));
+                output.set(startIndex + 2 + 1, output.get(startIndex + 2 + 1) + (error * value.getS2()));
+                output.set(startIndex + 3 + 1, output.get(startIndex + 3 + 1) + (error * value.getS3()));
+                output.set(startIndex + 4 + 1, output.get(startIndex + 4 + 1) + (error * value.getS4()));
+                output.set(startIndex + 5 + 1, output.get(startIndex + 5 + 1) + (error * value.getS5()));
+
+                accumulateJtJRows01(output, jtj, value);
+                accumulateJtJRows2345(output, jtj, value);
+
+                output.set(info, output.get(info) + 1);
             }
         }
     }
@@ -209,53 +254,60 @@ public class IterativeClosestPoint {
         sums.set(info, sums.get(info) + 1);
     }
 
-    public static void reduceValues(final FloatArray sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
-
-        final int jtj = startIndex + 7;
-        final int info = startIndex + 28;
-
-        Float8 value = trackingResults.get(resultIndex);
-        final int result = (int) value.getS7();
-        final float error = value.getS6();
-
-        if (result < 1) {
-            int condA = ((result == -4) ? 1 : 0);
-            int condB = ((result == -5) ? 1 : 0);
-            int condC = ((result > -4) ? 1 : 0);
-            sums.set(info + 1, sums.get(info + 1) + condA);
-            sums.set(info + 2, sums.get(info + 2) + condB);
-            sums.set(info + 3, sums.get(info + 3) + condC);
-            return;
-        }
-
-        sums.set(startIndex, sums.get(startIndex) + (error * error));
-
-
-        sums.set(startIndex + 0 + 1, sums.get(startIndex + 0 + 1) + (error * value.getS0()));
-        sums.set(startIndex + 1 + 1, sums.get(startIndex + 1 + 1) + (error * value.getS1()));
-        sums.set(startIndex + 2 + 1, sums.get(startIndex + 2 + 1) + (error * value.getS2()));
-        sums.set(startIndex + 3 + 1, sums.get(startIndex + 3 + 1) + (error * value.getS3()));
-        sums.set(startIndex + 4 + 1, sums.get(startIndex + 4 + 1) + (error * value.getS4()));
-        sums.set(startIndex + 5 + 1, sums.get(startIndex + 5 + 1) + (error * value.getS5()));
-
+    // Split out of mapReduce() purely for readability. Deliberately kept as
+    // unrolled getS0()..getS5() accesses, not a loop over value.get(i): Float8
+    // is a fixed-lane vector type, and TornadoVM's sketcher requires constant
+    // lane indices - a runtime loop variable there crashes the sketch compiler
+    // ("Invalid lane: ...ValuePhi..."), it's not just a size/style issue.
+    //
+    // The accumulator reads at jtj+5, jtj+7, jtj+14 must read their own index
+    // (matching the CPU reference in kfusion.java.algorithms.IterativeClosestPoint):
+    // an earlier version of this method read jtj+1 at all three positions,
+    // corrupting the J^T*J matrix used for the Gauss-Newton pose solve and
+    // visibly degrading tracking/reconstruction quality.
+    //
+    // Split into two halves (rows 0-1, rows 2-5), called directly from the
+    // root task method mapReduce(): a single 21-entry method's Graal sketch
+    // graph is ~600+ nodes, right at TornadoVM's default per-callee inlining
+    // cap (jdk.graal.compiler MaximumInliningSize * 2). Each half stays
+    // comfortably under that cap on its own, checked independently - but any
+    // wrapping method in between still fails: TornadoVM's inlining-decision
+    // walk evaluates a callee's node count after recursively resolving its own
+    // nested calls, so a wrapper's checked size is the sum of everything it
+    // calls (plus overhead). That ruled out both an accumulateJtJ(sums, jtj,
+    // value) dispatcher calling both halves (665 nodes, worse than the
+    // original monolithic method's 603) and calling both halves from
+    // mapReduce()'s former helper reduceValues() (638 nodes) - only the actual
+    // root method is exempt from this cap, so both halves must be called
+    // directly from mapReduce() itself with no intermediate method in between.
+    //
+    // This compiles under the default inlining policy without needing
+    // -Dtornado.compiler.fullInlining=True or a raised MaximumInliningSize -
+    // both of which were found to be unstable workarounds (raising the cap
+    // unlocks more nested inlining, so the node count needed grows along with
+    // it), and fullInlining additionally overflows an internal counter
+    // compiling other, larger kernels (e.g. renderVolume) on jdk25.
+    private static void accumulateJtJRows01(final FloatArray sums, final int jtj, final Float8 value) {
         // is this jacobian transpose jacobian?
         sums.set(jtj + 0, sums.get(jtj + 0) + (value.getS0() * value.getS0()));
         sums.set(jtj + 1, sums.get(jtj + 1) + (value.getS0() * value.getS1()));
         sums.set(jtj + 2, sums.get(jtj + 2) + (value.getS0() * value.getS2()));
         sums.set(jtj + 3, sums.get(jtj + 3) + (value.getS0() * value.getS3()));
         sums.set(jtj + 4, sums.get(jtj + 4) + (value.getS0() * value.getS4()));
-        sums.set(jtj + 5, sums.get(jtj + 1) + (value.getS0() * value.getS5()));
+        sums.set(jtj + 5, sums.get(jtj + 5) + (value.getS0() * value.getS5()));
 
         sums.set(jtj + 6, sums.get(jtj + 6) + (value.getS1() * value.getS1()));
-        sums.set(jtj + 7, sums.get(jtj + 1) + (value.getS1() * value.getS2()));
+        sums.set(jtj + 7, sums.get(jtj + 7) + (value.getS1() * value.getS2()));
         sums.set(jtj + 8, sums.get(jtj + 8) + (value.getS1() * value.getS3()));
         sums.set(jtj + 9, sums.get(jtj + 9) + (value.getS1() * value.getS4()));
         sums.set(jtj + 10, sums.get(jtj + 10) + (value.getS1() * value.getS5()));
+    }
 
+    private static void accumulateJtJRows2345(final FloatArray sums, final int jtj, final Float8 value) {
         sums.set(jtj + 11, sums.get(jtj + 11) + (value.getS2() * value.getS2()));
         sums.set(jtj + 12, sums.get(jtj + 12) + (value.getS2() * value.getS3()));
         sums.set(jtj + 13, sums.get(jtj + 13) + (value.getS2() * value.getS4()));
-        sums.set(jtj + 14, sums.get(jtj + 1) + (value.getS2() * value.getS5()));
+        sums.set(jtj + 14, sums.get(jtj + 14) + (value.getS2() * value.getS5()));
 
         sums.set(jtj + 15, sums.get(jtj + 15) + (value.getS3() * value.getS3()));
         sums.set(jtj + 16, sums.get(jtj + 16) + (value.getS3() * value.getS4()));
@@ -265,8 +317,6 @@ public class IterativeClosestPoint {
         sums.set(jtj + 19, sums.get(jtj + 19) + (value.getS4() * value.getS5()));
 
         sums.set(jtj + 20, sums.get(jtj + 20) + (value.getS5() * value.getS5()));
-
-        sums.set(info, sums.get(info) + 1);
     }
 
     public static void reduce(final FloatArray globalSums, final ImageFloat8 trackingResults) {
