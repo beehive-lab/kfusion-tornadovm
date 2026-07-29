@@ -95,22 +95,31 @@ public class Raycast {
 					float interpChanged = 0f;
 
 					if (interpValue > 0) {
-						for (; t < tfar; t += stepsize) {
+						// No `break`: on TornadoVM's jdk25 Metal/OpenCL backends, a value
+						// conditionally reassigned inside a loop via break and then read
+						// after the loop isn't reliably propagated to that later read -
+						// every ray on this device silently resolved as "no hit" regardless
+						// of the volume's contents. A boolean folded into the loop condition
+						// gives the loop a single exit edge instead of two (natural + break)
+						// merging downstream, which sidesteps the bug entirely.
+						boolean crossed = false;
+						while (t < tfar && !crossed) {
 							pos = add(mult(direction, t), origin);
 							interpChanged = interp(volume, volumeDims, pos);
 
 							if (interpChanged < 0f) {
-								break;
-							}
+								crossed = true;
+							} else {
+								if (interpChanged < 0.8f) {
+									stepsize = smallStep;
+								}
 
-							if (interpChanged < 0.8f) {
-								stepsize = smallStep;
+								interpValue = interpChanged;
+								t += stepsize;
 							}
-
-							interpValue = interpChanged;
 						}
 
-						if (interpChanged < 0) {
+						if (crossed) {
 							t = t + ((stepsize * interpChanged) / (interpValue - interpChanged));
 							pos = add(mult(direction, t), origin);
 							hitX = pos.getX();

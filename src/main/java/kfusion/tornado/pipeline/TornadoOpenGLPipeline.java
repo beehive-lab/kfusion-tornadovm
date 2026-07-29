@@ -185,11 +185,12 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
 
         renderGraph = new TaskGraph("render")
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, scenePose, verticies, normals, volume,
-                        pyramidVerticies[0], pyramidNormals[0], pyramidTrackingResults[0])
+                        pyramidVerticies[0], pyramidNormals[0], pyramidTrackingResults[0], pyramidDepths[0])
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, renderedScene, volumeDims, light, ambient)
                 .task("renderCurrentView", Renderer::renderLight, renderedCurrentViewImage, pyramidVerticies[0], pyramidNormals[0], light, ambient)
                 .task("renderReferenceView", Renderer::renderLight, renderedReferenceViewImage, verticies, normals, light, ambient)
                 .task("renderTrack", Renderer::renderTrack, renderedTrackingImage, pyramidTrackingResults[0])
+                .task("renderDepth", Renderer::renderDepth, renderedDepthImage, pyramidDepths[0], nearPlane, farPlane)
                 .task("renderVolume", Renderer::renderVolume, renderedScene, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, renderedCurrentViewImage, renderedReferenceViewImage, renderedTrackingImage, renderedDepthImage, renderedScene);
 
@@ -310,7 +311,6 @@ public class TornadoOpenGLPipeline<T extends TornadoModel> extends AbstractOpenG
         MatrixFloatOps.inverse(invTrack);
 
         integratePlan.execute();
-
     }
 
     @Override
