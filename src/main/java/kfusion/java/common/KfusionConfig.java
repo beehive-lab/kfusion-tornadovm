@@ -107,6 +107,10 @@ public class KfusionConfig {
     private boolean rotatePositiveY;
     private final FloatArray rotParams;
 
+    private static final float MIN_ZOOM = 0.25f;
+    private static final float MAX_ZOOM = 4f;
+    private float zoom = 1f;
+
     private boolean drawDepth;
     private double RSMEThreshold;
     private int scale;
@@ -552,6 +556,22 @@ public class KfusionConfig {
 
     public void rotatePositiveY() {
         rotatePositiveY = true;
+    }
+
+    public float getZoom() {
+        return zoom;
+    }
+
+    public void setZoom(final float value) {
+        zoom = Math.max(MIN_ZOOM, Math.min(value, MAX_ZOOM));
+    }
+
+    public void zoomIn() {
+        zoom = Math.min(zoom * 1.1f, MAX_ZOOM);
+    }
+
+    public void zoomOut() {
+        zoom = Math.max(zoom / 1.1f, MIN_ZOOM);
     }
 
     public void setAmbient(final Float3 value) {

@@ -25,6 +25,8 @@
 package kfusion.tornado;
 
 import java.awt.EventQueue;
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
 
 import kfusion.tornado.common.TornadoModel;
 import kfusion.tornado.ui.KfusionTornadoCanvas;
@@ -35,14 +37,35 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public class GUI {
 
+    // The canvas's content (see AbstractOpenGLPipeline#display) is drawn at
+    // fixed pixel positions sized for this "natural" (zoom == 1) canvas size.
+    private static final int BASE_CANVAS_WIDTH = 660 * 2;
+    private static final int BASE_CANVAS_HEIGHT = 500;
+
+    // Reserved for the config panels above the canvas + window chrome, when
+    // computing how much of the screen the canvas can actually use.
+    private static final int RESERVED_SCREEN_WIDTH = 40;
+    private static final int RESERVED_SCREEN_HEIGHT = 360;
+
     public static void main(String[] args) {
         EventQueue.invokeLater( () -> {
                 final TornadoModel config = new TornadoModel();
                 if (System.getProperty("tornado.config") != null) {
                     TornadoRuntimeProvider.loadSettings(System.getProperty("tornado.config"));
                 }
+
+                // Start zoomed to whatever fits this screen (capped at 1x - no
+                // point zooming past the content's native resolution by
+                // default), so the window opens usable even on a small
+                // display. The +/- keys can zoom in further from there.
+                final Rectangle screenBounds = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+                final float fitZoom = Math.min(1f, Math.min((screenBounds.width - RESERVED_SCREEN_WIDTH) / (float) BASE_CANVAS_WIDTH,
+                        (screenBounds.height - RESERVED_SCREEN_HEIGHT) / (float) BASE_CANVAS_HEIGHT));
+                config.setZoom(fitZoom);
+
                 final TornadoConfigPanel tornadoConfig = new TornadoConfigPanel(config);
-                final KfusionTornadoCanvas canvas = new KfusionTornadoCanvas(config, 660 * 2, 500, tornadoConfig);
+                final KfusionTornadoCanvas canvas = new KfusionTornadoCanvas(config, Math.round(BASE_CANVAS_WIDTH * fitZoom),
+                        Math.round(BASE_CANVAS_HEIGHT * fitZoom), tornadoConfig);
                 TornadoWorkbenchFrame frame = new TornadoWorkbenchFrame(config, canvas, tornadoConfig);
                 frame.setVisible(true);
         });

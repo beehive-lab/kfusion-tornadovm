@@ -27,11 +27,13 @@ package kfusion.java.pipeline;
 import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 
+import java.awt.Font;
 import java.nio.ByteBuffer;
 
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
+import com.jogamp.opengl.util.awt.TextRenderer;
 
 import kfusion.java.common.KfusionConfig;
 import kfusion.tornado.algorithms.Renderer;
@@ -45,6 +47,8 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
     public AbstractOpenGLPipeline(T config) {
         super(config);
     }
+
+    private TextRenderer paneLabelRenderer;
 
     @Override
     public void display(GLAutoDrawable drawable) {
@@ -68,20 +72,37 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
 
             execute();
 
-            final int borderSize = 5;
+            final float zoom = config.getZoom();
+            gl.glPixelZoom(zoom, -zoom);
+
+            final int borderSize = scaled(5, zoom);
             final int x0 = borderSize;
-            final int y0 = 500 - borderSize;
+            final int y0 = scaled(500, zoom) - borderSize;
+            final int videoW = scaled(scaledVideoImage.X(), zoom);
+            final int videoH = scaled(scaledVideoImage.Y(), zoom);
+            final int currentW = scaled(renderedCurrentViewImage.X(), zoom);
+            final int currentH = scaled(renderedCurrentViewImage.Y(), zoom);
+            final int referenceH = scaled(renderedReferenceViewImage.Y(), zoom);
+            final int sceneH = scaled(renderedScene.Y(), zoom);
 
             drawImageRGB(scaledVideoImage, gl, x0, y0);
             if (!config.drawDepth()) {
-                drawImageRGBA(renderedDepthImage, gl, x0 + scaledVideoImage.X() + 2 * borderSize, y0);
+                drawImageRGBA(renderedDepthImage, gl, x0 + videoW + 2 * borderSize, y0);
             } else {
-                drawImageRGB(renderedTrackingImage, gl, x0 + scaledVideoImage.X() + 2 * borderSize, y0);
+                drawImageRGB(renderedTrackingImage, gl, x0 + videoW + 2 * borderSize, y0);
             }
 
-            drawImageRGBA(renderedCurrentViewImage, gl, x0, y0 - borderSize - scaledVideoImage.Y());
-            drawImageRGBA(renderedReferenceViewImage, gl, x0 + renderedCurrentViewImage.X() + 2 * borderSize, y0 - borderSize - scaledVideoImage.Y());
-            drawImageRGBA(renderedScene, gl, (scaledVideoImage.X() * 2) + 4 * borderSize, y0);
+            drawImageRGBA(renderedCurrentViewImage, gl, x0, y0 - borderSize - videoH);
+            drawImageRGBA(renderedReferenceViewImage, gl, x0 + currentW + 2 * borderSize, y0 - borderSize - videoH);
+            drawImageRGBA(renderedScene, gl, (videoW * 2) + 4 * borderSize, y0);
+
+            beginPaneLabels(drawable, zoom);
+            drawPaneLabel("Camera Input", x0, y0 - videoH, zoom);
+            drawPaneLabel(config.drawDepth() ? "Tracking" : "Depth", x0 + videoW + 2 * borderSize, y0 - videoH, zoom);
+            drawPaneLabel("3D Reconstruction", (videoW * 2) + 4 * borderSize, y0 - sceneH, zoom);
+            drawPaneLabel("Current View", x0, y0 - borderSize - videoH - currentH, zoom);
+            drawPaneLabel("Reference View", x0 + currentW + 2 * borderSize, y0 - borderSize - videoH - referenceH, zoom);
+            endPaneLabels();
 
         }
         gl.glFlush();
@@ -122,6 +143,38 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
         bb.rewind();
         gl.glWindowPos2i(x, y);
         gl.glDrawPixels(image.X(), image.Y(), GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, bb);
+    }
+
+    private static final int PANE_LABEL_GAP = 14;
+    private static final int BASE_FONT_SIZE = 12;
+    private int paneLabelFontSize = -1;
+
+    /** Scales a base (zoom == 1) screen-space measurement by the current zoom. */
+    private static int scaled(int value, float zoom) {
+        return Math.round(value * zoom);
+    }
+
+    private void beginPaneLabels(GLAutoDrawable drawable, float zoom) {
+        final int fontSize = Math.max(8, scaled(BASE_FONT_SIZE, zoom));
+        if (paneLabelRenderer == null || fontSize != paneLabelFontSize) {
+            paneLabelRenderer = new TextRenderer(new Font("SansSerif", Font.PLAIN, fontSize));
+            paneLabelFontSize = fontSize;
+        }
+        paneLabelRenderer.beginRendering(drawable.getSurfaceWidth(), drawable.getSurfaceHeight());
+        paneLabelRenderer.setColor(1f, 1f, 1f, 1f);
+    }
+
+    /**
+     * {@code x, y} is the bottom-left corner of the pane the label sits under
+     * (window coordinates - same convention as {@link #drawImageRGB}/
+     * {@link #drawImageRGBA}'s {@code x, y}, which is each pane's top-left).
+     */
+    private void drawPaneLabel(String text, int x, int y, float zoom) {
+        paneLabelRenderer.draw(text, x, y - scaled(PANE_LABEL_GAP, zoom));
+    }
+
+    private void endPaneLabels() {
+        paneLabelRenderer.endRendering();
     }
 
     @Override
