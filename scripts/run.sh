@@ -46,4 +46,4 @@ java @"${ARGFILE}" \
     -Dlog4j.configurationFile="${KFUSION_ROOT}/conf/log4j2.xml" \
     "${BACKEND_PRIORITY[@]}" \
     -cp "${CLASSPATH}:${JARS}" \
-    kfusion.tornado.Benchmark --params="${SETTINGS}"
+    kfusion.tornado.Benchmark "${SETTINGS}"
