@@ -116,12 +116,33 @@ all took two discoveries:
 2. **The capture request must be restated for the selected graph on every execution**, because
    `withGraph(i)` re-selects it — the same pattern GPULlama3's `TornadoVMMasterPlan*` classes use.
 
-With capture genuinely engaged (requested at construction, before the warm-up), replay is both wrong
-and far slower: **4.5 FPS (218 ms/frame) and ATE 1.54 m**. Without the warm-up it instead dies with
-`cuMemAlloc status=700` (illegal address) after a few frames. This pipeline has per-execution changing
-inputs (pose matrices), a per-iteration device→host copy and cross-graph buffer aliasing, and the
-capture path does not currently survive that combination. Left off by default
-(`-Dkfusion.cuda.graphs=none|all`).
+3. **A captured graph bakes in device addresses.** Running with `-Dtornado.recover.bailout=False`
+   finally shows the real error, which the default bailout was swallowing:
+
+```
+TornadoBailoutRuntimeException: Bailout is disabled.
+Reason: cuGraphLaunch failed. CUresult=700
+        at TornadoTaskGraph.scheduleInner(TornadoTaskGraph.java:1056)
+```
+
+That is an illegal memory access on replay, and it explains the earlier "4.5 FPS with ATE 1.54 m": the
+failure was hidden and every frame fell back. The cause is that graphs consuming another graph's output
+through `consumeFromDevice` have their device pointers re-assigned after capture (the reference view
+does not even exist until frame 3), so the recorded nodes dereference stale addresses.
+
+**Capture therefore works for graphs whose buffers are never re-pointed.** `preproc` qualifies - its
+inputs come from the host, its outputs are its own - and capturing it is a measured win:
+
+| capture | computation/frame (3 runs) | mean | ATE RMSE |
+|---|---|---|---|
+| `none` | 2.034 / 1.999 / 2.000 ms | 2.011 ms | 0.019406 m |
+| **`preproc`** | 1.906 / 1.926 / 1.928 ms | **1.920 ms** | 0.019406 m |
+
+4.5% off the frame, trajectory unchanged, and `nsys` confirms it is real: **101 `cuGraphLaunch`** calls
+for 100 frames with a single `cuGraphInstantiateWithFlags`. This is now the default
+(`-Dkfusion.cuda.graphs=none|preproc|all`); `all` still fails as described. After changing which
+buffers cross graph boundaries, re-validate with `-Dtornado.recover.bailout=False`, because otherwise a
+capture failure is silent.
 
 ## Device-side ICP solve: measured and rejected
 

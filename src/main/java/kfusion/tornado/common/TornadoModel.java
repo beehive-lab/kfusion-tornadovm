@@ -140,12 +140,22 @@ public class TornadoModel extends KfusionConfig {
 	}
 
 	/**
-	 * Which task-graphs capture and replay a CUDA graph: {@code none}, {@code icp} (the graphs replayed
-	 * many times per frame) or {@code all}.
+	 * Which task-graphs capture and replay a CUDA graph: {@code none}, {@code preproc} (the default) or
+	 * {@code all}.
+	 *
+	 * <p>
+	 * A captured graph bakes in the device addresses it was recorded with, so only graphs whose buffers
+	 * are never re-pointed afterwards can be captured. That is true of {@code preproc} - its inputs come
+	 * from the host and its outputs are its own - but not of the graphs that consume another graph's
+	 * output through {@code consumeFromDevice}: replaying those fails with
+	 * {@code cuGraphLaunch failed. CUresult=700}. Note that the failure is swallowed unless
+	 * {@code -Dtornado.recover.bailout=False} is set, so re-validate with bailout disabled after changing
+	 * which buffers cross graph boundaries.
+	 * </p>
 	 */
 	public String getCUDAGraphScope() {
 		final String property = System.getProperty("kfusion.cuda.graphs");
-		final String value = (property != null) ? property : settings.getProperty("kfusion.cuda.graphs", "none");
+		final String value = (property != null) ? property : settings.getProperty("kfusion.cuda.graphs", "preproc");
 		if ("true".equalsIgnoreCase(value)) {
 			return "all";
 		}

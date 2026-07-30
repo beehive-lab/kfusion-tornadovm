@@ -72,6 +72,7 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
     private GridScheduler gridScheduler;
     private boolean captureCUDAGraphs;
+    private boolean capturePreprocOnly;
 
     private static final int GRAPH_PREPROC = 0;
     private int graphIcpFirst;
@@ -396,7 +397,14 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         if ("all".equalsIgnoreCase(cudaGraphScope)) {
             plan.withAllGraphs().withCUDAGraph();
             captureCUDAGraphs = true;
-            info("CUDA graphs      : enabled\n");
+            info("CUDA graphs      : all graphs\n");
+        } else if ("preproc".equalsIgnoreCase(cudaGraphScope)) {
+            // Only the preprocessing graph: its inputs come from the host and its outputs are its own,
+            // so no buffer of it is re-pointed by cross-graph aliasing after capture.
+            plan.withGraph(GRAPH_PREPROC).withCUDAGraph();
+            plan.withAllGraphs();
+            capturePreprocOnly = true;
+            info("CUDA graphs      : preproc only\n");
         }
         // NOTE: withPreCompilation() must NOT be used here. It runs every graph in isolation, which
         // leaves each graph with its own device buffers, so the pyramid/reference images produced by
@@ -503,6 +511,9 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         // The grid scheduler is registered once, at plan construction: re-registering it on every
         // execute() walks every task of every graph again, which is pure host overhead in the ICP loop.
         final TornadoExecutionPlan graphPlan = plan.withGraph(graphIndex);
+        if (capturePreprocOnly && graphIndex == GRAPH_PREPROC) {
+            graphPlan.withCUDAGraph();
+        }
         if (captureCUDAGraphs) {
             // withGraph() re-selects the graph, so the capture request has to be restated for the
             // selected graph on every execution - the same way GPULlama3's master plans do it.
