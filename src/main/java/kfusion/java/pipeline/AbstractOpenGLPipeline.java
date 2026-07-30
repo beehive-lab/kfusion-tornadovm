@@ -81,9 +81,6 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
             final int videoW = scaled(scaledVideoImage.X(), zoom);
             final int videoH = scaled(scaledVideoImage.Y(), zoom);
             final int currentW = scaled(renderedCurrentViewImage.X(), zoom);
-            final int currentH = scaled(renderedCurrentViewImage.Y(), zoom);
-            final int referenceH = scaled(renderedReferenceViewImage.Y(), zoom);
-            final int sceneH = scaled(renderedScene.Y(), zoom);
 
             drawImageRGB(scaledVideoImage, gl, x0, y0);
             if (!config.drawDepth()) {
@@ -97,11 +94,11 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
             drawImageRGBA(renderedScene, gl, (videoW * 2) + 4 * borderSize, y0);
 
             beginPaneLabels(drawable, zoom);
-            drawPaneLabel("Camera Input", x0, y0 - videoH, zoom);
-            drawPaneLabel(config.drawDepth() ? "Tracking" : "Depth", x0 + videoW + 2 * borderSize, y0 - videoH, zoom);
-            drawPaneLabel("3D Reconstruction", (videoW * 2) + 4 * borderSize, y0 - sceneH, zoom);
-            drawPaneLabel("Current View", x0, y0 - borderSize - videoH - currentH, zoom);
-            drawPaneLabel("Reference View", x0 + currentW + 2 * borderSize, y0 - borderSize - videoH - referenceH, zoom);
+            drawPaneLabel("Camera Input", x0, y0, zoom);
+            drawPaneLabel(config.drawDepth() ? "Tracking" : "Depth", x0 + videoW + 2 * borderSize, y0, zoom);
+            drawPaneLabel("3D Reconstruction", (videoW * 2) + 4 * borderSize, y0, zoom);
+            drawPaneLabel("Current View", x0, y0 - borderSize - videoH, zoom);
+            drawPaneLabel("Reference View", x0 + currentW + 2 * borderSize, y0 - borderSize - videoH, zoom);
             endPaneLabels();
 
         }
@@ -145,7 +142,8 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
         gl.glDrawPixels(image.X(), image.Y(), GL2.GL_RGBA, GL2.GL_UNSIGNED_BYTE, bb);
     }
 
-    private static final int PANE_LABEL_GAP = 14;
+    private static final int PANE_LABEL_INSET_X = 4;
+    private static final int PANE_LABEL_INSET_Y = 4;
     private static final int BASE_FONT_SIZE = 12;
     private int paneLabelFontSize = -1;
 
@@ -165,12 +163,14 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
     }
 
     /**
-     * {@code x, y} is the bottom-left corner of the pane the label sits under
-     * (window coordinates - same convention as {@link #drawImageRGB}/
-     * {@link #drawImageRGBA}'s {@code x, y}, which is each pane's top-left).
+     * {@code x, paneTopY} is each pane's top-left corner - the same {@code x, y}
+     * passed to {@link #drawImageRGB}/{@link #drawImageRGBA} for that pane.
+     * The label is drawn as an inset caption just below that top edge, so it
+     * always lands inside its own pane instead of in the (narrower) border
+     * gap between panes, which clipped or bled into the next row down.
      */
-    private void drawPaneLabel(String text, int x, int y, float zoom) {
-        paneLabelRenderer.draw(text, x, y - scaled(PANE_LABEL_GAP, zoom));
+    private void drawPaneLabel(String text, int x, int paneTopY, float zoom) {
+        paneLabelRenderer.draw(text, x + scaled(PANE_LABEL_INSET_X, zoom), paneTopY - paneLabelFontSize - scaled(PANE_LABEL_INSET_Y, zoom));
     }
 
     private void endPaneLabels() {

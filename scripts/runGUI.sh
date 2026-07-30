@@ -34,9 +34,18 @@ fi
 # panel and font render tiny on a HiDPI display. Derive a scale factor from
 # Xft.dpi (what the rest of the desktop is already scaled to) and let
 # KFUSION_UI_SCALE override it for setups where that heuristic guesses wrong.
-# macOS already scales Swing/AWT correctly for Retina displays on its own
-# (sun.java2d.uiScale is a Windows/Linux-only JEP 263 property), so this is
-# skipped there to leave that platform's launch untouched.
+#
+# This is deliberately NOT sun.java2d.uiScale: that property scales every
+# heavyweight AWT peer's native pixel size, including the GLCanvas the
+# OpenGL views render into. AbstractOpenGLPipeline#display draws those views
+# at hardcoded pixel positions sized for the canvas's logical (unscaled)
+# size, so uiScale left the real surface 2x bigger than that content -
+# the extra space rendered as blank canvas around the actual views. Passing
+# the factor as kfusion.ui.fontScale instead (read by GUI.main, see there)
+# only enlarges Swing fonts, leaving the canvas's native size untouched.
+#
+# macOS already scales Swing/AWT correctly for Retina displays on its own,
+# so this is skipped there to leave that platform's launch untouched.
 UI_SCALE_ARGS=()
 if [ "$(uname -s)" = "Linux" ]; then
     if [ -n "${KFUSION_UI_SCALE}" ]; then
@@ -45,7 +54,7 @@ if [ "$(uname -s)" = "Linux" ]; then
         XFT_DPI=$(xrdb -query 2>/dev/null | awk -F: '/^Xft\.dpi/ {gsub(/[ \t]/, "", $2); print $2}')
         UI_SCALE=$(awk -v dpi="${XFT_DPI:-96}" 'BEGIN { s = dpi / 96; if (s < 1) s = 1; printf "%.2f", s }')
     fi
-    UI_SCALE_ARGS=("-Dsun.java2d.uiScale=${UI_SCALE}")
+    UI_SCALE_ARGS=("-Dkfusion.ui.fontScale=${UI_SCALE}")
 fi
 
 echo "kfusion (GUI) -Xmx20g -Xms2g ${UI_SCALE_ARGS[*]} kfusion.tornado.GUI"

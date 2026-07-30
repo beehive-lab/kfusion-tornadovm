@@ -24,9 +24,17 @@
  */
 package kfusion.tornado;
 
+import java.awt.Component;
 import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
+
+import javax.swing.Icon;
+import javax.swing.UIManager;
+import javax.swing.plaf.FontUIResource;
 
 import kfusion.tornado.common.TornadoModel;
 import kfusion.tornado.ui.KfusionTornadoCanvas;
@@ -47,21 +55,75 @@ public class GUI {
     private static final int RESERVED_SCREEN_WIDTH = 40;
     private static final int RESERVED_SCREEN_HEIGHT = 360;
 
+    // scripts/runGUI.sh derives this from the desktop's DPI scale (Xft.dpi)
+    // and passes it as kfusion.ui.fontScale, so the config panels stay
+    // readable on HiDPI Linux displays. This is deliberately a font/icon-only
+    // scale rather than sun.java2d.uiScale: that property also scales the
+    // GLCanvas's native pixel size, which AbstractOpenGLPipeline#display
+    // doesn't account for (it draws at hardcoded pixel positions), leaving a
+    // large blank margin around the actual camera/reconstruction views.
+    private static void scaleUIDefaults() {
+        final float scale = Float.parseFloat(System.getProperty("kfusion.ui.fontScale", "1"));
+        if (scale == 1f) {
+            return;
+        }
+        for (Object key : UIManager.getDefaults().keySet()) {
+            final Object value = UIManager.get(key);
+            if (value instanceof Font font) {
+                UIManager.put(key, new FontUIResource(font.deriveFont(font.getSize2D() * scale)));
+            }
+        }
+        // The checkbox/radio button tick icon is a fixed pixel-size L&F
+        // resource, not derived from the font, so scaling fonts above
+        // doesn't touch it - wrap it so it grows (e.g. "Use Tornado") too.
+        scaleIcon("CheckBox.icon", scale);
+        scaleIcon("RadioButton.icon", scale);
+    }
+
+    private static void scaleIcon(String key, float scale) {
+        if (UIManager.get(key) instanceof Icon icon) {
+            UIManager.put(key, new ScaledIcon(icon, scale));
+        }
+    }
+
+    private record ScaledIcon(Icon delegate, float scale) implements Icon {
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            final Graphics2D g2 = (Graphics2D) g.create();
+            g2.translate(x, y);
+            g2.scale(scale, scale);
+            delegate.paintIcon(c, g2, 0, 0);
+            g2.dispose();
+        }
+
+        @Override
+        public int getIconWidth() {
+            return Math.round(delegate.getIconWidth() * scale);
+        }
+
+        @Override
+        public int getIconHeight() {
+            return Math.round(delegate.getIconHeight() * scale);
+        }
+    }
+
     public static void main(String[] args) {
         EventQueue.invokeLater( () -> {
+                scaleUIDefaults();
                 final TornadoModel config = new TornadoModel();
                 if (System.getProperty("tornado.config") != null) {
                     TornadoRuntimeProvider.loadSettings(System.getProperty("tornado.config"));
                 }
 
-                // Start zoomed to whatever fits this screen (capped at 1x - no
-                // point zooming past the content's native resolution by
-                // default), so the window opens usable even on a small
-                // display. The +/- keys can zoom in further from there.
+                // Start zoomed to whatever fits this screen, so the window
+                // opens usable on a small display and fills a large/HiDPI
+                // one instead of sitting tiny in its native 1x size (zoom is
+                // still clamped to KfusionConfig.MAX_ZOOM by setZoom below).
+                // The +/- keys can zoom further from there either way.
                 final Rectangle screenBounds = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-                final float fitZoom = Math.min(1f, Math.min((screenBounds.width - RESERVED_SCREEN_WIDTH) / (float) BASE_CANVAS_WIDTH,
+                config.setZoom(Math.min((screenBounds.width - RESERVED_SCREEN_WIDTH) / (float) BASE_CANVAS_WIDTH,
                         (screenBounds.height - RESERVED_SCREEN_HEIGHT) / (float) BASE_CANVAS_HEIGHT));
-                config.setZoom(fitZoom);
+                final float fitZoom = config.getZoom();
 
                 final TornadoConfigPanel tornadoConfig = new TornadoConfigPanel(config);
                 final KfusionTornadoCanvas canvas = new KfusionTornadoCanvas(config, Math.round(BASE_CANVAS_WIDTH * fitZoom),

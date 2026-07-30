@@ -89,7 +89,12 @@ public class TornadoConfigPanel extends JPanel implements ActionListener {
 
         fpsLabel = new JLabel("FPS: --");
         fpsLabel.setFont(fpsLabel.getFont().deriveFont(Font.BOLD));
-        fpsLabel.setPreferredSize(new Dimension(90, fpsLabel.getPreferredSize().height));
+        // Widest realistic value ("FPS: 999.9") sets a stable width so the
+        // panel doesn't jitter as the FPS text's digit count changes; derived
+        // from the label's actual font (rather than a hardcoded pixel count)
+        // so it stays correct at any font scale (see GUI#scaleUIDefaults).
+        final int fpsLabelWidth = fpsLabel.getFontMetrics(fpsLabel.getFont()).stringWidth("FPS: 999.9") + 10;
+        fpsLabel.setPreferredSize(new Dimension(fpsLabelWidth, fpsLabel.getPreferredSize().height));
 
         setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), PANEL_NAME));
         add(enableTornadoCheckBox);
