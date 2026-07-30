@@ -14,6 +14,7 @@
 #   ./scripts/runGUI.sh metal
 
 : "${TORNADOVM_HOME:?TORNADOVM_HOME is not set. Install a TornadoVM SDK (Metal, OpenCL, or CUDA backend) and source its setvars.sh first.}"
+: "${KFUSION_ROOT:?KFUSION_ROOT is not set. Run 'source source.env' from the repo root first.}"
 
 ARGFILE="${TORNADOVM_HOME}/tornado-argfile"
 if [ ! -f "${ARGFILE}" ]; then
@@ -32,6 +33,7 @@ echo "kfusion (GUI) -Xmx20g -Xms2g kfusion.tornado.GUI"
 
 java @"${ARGFILE}" \
     -Xmx20g -Xms2g \
+    --add-opens java.desktop/sun.awt=ALL-UNNAMED \
     -Dtornado.kernels.coarsener=False \
     -Dtornado.enable.fix.reads=False \
     -Dtornado.compiler.fullInlining=True \

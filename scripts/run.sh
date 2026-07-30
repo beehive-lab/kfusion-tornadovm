@@ -17,6 +17,7 @@
 #   ./scripts/run.sh metal conf/bm-traj3.settings
 
 : "${TORNADOVM_HOME:?TORNADOVM_HOME is not set. Install a TornadoVM SDK (Metal, OpenCL, or CUDA backend) and source its setvars.sh first.}"
+: "${KFUSION_ROOT:?KFUSION_ROOT is not set. Run 'source source.env' from the repo root first.}"
 
 ARGFILE="${TORNADOVM_HOME}/tornado-argfile"
 if [ ! -f "${ARGFILE}" ]; then
