@@ -30,6 +30,7 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 import java.awt.Font;
 import java.nio.ByteBuffer;
 
+import com.jogamp.nativewindow.ScalableSurface;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
@@ -72,7 +73,20 @@ public abstract class AbstractOpenGLPipeline<T extends KfusionConfig> extends Ab
 
             execute();
 
-            final float zoom = config.getZoom();
+            // KfusionTornadoCanvas requests IDENTITY_PIXELSCALE (1 device pixel
+            // per point) so drawing at config.getZoom() maps 1:1 onto the
+            // surface - but on at least some JOGL/macOS/Metal combinations the
+            // request isn't honored and the surface stays at the OS's real
+            // HiDPI backing scale (e.g. 2x on Retina). Reading back the scale
+            // JOGL actually applied and folding it into the zoom used here
+            // keeps content filling the real surface either way, instead of
+            // silently rendering into one quadrant of it when the request is
+            // ignored.
+            final float[] surfaceScale = { 1f, 1f };
+            if (drawable instanceof ScalableSurface s) {
+                s.getCurrentSurfaceScale(surfaceScale);
+            }
+            final float zoom = config.getZoom() * surfaceScale[0];
             gl.glPixelZoom(zoom, -zoom);
 
             final int borderSize = scaled(5, zoom);
