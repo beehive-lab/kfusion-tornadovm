@@ -258,17 +258,37 @@ public class RawDevice extends AbstractLogger implements Device {
         }
     }
 
+    // A truncated/incomplete dataset file - e.g. an interrupted download -
+    // ends mid-frame rather than exactly on a frame boundary. buffer.hasRemaining()
+    // alone (any bytes left at all, even just one) isn't enough to guarantee a
+    // read for a whole depth/video sub-frame won't run past the buffer's limit
+    // and throw BufferUnderflowException/IllegalArgumentException; checking
+    // against the exact byte count a sub-frame needs lets pollDepth/pollVideo/
+    // skipVideoFrame end the stream cleanly instead.
+    private boolean hasFullFrameRemaining(int neededBytes) {
+        return buffer.remaining() >= neededBytes;
+    }
+
     public void skipVideoFrame() {
-        if (buffer.hasRemaining() && running) {
+        if (!running) {
+            return;
+        }
+        if (hasFullFrameRemaining(8 + (width * height * 3))) {
             buffer.position(buffer.position() + 8 + (width * height * 3));
+        } else {
+            running = false;
         }
     }
 
     @Override
     public boolean pollVideo(ImageByte3 image) {
+        if (!running) {
+            return false;
+        }
+
         boolean haveFrame = true;
 
-        if (buffer.hasRemaining()) {
+        if (hasFullFrameRemaining(8 + (width * height * 3))) {
             extractVideoFrame(image);
         } else {
             haveFrame = false;
@@ -290,13 +310,23 @@ public class RawDevice extends AbstractLogger implements Device {
 
     @Override
     public boolean pollDepth(ImageFloat image) {
+        if (!running) {
+            return false;
+        }
+
+        final int depthFrameBytes = 8 + (width * height * 2);
         boolean haveFrame = true;
 
-        if (buffer.hasRemaining()) {
+        if (hasFullFrameRemaining(depthFrameBytes)) {
             extractDepthFrame(image);
         } else if (bufferOffset < fileSize) {
             loadNextBuffer();
-            extractDepthFrame(image);
+            if (buffer != null && hasFullFrameRemaining(depthFrameBytes)) {
+                extractDepthFrame(image);
+            } else {
+                haveFrame = false;
+                running = false;
+            }
         } else {
             haveFrame = false;
             running = false;
