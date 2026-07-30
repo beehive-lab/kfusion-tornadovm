@@ -35,6 +35,7 @@ import kfusion.java.pipeline.AbstractPipeline;
 import kfusion.tornado.algorithms.GraphicsMath;
 import kfusion.tornado.algorithms.ImagingOps;
 import kfusion.tornado.algorithms.Integration;
+import kfusion.tornado.algorithms.IcpSolver;
 import kfusion.tornado.algorithms.IterativeClosestPoint;
 import kfusion.tornado.algorithms.Raycast;
 import kfusion.tornado.algorithms.Renderer;
@@ -82,6 +83,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
     private Matrix4x4Float[] scaledInvKs;
     private Matrix4x4Float pyramidPose;
 
+    private FloatArray icpControl;
+    private FloatArray icpScratch;
     private FloatArray icpResultIntermediate1;
     private FloatArray icpGroupPartials;
     private FloatArray icpResult;
@@ -280,6 +283,8 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         // ---------------------------------------------------------------------------------------
         if (config.useSimpleReduce()) {
             icpResultIntermediate1 = new FloatArray(config.getReductionSize() * 32);
+            icpControl = new FloatArray(IcpSolver.CONTROL_SIZE);
+            icpScratch = new FloatArray(IcpSolver.SCRATCH_SIZE);
             icpReduceChunk = Math.max(1, config.getReductionSize() / config.getReduceGroups());
             icpReduceGroups = Math.max(1, config.getReductionSize() / icpReduceChunk);
             icpGroupPartials = new FloatArray(icpReduceGroups * 32);
@@ -289,34 +294,10 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         final ImageFloat3 referenceNormals = referenceView.getNormals();
 
         final TaskGraph[] icpGraphs = new TaskGraph[iterations];
-        for (int i = 0; i < iterations; i++) {
-            icpGraphs[i] = new TaskGraph("icp" + i) //
-                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidPose, projectReference) //
-                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, trackingResults[i]) //
-                    .consumeFromDevice("preproc", pyramidVerticies[i], pyramidNormals[i]) //
-                    .consumeFromDevice("raycast", referenceVerticies, referenceNormals) //
-                    .task("track" + i, IterativeClosestPoint::trackPose, //
-                            trackingResults[i], trackingWidth[i], trackingHeight[i], pyramidVerticies[i], pyramidNormals[i], //
-                            referenceVerticies, referenceNormals, pyramidPose, //
-                            projectReference, distanceThreshold, normalThreshold);
-
-            if (config.useSimpleReduce()) {
-                icpGraphs[i].transferToDevice(DataTransferMode.FIRST_EXECUTION, icpResultIntermediate1, icpResult) //
-                        .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, trackingResults[i], trackingWidth[i] * trackingHeight[i]);
-                if (config.useTwoStageReduce()) {
-                    // finish the reduction on the device: 32 floats come back instead of reductionSize * 32
-                    icpGraphs[i].transferToDevice(DataTransferMode.FIRST_EXECUTION, icpGroupPartials) //
-                            .task("reducepartials" + i, IterativeClosestPoint::reducePartials, icpGroupPartials, icpResultIntermediate1, icpReduceChunk) //
-                            .task("reducefinal" + i, IterativeClosestPoint::reduceFinal, icpResult, icpGroupPartials, icpReduceGroups) //
-                            .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResult);
-                } else {
-                    icpGraphs[i].transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
-                }
-            } else {
-                icpGraphs[i].transferToHost(DataTransferMode.EVERY_EXECUTION, trackingResults[i]);
-            }
-            // renderTrack reads the finest level; never copy the tracking image back to the host
-            icpGraphs[i].persistOnDevice(trackingResults[i]);
+        if (config.solveIcpOnDevice()) {
+            buildDeviceSolveIcpGraphs(icpGraphs, iterations, referenceVerticies, referenceNormals);
+        } else {
+            buildHostSolveIcpGraphs(icpGraphs, iterations, referenceVerticies, referenceNormals);
         }
 
         // ---------------------------------------------------------------------------------------
@@ -452,6 +433,71 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
         gridScheduler.addWorkerGrid(taskName, grid);
     }
 
+    /** One graph per level, with the 6x6 solve and the convergence test on the host. */
+    private void buildHostSolveIcpGraphs(TaskGraph[] icpGraphs, int iterations, ImageFloat3 referenceVerticies, ImageFloat3 referenceNormals) {
+        for (int i = 0; i < iterations; i++) {
+            icpGraphs[i] = new TaskGraph("icp" + i) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidPose, projectReference) //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, trackingResults[i]) //
+                    .consumeFromDevice("preproc", pyramidVerticies[i], pyramidNormals[i]) //
+                    .consumeFromDevice("raycast", referenceVerticies, referenceNormals) //
+                    .task("track" + i, IterativeClosestPoint::trackPose, //
+                            trackingResults[i], trackingWidth[i], trackingHeight[i], pyramidVerticies[i], pyramidNormals[i], //
+                            referenceVerticies, referenceNormals, pyramidPose, //
+                            projectReference, distanceThreshold, normalThreshold);
+
+            if (config.useSimpleReduce()) {
+                icpGraphs[i].transferToDevice(DataTransferMode.FIRST_EXECUTION, icpResultIntermediate1, icpResult) //
+                        .task("mapreduce" + i, IterativeClosestPoint::mapReduce, icpResultIntermediate1, trackingResults[i], trackingWidth[i] * trackingHeight[i]);
+                if (config.useTwoStageReduce()) {
+                    // finish the reduction on the device: 32 floats come back instead of reductionSize * 32
+                    icpGraphs[i].transferToDevice(DataTransferMode.FIRST_EXECUTION, icpGroupPartials) //
+                            .task("reducepartials" + i, IterativeClosestPoint::reducePartials, icpGroupPartials, icpResultIntermediate1, icpReduceChunk) //
+                            .task("reducefinal" + i, IterativeClosestPoint::reduceFinal, icpResult, icpGroupPartials, icpReduceGroups) //
+                            .transferToHost(DataTransferMode.EVERY_EXECUTION, icpResult);
+                } else {
+                    icpGraphs[i].transferToHost(DataTransferMode.EVERY_EXECUTION, icpResultIntermediate1);
+                }
+            } else {
+                icpGraphs[i].transferToHost(DataTransferMode.EVERY_EXECUTION, trackingResults[i]);
+            }
+            // renderTrack reads the finest level; never copy the tracking image back to the host
+            icpGraphs[i].persistOnDevice(trackingResults[i]);
+        }
+    }
+
+    /**
+     * One graph per level with every iteration of that level unrolled: track, reduce and solve run
+     * back to back on the device and the pose is updated in place, so a level costs one execution
+     * instead of one blocking device-to-host round trip per iteration.
+     */
+    private void buildDeviceSolveIcpGraphs(TaskGraph[] icpGraphs, int iterations, ImageFloat3 referenceVerticies, ImageFloat3 referenceNormals) {
+        for (int level = 0; level < iterations; level++) {
+            final TaskGraph graph = new TaskGraph("icp" + level) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, pyramidPose, projectReference, icpControl) //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, trackingResults[level], icpResultIntermediate1, icpGroupPartials, icpResult, icpScratch) //
+                    .consumeFromDevice("preproc", pyramidVerticies[level], pyramidNormals[level]) //
+                    .consumeFromDevice("raycast", referenceVerticies, referenceNormals);
+
+            for (int iteration = 0; iteration < pyramidIterations[level]; iteration++) {
+                final String suffix = level + "_" + iteration;
+                graph.task("track" + suffix, IterativeClosestPoint::trackPose, //
+                        trackingResults[level], trackingWidth[level], trackingHeight[level], pyramidVerticies[level], pyramidNormals[level], //
+                        referenceVerticies, referenceNormals, pyramidPose, projectReference, distanceThreshold, normalThreshold) //
+                        .task("mapreduce" + suffix, IterativeClosestPoint::mapReduceGuarded, icpResultIntermediate1, trackingResults[level], //
+                                trackingWidth[level] * trackingHeight[level], icpControl) //
+                        .task("reducepartials" + suffix, IterativeClosestPoint::reducePartials, icpGroupPartials, icpResultIntermediate1, icpReduceChunk) //
+                        .task("reducefinal" + suffix, IterativeClosestPoint::reduceFinal, icpResult, icpGroupPartials, icpReduceGroups) //
+                        .task("solve" + suffix, IcpSolver::solveAndUpdatePose, icpResult, pyramidPose, icpControl, icpScratch, ICP_THRESHOLD);
+            }
+
+            // the host only needs the resulting pose, the statistics and the control flags
+            graph.transferToHost(DataTransferMode.EVERY_EXECUTION, pyramidPose, icpResult, icpControl) //
+                    .persistOnDevice(trackingResults[level]);
+            icpGraphs[level] = graph;
+        }
+    }
+
     /** Runs a single task-graph of the shared execution plan. */
     private void runGraph(int graphIndex) {
         // The grid scheduler is registered once, at plan construction: re-registering it on every
@@ -524,6 +570,14 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
 
         // perform ICP
         pyramidPose.set(currentView.getPose());
+        if (config.solveIcpOnDevice()) {
+            estimatePoseOnDevice();
+            boolean trackedOnDevice = (trackingResult.getRSME() < RSMEThreshold) && (trackingResult.getTracked(scaledInputSize.getX() * scaledInputSize.getY()) >= trackingThreshold);
+            if (trackedOnDevice) {
+                currentView.getPose().set(trackingResult.getPose());
+            }
+            return true;
+        }
         for (int level = pyramidIterations.length - 1; level >= 0; level--) {
             for (int i = 0; i < pyramidIterations[level]; i++) {
                 runGraph(graphIcpFirst + level);
@@ -562,6 +616,40 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             currentView.getPose().set(trackingResult.getPose());
         }
         return true;
+    }
+
+    /**
+     * Runs one execution per pyramid level: the iterations of that level are unrolled inside the graph
+     * and the pose is updated on the device, so there is no per-iteration synchronisation. Only if the
+     * device solver reports a non-positive Cholesky pivot does the host finish that level with the SVD
+     * path, which is what keeps the result equivalent for ill-conditioned systems.
+     */
+    private void estimatePoseOnDevice() {
+        for (int level = pyramidIterations.length - 1; level >= 0; level--) {
+            icpControl.init(0f);
+            runGraph(graphIcpFirst + level);
+
+            trackingResult.points = trackingWidth[level] * trackingHeight[level];
+            trackingResult.error = icpResult.get(0);
+            trackingResult.tracked = icpResult.get(28);
+            trackingResult.tooFar = icpResult.get(29);
+            trackingResult.wrongNormal = icpResult.get(30);
+            trackingResult.other = icpResult.get(31);
+            trackingResult.getPose().set(pyramidPose);
+
+            if (icpControl.get(IcpSolver.CONTROL_SOLVE_FAILED) != 0f) {
+                // ill-conditioned system: redo the remaining iterations of this level on the host
+                final int done = (int) icpControl.get(IcpSolver.CONTROL_ITERATIONS);
+                for (int i = done; i < pyramidIterations[level]; i++) {
+                    runGraph(graphIcpFirst + level);
+                    if (IterativeClosestPoint.estimateNewPose(config, trackingResult, icpResult, pyramidPose, ICP_THRESHOLD)) {
+                        pyramidPose.set(trackingResult.getPose());
+                        break;
+                    }
+                    pyramidPose.set(trackingResult.getPose());
+                }
+            }
+        }
     }
 
     @Override

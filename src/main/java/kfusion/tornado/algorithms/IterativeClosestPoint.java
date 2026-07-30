@@ -131,6 +131,27 @@ public class IterativeClosestPoint {
         }
     }
 
+    /**
+     * {@link #mapReduce} with the convergence guard of an unrolled ICP iteration: once the level has
+     * converged the threads return immediately instead of re-reducing an unchanged tracking image.
+     */
+    public static void mapReduceGuarded(final FloatArray output, final FloatArray input, final int numElements, final FloatArray control) {
+        final int numThreads = output.getSize() / 32;
+
+        for (@Parallel int i = 0; i < numThreads; i++) {
+            if (control.get(IcpSolver.CONTROL_CONVERGED) == 0f && control.get(IcpSolver.CONTROL_SOLVE_FAILED) == 0f) {
+                final int startIndex = i * 32;
+                for (int j = 0; j < 32; j++) {
+                    output.set(startIndex + j, 0f);
+                }
+
+                for (int j = i; j < numElements; j += numThreads) {
+                    reduceValues(output, startIndex, input, j);
+                }
+            }
+        }
+    }
+
     public static void reduceIntermediate(final FloatArray output, final FloatArray input) {
 
         final int elementSize = 32;

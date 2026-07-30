@@ -118,6 +118,20 @@ public class TornadoModel extends KfusionConfig {
 		return Boolean.parseBoolean(value);
 	}
 
+	/**
+	 * Where the 6x6 ICP system is solved: {@code host} keeps the EJML SVD solve with a device-to-host
+	 * copy per iteration, {@code device} solves it in a kernel and unrolls the iterations of a level
+	 * into a single execution.
+	 */
+	public String getIcpSolveMode() {
+		final String property = System.getProperty("kfusion.icp.solve");
+		return (property != null) ? property : settings.getProperty("kfusion.icp.solve", "host");
+	}
+
+	public boolean solveIcpOnDevice() {
+		return "device".equalsIgnoreCase(getIcpSolveMode());
+	}
+
 	/** Whether every task-graph is executed once before the frame loop, to force its allocations. */
 	public boolean useWarmUp() {
 		final String property = System.getProperty("kfusion.warmup");
