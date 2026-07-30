@@ -637,6 +637,12 @@ public class TornadoBenchmarkPipeline extends AbstractPipeline<TornadoModel> {
             trackingResult.other = icpResult.get(31);
             trackingResult.getPose().set(pyramidPose);
 
+            if (Boolean.getBoolean("kfusion.debug.solve") && frames >= 4 && frames <= 6) {
+                out.printf("[dbg] frame %d level %d converged=%.0f failed=%.0f iters=%.0f norm=%.3e tracked=%.0f poseX=%.6f%n", frames, level, //
+                        icpControl.get(IcpSolver.CONTROL_CONVERGED), icpControl.get(IcpSolver.CONTROL_SOLVE_FAILED), icpControl.get(IcpSolver.CONTROL_ITERATIONS), //
+                        icpControl.get(IcpSolver.CONTROL_UPDATE_NORM), trackingResult.tracked, pyramidPose.get(0, 3));
+            }
+
             if (icpControl.get(IcpSolver.CONTROL_SOLVE_FAILED) != 0f) {
                 // ill-conditioned system: redo the remaining iterations of this level on the host
                 final int done = (int) icpControl.get(IcpSolver.CONTROL_ITERATIONS);

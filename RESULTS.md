@@ -123,6 +123,19 @@ inputs (pose matrices), a per-iteration device→host copy and cross-graph buffe
 capture path does not currently survive that combination. Left off by default
 (`-Dkfusion.cuda.graphs=none|all`).
 
+## Device-side ICP solve: measured and rejected
+
+`-Dkfusion.icp.solve=device` unrolls a level's ICP iterations into one graph and does the 6x6 solve and
+the SE3 pose update in a kernel, to remove the blocking per-iteration copy-out. It is **slower**: 240
+FPS / 3.88 ms against 412 FPS / 2.10 ms for the host loop, because 50 static task launches per level-0
+execution cost more than the 10 round trips they replace, and a graph's task list cannot shrink when
+the convergence guard fires. ATE happens to improve (0.013272 m vs 0.019406 m) since Cholesky plus a
+fixed iteration count differs from the SVD pseudo-inverse with early exit. Kept behind the flag,
+default `host`; a hybrid unrolling 2-3 iterations per execution is the open idea.
+
+The solver was validated offline against the host SVD path (200 synthetic systems, worst pose-element
+delta 2.03e-05, singular systems correctly deferred to the host).
+
 ## TornadoVM runtime changes required
 
 On branch `fix/cross-graph-consume` of the TornadoVM checkout (not upstreamed):
@@ -135,6 +148,11 @@ On branch `fix/cross-graph-consume` of the TornadoVM checkout (not upstreamed):
 2. `TornadoVMInterpreter.executeAlloc()` no longer dereferences a null device buffer for a persisted
    object whose producer has not run yet — it allocates it instead (the bootstrap case: ICP runs
    before the first raycast exists).
+
+Upstream PRs that came out of profiling this application: TornadoVM #996 (the fix above), #997
+(interpreter hot path), #999 (deterministic kernel source), #1000 (on-disk CUDA module cache, 2.2x
+start-up), #1002 (lazy wait-event lists, **1.94x tok/s on GPULlama3 and 316 -> 424 FPS here**), #1004
+(bytecode buffer sized for the graph; many-task graphs previously produced silently wrong results).
 
 ## Reproducing
 
