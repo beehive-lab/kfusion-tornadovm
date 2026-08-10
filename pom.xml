@@ -186,16 +186,33 @@
         </profile>
 
         <!-- ─── JDK 25 ───────────────────────────────────────────────────────────
-             Auto-activates for JDK 25.0.2+ builds (minimum required version).
+             Auto-activates for JDK 25.0.2 through 25.x builds (minimum required version).
              TornadoVM: ${tornadovm.base.version}-jdk25-dev
         ─────────────────────────────────────────────────────────────────────── -->
         <profile>
             <id>jdk25</id>
-            <activation><jdk>[25.0.2,)</jdk></activation>
+            <activation><jdk>[25.0.2,26)</jdk></activation>
             <properties>
                 <maven.compiler.release>25</maven.compiler.release>
                 <jdk.version.suffix>-jdk25</jdk.version.suffix>
                 <tornadovm.version>${tornadovm.base.version}${jdk.version.suffix}</tornadovm.version>
+            </properties>
+        </profile>
+
+        <!-- ─── JDK 27 ───────────────────────────────────────────────────────────
+             Auto-activates for JDK 27+ builds (JVMCI fully removed upstream,
+             openjdk/jdk#30834 — see the matching jdk27 profile in TornadoVM's own pom).
+             TornadoVM: pinned to the locally-built 5.2.1-jdk27-dev artifacts (no
+             5.2.0-jdk27 release exists yet, so this does not follow the base+suffix
+             composition the other profiles use).
+        ─────────────────────────────────────────────────────────────────────── -->
+        <profile>
+            <id>jdk27</id>
+            <activation><jdk>[27,)</jdk></activation>
+            <properties>
+                <maven.compiler.release>27</maven.compiler.release>
+                <jdk.version.suffix>-jdk27</jdk.version.suffix>
+                <tornadovm.version>5.2.1-jdk27-dev</tornadovm.version>
             </properties>
         </profile>
     </profiles>
