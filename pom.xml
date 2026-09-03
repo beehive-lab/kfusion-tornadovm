@@ -15,9 +15,11 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tornadovm.base.version>5.2.1</tornadovm.base.version>
-        <!-- Defaults (overridden by the JDK profiles below) -->
-        <jdk.version.suffix>-jdk22plus-dev</jdk.version.suffix>
+        <!-- Published TornadoVM release. Maven Central coordinates are per-JDK; the
+             profiles below append the -jdk21 / -jdk22plus suffix matching the running JDK. -->
+        <tornadovm.base.version>6.0.0</tornadovm.base.version>
+        <!-- Defaults; one of the JDK profiles below always activates for JDK >= 21 and overrides these. -->
+        <jdk.version.suffix>-jdk22plus</jdk.version.suffix>
         <tornadovm.version>${tornadovm.base.version}${jdk.version.suffix}</tornadovm.version>
         <maven.compiler.release>22</maven.compiler.release>
     </properties>
@@ -156,15 +158,14 @@
 
     <profiles>
         <!-- ─── JDK 21 ───────────────────────────────────────────────────────────
-             Auto-activates for JDK 21.x builds.
-             TornadoVM: ${tornadovm.base.version}-jdk21-dev
+             Auto-activates for JDK 21.x builds; resolves the -jdk21 TornadoVM artifacts.
         ─────────────────────────────────────────────────────────────────────── -->
         <profile>
             <id>jdk21</id>
             <activation><jdk>[21,22)</jdk></activation>
             <properties>
                 <maven.compiler.release>21</maven.compiler.release>
-                <jdk.version.suffix>-jdk21-dev</jdk.version.suffix>
+                <jdk.version.suffix>-jdk21</jdk.version.suffix>
                 <tornadovm.version>${tornadovm.base.version}${jdk.version.suffix}</tornadovm.version>
             </properties>
             <build>
@@ -189,15 +190,16 @@
              Auto-activates for JDK 22 and newer. TornadoVM consolidated its old
              per-version jdk25/jdk26/jdk27 dev profiles into one "jdk22plus" SDK
              build that runs unchanged on 22, 23, ..., 27 and later - so one
-             profile here covers the whole open-ended range too.
-             TornadoVM: ${tornadovm.base.version}-jdk22plus-dev
+             profile here covers the whole open-ended range too. FFM/Panama is
+             final from 22, so no enable-preview flag is needed.
+             TornadoVM: ${tornadovm.base.version}-jdk22plus
         ─────────────────────────────────────────────────────────────────────── -->
         <profile>
             <id>jdk22plus</id>
             <activation><jdk>[22,)</jdk></activation>
             <properties>
                 <maven.compiler.release>22</maven.compiler.release>
-                <jdk.version.suffix>-jdk22plus-dev</jdk.version.suffix>
+                <jdk.version.suffix>-jdk22plus</jdk.version.suffix>
                 <tornadovm.version>${tornadovm.base.version}${jdk.version.suffix}</tornadovm.version>
             </properties>
         </profile>
