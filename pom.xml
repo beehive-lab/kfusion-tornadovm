@@ -17,7 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Published TornadoVM release. Maven Central coordinates are per-JDK; the
              profiles below append the -jdk21 / -jdk22plus suffix matching the running JDK. -->
-        <tornadovm.base.version>7.0.0</tornadovm.base.version>
+        <tornadovm.base.version>7.0.1</tornadovm.base.version>
         <!-- Defaults; one of the JDK profiles below always activates for JDK >= 21 and overrides these. -->
         <jdk.version.suffix>-jdk22plus</jdk.version.suffix>
         <tornadovm.version>${tornadovm.base.version}${jdk.version.suffix}</tornadovm.version>
